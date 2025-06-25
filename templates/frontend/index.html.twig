@@ -1,0 +1,31 @@
+{% extends 'frontend/frontend_base.html.twig' %}
+
+{% block title %}Игры{% endblock %}
+
+{% block body %}
+
+    <h1>Игры</h1>
+
+    <form method="get">
+        <input type="text" name="q" placeholder="Поиск по названию" value="{{ search }}">
+        <select name="genre">
+            <option value="">Все жанры</option>
+            {% for genre in genres %}
+                <option value="{{ genre.id }}" {{ genre.id == selectedGenre ? 'selected' : '' }}>
+                    {{ genre.name }}
+                </option>
+            {% endfor %}
+        </select>
+        <button type="submit">Найти</button>
+    </form>
+
+    <ul>
+        {% for game in games %}
+            <li>
+                <a href="{{ path('frontend_game_show', { id: game.id }) }}">{{ game.name }}</a>
+            </li>
+        {% else %}
+            <li>Нет игр по заданным фильтрам</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

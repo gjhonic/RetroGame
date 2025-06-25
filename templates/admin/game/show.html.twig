@@ -1,0 +1,59 @@
+{% extends 'admin/admin_base.html.twig' %}
+
+{% block title %}Игра{% endblock %}
+
+{% block body %}
+    <h1>{{ game.name }}</h1>
+
+    {% if game.image %}
+        <img src="{{ asset(game.image) }}" alt="{{ game.name }}">
+    {% endif %}
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ game.id }}</td>
+            </tr>
+            <tr>
+                <th>Title</th>
+                <td>{{ game.name }}</td>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>{{ game.description }}</td>
+            </tr>
+            <tr>
+                <th>ReleaseDate</th>
+                <td>{{ game.releaseDate ? game.releaseDate|date('Y-m-d') : '' }}</td>
+            </tr>
+            <tr>
+                <th>CreatedAt</th>
+                <td>{{ game.createdAt ? game.createdAt|date('Y-m-d H:i:s') : '' }}</td>
+            </tr>
+            <tr>
+                <th>UpdatedAt</th>
+                <td>{{ game.updatedAt ? game.updatedAt|date('Y-m-d H:i:s') : '' }}</td>
+            </tr>
+            <tr>
+                <th>CreatedBy</th>
+                <td>{{ game.createdBy }}</td>
+            </tr>
+            <tr>
+                <th>UpdatedBy</th>
+                <td>{{ game.updatedBy }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+
+    <a href="{{ path('admin_game_index') }}" class="btn btn-secondary">
+        Назад
+    </a>
+
+    <a href="{{ path('admin_game_edit', {'id': game.id}) }}" class="btn btn-primary">
+        Редактировать
+    </a>
+
+    {{ include('admin/game/_delete_form.html.twig') }}
+{% endblock %}

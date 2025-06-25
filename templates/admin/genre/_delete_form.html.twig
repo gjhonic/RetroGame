@@ -1,0 +1,5 @@
+<form method="post" action="{{ path('admin_genre_delete', {'id': genre.id}) }}"
+      onsubmit="return confirm('Вы действительно хотите удалить этот жанр');">
+    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ genre.id) }}">
+    <button class="btn btn-sm btn-danger btn-block">Удалить</button>
+</form>

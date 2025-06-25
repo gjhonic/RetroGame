@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+
+<title>GameShop index</title>
+
+{% block body %}
+    <h1>GameShop index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Link_game_id</th>
+                <th>Name</th>
+                <th>Link</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for game_shop in game_shops %}
+            <tr>
+                <td>{{ game_shop.id }}</td>
+                <td>{{ game_shop.linkGameId }}</td>
+                <td>{{ game_shop.name }}</td>
+                <td>{{ game_shop.link }}</td>
+                <td>
+                    <a href="{{ path('app_game_shop_show', {'id': game_shop.id}) }}">show</a>
+                    <a href="{{ path('app_game_shop_edit', {'id': game_shop.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="5">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_game_shop_new') }}">Create new</a>
+{% endblock %}

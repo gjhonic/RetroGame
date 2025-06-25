@@ -1,0 +1,45 @@
+{% extends 'admin/admin_base.html.twig' %}
+
+{% block title %}Магазины{% endblock %}
+
+{% block body %}
+    <h1>Торговые площадки</h1>
+
+    <a class="btn btn-primary mb-3" href="{{ path('admin_shop_new') }}">Добавить торговую площадку</a>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Url</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for shop in shops %}
+            <tr>
+                <td>{{ shop.id }}</td>
+                <td>{{ shop.name }}</td>
+                <td>{{ shop.description }}</td>
+                <td>{{ shop.url }}</td>
+                <td>
+                    <a href="{{ path('admin_shop_show', {'id': shop.id}) }}"
+                       class="btn btn-sm btn-success btn-block">
+                        Смотреть
+                    </a>
+                    <a href="{{ path('admin_shop_edit', {'id': shop.id}) }}"
+                       class="btn btn-sm btn-primary btn-block">
+                        Редактировать
+                    </a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="5">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

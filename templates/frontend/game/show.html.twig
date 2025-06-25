@@ -1,0 +1,69 @@
+{% extends 'frontend/frontend_base.html.twig' %}
+
+{% block title %}{{ game.name }}{% endblock %}
+
+{% block body %}
+    <h1>{{ game.name }}</h1>
+    <p>{{ game.description }}</p>
+
+    {% if game.image %}
+        <img src="{{ asset(game.image) }}" alt="{{ game.name }}">
+    {% endif %}
+
+    <h3>Жанры:</h3>
+    <ul>
+        {% for genre in game.genre %}
+            <li>{{ genre.name }}</li>
+        {% endfor %}
+    </ul>
+
+    <hr>
+
+    <h3>Где купить:</h3>
+    <ul>
+        {% for gameShop in game.shops %}
+            <li>
+                <strong>Steam:</strong>
+                {% set latestPrice = gameShop.latestPrice %}
+                {% set latestUpdate = gameShop.latestPriceUpdatedAt %}
+
+                <a>
+                   {{ latestPrice is not null ? latestPrice ~ ' ₽' : 'Цена не найдена' }}
+                </a>
+
+            </li>
+        {% endfor %}
+    </ul>
+
+    <hr>
+
+    <h3>Динамика цен:</h3>
+    <canvas id="priceChart" height="150"></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('priceChart').getContext('2d');
+
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ priceDates|json_encode|raw }},
+                datasets: [{
+                    label: 'Цена в ₽',
+                    data: {{ priceValues|json_encode|raw }},
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    fill: false,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    </script>
+{% endblock %}

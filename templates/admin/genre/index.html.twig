@@ -1,0 +1,45 @@
+{% extends 'admin/admin_base.html.twig' %}
+
+{% block title %}Жанры{% endblock %}
+
+{% block body %}
+    <h1>Жанры</h1>
+
+    <a class="btn btn-primary mb-3" href="{{ path('admin_genre_new') }}">Добавить жанр</a>
+
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Название</th>
+            <th>Описание</th>
+            <th>Добавлен</th>
+            <th>Кем</th>
+            <th>Изменён</th>
+            <th>Кем</th>
+            <th>Действия</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for genre in genres %}
+            <tr>
+                <td>{{ genre.name }}</td>
+                <td>{{ genre.description|u.truncate(40) }}</td>
+                <td>{{ genre.createdAt|date('Y-m-d H:i') }}</td>
+                <td>{{ genre.createdBy }}</td>
+                <td>{{ genre.updatedAt ? genre.updatedAt|date('Y-m-d H:i') : '-' }}</td>
+                <td>{{ genre.updatedBy ?? '-' }}</td>
+                <td>
+                    <div>
+                        <a href="{{ path('admin_genre_edit', {'id': genre.id}) }}"
+                           class="btn btn-sm btn-primary btn-block">Изменить</a>
+                        {{ include('admin/genre/_delete_form.html.twig') }}
+                    </div>
+
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="7">Нет жанров</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
