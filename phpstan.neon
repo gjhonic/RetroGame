@@ -1,0 +1,17 @@
+parameters:
+    level: 7
+    paths:
+        - src
+
+
+    # Если используешь Doctrine с аннотациями или аттрибутами
+    doctrine:
+        objectManagerLoader: null
+
+includes:
+    - vendor/phpstan/phpstan-symfony/extension.neon
+    - vendor/phpstan/phpstan-doctrine/extension.neon
+
+# Автолоадинг симфонийского контейнера
+services:
+

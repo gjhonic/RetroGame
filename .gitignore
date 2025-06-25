@@ -15,10 +15,6 @@
 .phpunit.result.cache
 ###< phpunit/phpunit ###
 
-###> phpstan/phpstan ###
-phpstan.neon
-###< phpstan/phpstan ###
-
 ###> squizlabs/php_codesniffer ###
 /.phpcs-cache
 /phpcs.xml
