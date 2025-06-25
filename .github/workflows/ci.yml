@@ -25,7 +25,7 @@ jobs:
       - name: 📦 Установка зависимостей Composer
         run: composer install --no-progress --prefer-dist --no-interaction
 
-      - name: 📦 PHPStan — статический анализ
+      - name: 🔍 PHPStan — статический анализ
         run: vendor/bin/phpstan analyse -c phpstan.neon --level=8
 
       - name: 🔍 PHPCS — проверка стиля
