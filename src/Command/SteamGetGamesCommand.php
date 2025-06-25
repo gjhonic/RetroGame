@@ -81,7 +81,6 @@ class SteamGetGamesCommand extends Command
                     "https://store.steampowered.com/api/appdetails?appids={$appid}&cc=us&l=ru"
                 );
                 $detailsData = $detailsResponse->toArray();
-
             } catch (TransportExceptionInterface $e) {
                 $output->writeln(
                     "<comment>Skipping app {$appid} due to HTTP error: {$e->getMessage()}</comment>"
