@@ -1,4 +1,4 @@
-name: CI
+name: 🧪 CI
 
 on:
   push:
@@ -7,26 +7,26 @@ on:
     branches: [ main ]
 
 jobs:
-  code_quality:
-    name: PHPStan & PHPCS
+  php-code-quality:
+    name: Проверка PHPStan и PHPCS
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: 🧲 Клонирование репозитория
+        uses: actions/checkout@v3
 
-      - name: Set up PHP
+      - name: 🧰 Установка PHP (с Composer)
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
           extensions: mbstring, intl, pdo, pdo_mysql
-          coverage: none
+          tools: composer:v2
 
-      - name: Install dependencies
-        run: composer install --no-progress --no-suggest --prefer-dist
+      - name: 📦 Установка зависимостей Composer
+        run: composer install --no-progress --prefer-dist --no-interaction
 
-      - name: Run PHPStan
-        run: ./vendor/bin/phpstan analyse -c phpstan.neon --level=8
+      - name: 📦 PHPStan — статический анализ
+        run: vendor/bin/phpstan analyse -c phpstan.neon --level=8
 
-      - name: Run PHPCS
-        run: ./vendor/bin/phpcs --standard=.phpcs.xml src tests
+      - name: 🔍 PHPCS — проверка стиля
+        run: vendor/bin/phpcs --standard=.phpcs.xml src tests
