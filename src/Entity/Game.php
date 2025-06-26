@@ -45,6 +45,9 @@ class Game
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $updatedBy = null;
 
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $ownersCount = null;
+
     /**
      * @var Collection<int, GameShop>
      */
@@ -227,6 +230,17 @@ class Game
     public function setImage(?string $image): self
     {
         $this->image = $image;
+        return $this;
+    }
+
+    public function getOwnersCount(): ?int
+    {
+        return $this->ownersCount;
+    }
+
+    public function setOwnersCount(?int $ownersCount): self
+    {
+        $this->ownersCount = $ownersCount;
         return $this;
     }
 }

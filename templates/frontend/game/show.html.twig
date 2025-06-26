@@ -3,67 +3,116 @@
 {% block title %}{{ game.name }}{% endblock %}
 
 {% block body %}
-    <h1>{{ game.name }}</h1>
-    <p>{{ game.description }}</p>
+    <div class="container my-5">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                {% if game.image %}
+                    <img src="{{ asset(game.image) }}" alt="{{ game.name }}" class="img-fluid rounded shadow">
+                {% else %}
+                    <div class="bg-secondary text-white d-flex align-items-center justify-content-center rounded" style="height: 300px;">
+                        Нет изображения
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-lg-8">
+                <h1 class="mb-3">{{ game.name }}</h1>
+                <p class="lead">{{ game.description }}</p>
 
-    {% if game.image %}
-        <img src="{{ asset(game.image) }}" alt="{{ game.name }}">
-    {% endif %}
+                <div class="mb-3">
+                    <h5>Жанры:</h5>
+                    {% if game.genre|length > 0 %}
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for genre in game.genre %}
+                                <span class="badge bg-info text-dark">{{ genre.name }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Жанры не указаны.</p>
+                    {% endif %}
+                </div>
 
-    <h3>Жанры:</h3>
-    <ul>
-        {% for genre in game.genre %}
-            <li>{{ genre.name }}</li>
-        {% endfor %}
-    </ul>
+                <div class="mb-3">
+                    <h5>Где купить:</h5>
+                    <ul class="list-group">
+                        {% for gameShop in game.shops %}
+                            {% set latestPrice = gameShop.latestPrice %}
+                            {% set latestUpdate = gameShop.latestPriceUpdatedAt %}
+                            {% set shopLink = gameShop.link %}
 
-    <hr>
+                            <li class="list-group-item d-flex justify-content-between align-items-center flex-column flex-md-row">
+                                <div>
+                                    <strong>{{ gameShop.shopName ?? 'Steam' }}</strong>
+                                    {% if shopLink %}
+                                        <a href="{{ shopLink }}?cc=ru" target="_blank" class="ms-2 text-decoration-none">
+                                            <i class="bi bi-box-arrow-up-right"></i> Перейти
+                                        </a>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    {% if latestPrice is not null %}
+                                        {{ latestPrice }} ₽
+                                        {% if latestUpdate %}
+                                            <small class="text-muted ms-2">(обновлено {{ latestUpdate|date('d.m.Y') }})</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">Цена не найдена</span>
+                                    {% endif %}
+                                </div>
+                            </li>
+                        {% else %}
+                            <li class="list-group-item text-muted">Нет информации о магазинах.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
 
-    <h3>Где купить:</h3>
-    <ul>
-        {% for gameShop in game.shops %}
-            <li>
-                <strong>Steam:</strong>
-                {% set latestPrice = gameShop.latestPrice %}
-                {% set latestUpdate = gameShop.latestPriceUpdatedAt %}
+        {% if priceValues is not empty %}
+            <div class="mt-5">
+                <h3 class="mb-3">Динамика цен</h3>
+                <canvas id="priceChart" height="150"></canvas>
+            </div>
+        {% endif %}
+    </div>
 
-                <a>
-                   {{ latestPrice is not null ? latestPrice ~ ' ₽' : 'Цена не найдена' }}
-                </a>
+    {% if priceValues is not empty %}
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            const ctx = document.getElementById('priceChart').getContext('2d');
 
-            </li>
-        {% endfor %}
-    </ul>
-
-    <hr>
-
-    <h3>Динамика цен:</h3>
-    <canvas id="priceChart" height="150"></canvas>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        const ctx = document.getElementById('priceChart').getContext('2d');
-
-        const chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: {{ priceDates|json_encode|raw }},
-                datasets: [{
-                    label: 'Цена в ₽',
-                    data: {{ priceValues|json_encode|raw }},
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    fill: false,
-                    tension: 0.1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: false
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: {{ priceDates|json_encode|raw }},
+                    datasets: [{
+                        label: 'Цена в ₽',
+                        data: {{ priceValues|json_encode|raw }},
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + ' ₽';
+                                }
+                            }
+                        }
                     }
                 }
-            }
-        });
-    </script>
+            });
+        </script>
+    {% endif %}
 {% endblock %}

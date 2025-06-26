@@ -16,14 +16,19 @@ class GameController extends AbstractController
     #[Route('/', name: 'frontend_index')]
     public function index(Request $request, GameRepository $gameRepo, GenreRepository $genreRepo): Response
     {
-        $search = $request->query->get('q', null);
-        $genreId = $request->query->get('genre', null);
+        $search = $request->query->get('q');
+        $genreId = $request->query->get('genre');
+        $page = (int)max(1, (int)$request->query->get('page', '1'));
+        $limit = 40;
 
         if ($genreId !== null) {
             $genreId = (int)$genreId;
         }
 
-        $games = $gameRepo->findByFilters($search, $genreId);
+        $games = $gameRepo->findByFilters($search, $genreId, $page, $limit);
+        $total = $gameRepo->countByFilters($search, $genreId);
+        $totalPages = (int) ceil($total / $limit);
+
         $genres = $genreRepo->findAll();
 
         return $this->render('frontend/index.html.twig', [
@@ -31,6 +36,8 @@ class GameController extends AbstractController
             'genres' => $genres,
             'search' => $search,
             'selectedGenre' => $genreId,
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
         ]);
     }
 

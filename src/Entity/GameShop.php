@@ -38,6 +38,9 @@ class GameShop
     #[ORM\OneToMany(mappedBy: 'gameShop', targetEntity: GameShopPriceHistory::class, orphanRemoval: true)]
     private Collection $priceHistory;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => true])]
+    private bool $shouldImportPrice = true;
+
     public function __construct()
     {
         $this->priceHistory = new ArrayCollection();
@@ -135,5 +138,16 @@ class GameShop
         }
 
         return $last?->getUpdatedAt();
+    }
+
+    public function getShouldImportPrice(): bool
+    {
+        return $this->shouldImportPrice;
+    }
+
+    public function setShouldImportPrice(bool $shouldImportPrice): static
+    {
+        $this->shouldImportPrice = $shouldImportPrice;
+        return $this;
     }
 }
