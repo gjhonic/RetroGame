@@ -1,0 +1,13 @@
+{% extends 'admin/admin_base.html.twig' %}
+
+{% block title %}Жанры{% endblock %}
+
+{% block body %}
+    <h1>Edit Shop</h1>
+
+    {{ include('admin/shop/_form.html.twig', {'button_label': 'Update'}) }}
+
+    <a href="{{ path('admin_shop_index') }}">back to list</a>
+
+    {{ include('admin/shop/_delete_form.html.twig') }}
+{% endblock %}

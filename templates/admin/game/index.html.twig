@@ -1,0 +1,53 @@
+{% extends 'admin/admin_base.html.twig' %}
+
+{% block title %}Игры{% endblock %}
+
+{% block body %}
+    <h1>Игры</h1>
+
+    <a class="btn btn-primary mb-3" href="{{ path('admin_game_new') }}">Добавить игру</a>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>ReleaseDate</th>
+                <th>CreatedAt</th>
+                <th>UpdatedAt</th>
+                <th>CreatedBy</th>
+                <th>UpdatedBy</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for game in games %}
+            <tr>
+                <td>{{ game.id }}</td>
+                <td>{{ game.name }}</td>
+                <td>{{ game.description }}</td>
+                <td>{{ game.releaseDate ? game.releaseDate|date('Y-m-d') : '' }}</td>
+                <td>{{ game.createdAt ? game.createdAt|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ game.updatedAt ? game.updatedAt|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ game.createdBy }}</td>
+                <td>{{ game.updatedBy }}</td>
+                <td>
+                    <a href="{{ path('admin_game_show', {'id': game.id}) }}"
+                       class="btn btn-sm btn-success btn-block">
+                        Смотреть
+                    </a>
+                    <a href="{{ path('admin_game_edit', {'id': game.id}) }}"
+                       class="btn btn-sm btn-primary btn-block">
+                        Редактировать
+                    </a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="9">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
