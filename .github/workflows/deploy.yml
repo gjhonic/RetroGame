@@ -12,18 +12,23 @@ jobs:
       - name: 🛎️ Checkout main branch
         uses: actions/checkout@v4
         with:
-          ref: main  # 👈 вот здесь указываем ветку main
+          ref: main  # 👈 ветка main
 
       - name: 🔐 Set up SSH agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+      - name: Добавить SSH ключ сервера в known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H 5.129.221.92 >> ~/.ssh/known_hosts
+
       - name: 📤 Upload project to server
         run: |
           rsync -az --exclude='.git' --exclude='vendor' ./ deployer@5.129.221.92:/var/www/retro-game
 
-      - name: 🚀 Run deploy script on server
+      - name: 🚀 Run deploy script on сервере
         run: |
           ssh deployer@5.129.221.92 << 'EOF'
           cd /var/www/retro-game
