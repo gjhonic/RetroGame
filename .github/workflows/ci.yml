@@ -23,7 +23,7 @@ jobs:
           tools: composer:v2
 
       - name: 📦 Установка зависимостей Composer
-        run: composer install --no-progress --prefer-dist --no-interaction
+        run: composer install --no-progress --prefer-dist --no-interaction --no-scripts
 
       - name: 🔍 PHPStan — статический анализ
         run: vendor/bin/phpstan analyse -c phpstan.neon --level=8
