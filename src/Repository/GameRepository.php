@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Game;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -27,12 +28,16 @@ class GameRepository extends ServiceEntityRepository
     public function findByFilters(?string $search, ?int $genreId, int $page = 1, int $limit = 40): array
     {
         $qb = $this->createQueryBuilder('g')
+            ->distinct()
             ->leftJoin('g.genre', 'genre')
             ->addSelect('genre')
             ->leftJoin('g.shops', 'shops')
             ->addSelect('shops')
-            ->leftJoin('shops.shop', 'shop') // Жадно подгружаем Shop внутри GameShop
-            ->addSelect('shop');
+            ->leftJoin('shops.shop', 'shop')
+            ->addSelect('shop')
+            ->orderBy('g.ownersCount', 'DESC')
+            ->setFirstResult(($page - 1) * $limit)
+            ->setMaxResults($limit);
 
         if ($search) {
             $qb->andWhere('g.name LIKE :search')
@@ -44,17 +49,14 @@ class GameRepository extends ServiceEntityRepository
                 ->setParameter('genreId', $genreId);
         }
 
-        $qb->orderBy('g.ownersCount', 'DESC')
-            ->setFirstResult(($page - 1) * $limit)
-            ->setMaxResults($limit);
-
-        return $qb->getQuery()->getResult();
+        $paginator = new Paginator($qb, true);
+        return iterator_to_array($paginator);
     }
 
     public function countByFilters(?string $search, ?int $genreId): int
     {
         $qb = $this->createQueryBuilder('g')
-            ->select('COUNT(g.id)')
+            ->select('COUNT(DISTINCT g.id)')
             ->leftJoin('g.genre', 'genre');
 
         if ($search) {

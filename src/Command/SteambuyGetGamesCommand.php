@@ -32,11 +32,11 @@ class SteambuyGetGamesCommand extends Command
         $shop = $this->entityManager->getRepository(Shop::class)->findOneBy(['id' => 2]);
 
         if (!$shop) {
-            $output->writeln('<error>Shop with ID 2 not found</error>');
+            $output->writeln('<error>⛔ Магазин с ID 2 не найден</error>');
             return Command::FAILURE;
         }
 
-        $output->writeln(sprintf('Starting import for %d games...', count($games)));
+        $output->writeln(sprintf('🚀 <info>Начинаем импорт для %d игр...</info>', count($games)));
 
         $imported = 0;
         $skippedExistingShop = 0;
@@ -44,15 +44,15 @@ class SteambuyGetGamesCommand extends Command
         $errorsCount = 0;
 
         foreach ($games as $game) {
-            if ($imported >= 100) {
-                $output->writeln('Reached limit of 100 imported games. Stopping.');
+            if ($imported >= 200) {
+                $output->writeln('⏹️ <comment>Достигнут лимит 200 импортированных игр. Останавливаем.</comment>');
                 break;
             }
 
             $slug = $this->slugify((string)$game->getName()) . '-russia';
             $url = "https://steambuy.com/steam/{$slug}/";
 
-            $output->writeln("Processing game: '{$game->getName()}', slug: $slug");
+            $output->writeln("🎮 <info>Обрабатываем игру: '{$game->getName()}', slug: $slug</info>");
 
             // Проверка существования GameShop
             $existingShop = $this->entityManager->getRepository(GameShop::class)->findOneBy([
@@ -61,7 +61,7 @@ class SteambuyGetGamesCommand extends Command
             ]);
 
             if ($existingShop) {
-                $output->writeln(" - GameShop already exists for this game and shop. Skipping.");
+                $output->writeln("⏩ <comment>GameShop уже существует для этой игры и магазина. Пропускаем.</comment>");
                 $skippedExistingShop++;
                 continue;
             }
@@ -72,30 +72,32 @@ class SteambuyGetGamesCommand extends Command
             ]);
 
             if ($steambuyApp && $steambuyApp->isNotFound()) {
-                $output->writeln(" - Previously checked as 404 (not found). Skipping.");
+                $output->writeln("⏩ <comment>Ранее отмечено как 404 (не найдено). Пропускаем.</comment>");
                 $skippedNotFound++;
                 continue;
             }
 
+            usleep(random_int(1000000, 1500000));
+
             try {
-                $output->writeln(" - Fetching URL: $url");
+                $output->writeln("🌐 <info>Запрашиваем URL: $url</info>");
                 $response = $this->httpClient->request('GET', $url);
                 $content = $response->getContent(false);
 
                 if (!$steambuyApp) {
                     $steambuyApp = new SteambuyApp();
                     $steambuyApp->setSlug($slug);
-                    $output->writeln(" - Created new SteambuyApp record for slug.");
+                    $output->writeln("🆕 <info>Создана новая запись SteambuyApp для slug.</info>");
                 } else {
-                    $output->writeln(" - Found existing SteambuyApp record, updating.");
+                    $output->writeln("🔄 <info>Найдена существующая запись SteambuyApp, обновляем.</info>");
                 }
 
                 $steambuyApp->setCheckedAt(new \DateTimeImmutable());
 
-                if (str_contains($content, '<div class="review-heaing__title">Ошибка 404</div>')) {
+                if (str_contains($content, '<div class=\"review-heaing__title\">Ошибка 404</div>')) {
                     $steambuyApp->setNotFound(true);
                     $steambuyApp->setRawHtml(null);
-                    $output->writeln(" - Page returned 404. Marking as not found.");
+                    $output->writeln("❌ <comment>Страница вернула 404. Отмечаем как не найдено.</comment>");
                 } else {
                     $steambuyApp->setNotFound(false);
                     $steambuyApp->setRawHtml(null);
@@ -111,7 +113,7 @@ class SteambuyGetGamesCommand extends Command
 
                     $this->entityManager->persist($gameShop);
 
-                    $output->writeln(" - Linked GameShop created for game '{$game->getName()}'.");
+                    $output->writeln("✅ <info>GameShop создан и связан с игрой '{$game->getName()}'.</info>");
                     $imported++;
                 }
 
@@ -119,19 +121,17 @@ class SteambuyGetGamesCommand extends Command
                 $this->entityManager->flush();
             } catch (\Throwable $e) {
                 $errorsCount++;
-                $output->writeln("<error> - Error fetching $slug: {$e->getMessage()}</error>");
+                $output->writeln("<error>⛔ Ошибка при запросе $slug: {$e->getMessage()}</error>");
             }
-
-            usleep(1000000); // 1 секунда
         }
 
         $output->writeln('');
-        $output->writeln('Import summary:');
-        $output->writeln(" - Total games processed: " . count($games));
-        $output->writeln(" - Games linked/imported: $imported");
-        $output->writeln(" - Games skipped (already linked): $skippedExistingShop");
-        $output->writeln(" - Games skipped (404 previously): $skippedNotFound");
-        $output->writeln(" - Errors occurred: $errorsCount");
+        $output->writeln('📊 <info>Итоги импорта:</info>');
+        $output->writeln(" - Всего игр обработано: " . count($games));
+        $output->writeln(" - Связано/импортировано: $imported");
+        $output->writeln(" - Пропущено (уже связано): $skippedExistingShop");
+        $output->writeln(" - Пропущено (404 ранее): $skippedNotFound");
+        $output->writeln(" - Ошибок: $errorsCount");
 
         return Command::SUCCESS;
     }

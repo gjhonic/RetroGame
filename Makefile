@@ -38,6 +38,11 @@ test-phpcs: ## 🔍 Code Sniffer — проверка стиля
 fix-cs: ## 🛠️ Code Style Fixer — автоисправление по PSR-12
 	vendor/bin/php-cs-fixer fix
 
+## 📊 Метрики кода
+
+analyse-phpmetr: ## 📊 Метрики кода
+	vendor/bin/phpmetrics --report-html=var/phpmetrics src
+
 ## 📖 Помощь
 
 help: ## ❓ Показать доступные команды
