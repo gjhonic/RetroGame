@@ -30,8 +30,8 @@ class SteamUpdatePricesCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $now = new \DateTime();
-        $output->writeln('📅 ' . $now->format('Y-m-d H:i:s'));
-        $output->writeln('🚀 Начинаем обновление цен Steam...');
+        $output->writeln('🚀 <info>Начинаем обновление цен Steam...</info>');
+        $output->writeln('📅 <info>' . $now->format('Y-m-d H:i:s') . '</info>');
 
         $steamGames = $this->entityManager
             ->getRepository(GameShop::class)
@@ -43,14 +43,14 @@ class SteamUpdatePricesCommand extends Command
             ->getResult();
 
         $total = count($steamGames);
-        $output->writeln("🔍 Найдено игр для обновления: {$total}");
+        $output->writeln("🔍 <info>Найдено игр для обновления: {$total}</info>");
 
         $updated = 0;
         $checked = 0;
 
         foreach ($steamGames as $index => $gameShop) {
-            if ($checked >= 150) {
-                $output->writeln('⛔ Достигнут лимит в 150 игр. Завершаем.');
+            if ($checked >= 250) {
+                $output->writeln('⏹️ <comment>Достигнут лимит в 250 игр. Завершаем.</comment>');
                 break;
             }
 
@@ -58,7 +58,7 @@ class SteamUpdatePricesCommand extends Command
 
             if ($game && $game->isFree()) {
                 $output->writeln(
-                    "⏩ [{$gameShop->getLinkGameId()}] {$gameShop->getName()} — Бесплатная игра, пропускаем."
+                    "⏩ <comment>[{$gameShop->getLinkGameId()}] {$gameShop->getName()} — Бесплатная игра, пропускаем.</comment>"
                 );
                 continue;
             }
@@ -81,7 +81,7 @@ class SteamUpdatePricesCommand extends Command
 
             if ($existing > 0) {
                 $output->writeln(
-                    "🔁 [{$gameShop->getLinkGameId()}] {$gameShop->getName()} — Цена уже есть на сегодня, пропускаем."
+                    "🔄 <comment>[{$gameShop->getLinkGameId()}] {$gameShop->getName()} — Цена уже есть на сегодня, пропускаем.</comment>"
                 );
                 continue;
             }
@@ -90,7 +90,7 @@ class SteamUpdatePricesCommand extends Command
             $url = "https://store.steampowered.com/app/{$appid}/?cc=ru";
 
             try {
-                $output->writeln("🌐 [$appid] Отправляем запрос по URL: {$url}");
+                $output->writeln("🌐 <info>[{$appid}] Отправляем запрос по URL: {$url}</info>");
 
                 $response = $this->httpClient->request('GET', $url, [
                     'headers' => [
@@ -102,16 +102,15 @@ class SteamUpdatePricesCommand extends Command
 
                 $html = $response->getContent();
 
-
                 // 1. Пробуем найти цену со скидкой
-                if (preg_match('/<div class="discount_final_price">([^<]+)<\/div>/s', $html, $matches)) {
+                if (preg_match('/<div class=\"discount_final_price\">([^<]+)<\/div>/s', $html, $matches)) {
                     $priceText = strip_tags(trim($matches[1]));
-                    $output->writeln("💸 [$appid] Найдена цена со скидкой: $priceText");
-                } elseif (preg_match('/<div class="game_purchase_price price"[^>]*>(.*?)<\/div>/s', $html, $matches)) {
+                    $output->writeln("💸 <info>[{$appid}] Найдена цена со скидкой: $priceText</info>");
+                } elseif (preg_match('/<div class=\"game_purchase_price price\"[^>]*>(.*?)<\/div>/s', $html, $matches)) {
                     $priceText = strip_tags(trim($matches[1]));
-                    $output->writeln("💰 [$appid] Найдена обычная цена: $priceText");
+                    $output->writeln("💰 <info>[{$appid}] Найдена обычная цена: $priceText</info>");
                 } else {
-                    $output->writeln("❌ [$appid] Цена не найдена. Отключаем импорт.");
+                    $output->writeln("❌ <comment>[{$appid}] Цена не найдена. Отключаем импорт.</comment>");
                     $gameShop->setShouldImportPrice(false);
                     $this->entityManager->persist($gameShop);
                     $this->entityManager->flush();
@@ -131,22 +130,21 @@ class SteamUpdatePricesCommand extends Command
                     $history->setUpdatedAt(new \DateTime());
 
                     $this->entityManager->persist($history);
-                    $output->writeln("✅ [$appid] {$gameShop->getName()} — {$price} ₽");
+                    $output->writeln("✅ <info>[{$appid}] {$gameShop->getName()} — {$price} ₽</info>");
                     $updated++;
                 } else {
-                    $output->writeln("✘ [$appid] Цена равна 0, не сохраняем.");
+                    $output->writeln("⚠️ <comment>[{$appid}] Цена равна 0, не сохраняем.</comment>");
                 }
 
-
-                usleep(2000000); // Пауза 1.5 секунды
+                usleep(2000000); // Пауза 2 секунды
             } catch (\Throwable $e) {
-                $output->writeln("⚠ [$appid] Ошибка при запросе: {$e->getMessage()}");
+                $output->writeln("<error>⛔ [{$appid}] Ошибка при запросе: {$e->getMessage()}</error>");
             }
             $this->entityManager->flush();
         }
 
         $this->entityManager->flush();
-        $output->writeln("🎉 Цены обновлены для {$updated} игр из {$checked} проверенных.");
+        $output->writeln("🎉 <info>Цены обновлены для {$updated} игр из {$checked} проверенных.</info>");
 
         return Command::SUCCESS;
     }

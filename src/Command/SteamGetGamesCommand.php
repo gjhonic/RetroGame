@@ -30,25 +30,25 @@ class SteamGetGamesCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $output->writeln('Fetching app list from Steam...');
+        $output->writeln('🚀 <info>Начинаем загрузку списка приложений Steam...</info>');
 
         try {
             $response = $this->httpClient->request('GET', 'https://api.steampowered.com/ISteamApps/GetAppList/v2/');
             $data = $response->toArray();
         } catch (\Throwable $e) {
-            $output->writeln('<error>Failed to fetch app list: ' . $e->getMessage() . '</error>');
+            $output->writeln('<error>⛔ Не удалось получить список приложений: ' . $e->getMessage() . '</error>');
             return Command::FAILURE;
         }
 
         $apps = $data['applist']['apps'] ?? [];
-        $output->writeln('Total apps found: ' . count($apps));
+        $output->writeln('🔍 <info>Всего приложений найдено: ' . count($apps) . '</info>');
 
         $shopSteam = $this->entityManager
             ->getRepository(Shop::class)
             ->find(1);
 
         if (!$shopSteam) {
-            $output->writeln('<error>Steam shop (id=1) not found in DB.</error>');
+            $output->writeln('<error>⛔ Магазин Steam (id=1) не найден в базе данных.</error>');
             return Command::FAILURE;
         }
 
@@ -58,8 +58,8 @@ class SteamGetGamesCommand extends Command
         $batchSize = 10;
 
         foreach ($apps as $app) {
-            if ($imported >= 100) {
-                $output->writeln('Reached 100 new games limit. Stopping.');
+            if ($imported >= 200) {
+                $output->writeln('⏹️ <comment>Достигнут лимит 200 новых игр. Останавливаем импорт.</comment>');
                 break;
             }
 
@@ -70,26 +70,26 @@ class SteamGetGamesCommand extends Command
                 continue;
             }
 
-            // Already processed?
+            // Уже обработано?
             $existingSteamApp = $this->entityManager
                 ->getRepository(SteamApp::class)
                 ->findOneBy(['app_id' => $appid]);
 
             if ($existingSteamApp) {
-                $output->writeln("App {$appid} was imported to SteamApp.");
+                $output->writeln("<comment>⏩ Приложение {$appid} уже импортировано.</comment>");
                 continue;
             }
 
             if ($checked === 30) {
                 $this->entityManager->flush();
-                $output->writeln("Processed 30 apps, waiting 10 seconds...");
+                $output->writeln("⏳ <info>Обработано 30 приложений, пауза 10 секунд...</info>");
                 usleep(10000000);
                 $checked = 0;
             }
 
             $checked++;
 
-            // Get detailed info
+            // Получаем подробную информацию
             try {
                 $detailsResponse = $this->httpClient->request(
                     'GET',
@@ -97,10 +97,10 @@ class SteamGetGamesCommand extends Command
                 );
                 $detailsData = $detailsResponse->toArray();
             } catch (TransportExceptionInterface $e) {
-                $output->writeln("<comment>HTTP error for {$appid}: {$e->getMessage()}</comment>");
+                $output->writeln("<comment>⚠️ HTTP-ошибка для {$appid}: {$e->getMessage()}</comment>");
                 continue;
             } catch (\Throwable) {
-                $output->writeln("<comment>Invalid response for {$appid}. Skipping.</comment>");
+                $output->writeln("<comment>⚠️ Некорректный ответ для {$appid}. Пропускаем.</comment>");
                 continue;
             }
 
@@ -118,11 +118,11 @@ class SteamGetGamesCommand extends Command
             $this->entityManager->flush();
 
             if (!$success || empty($gameData)) {
-                $output->writeln("App {$appid} is empty or failed. Saved as type=empty.");
+                $output->writeln("<comment>⚠️ Приложение {$appid} пустое или не удалось загрузить. Сохраняем как type=empty.</comment>");
                 continue;
             }
 
-            $output->writeln("App {$appid} details loaded and saved to SteamApp.");
+            $output->writeln("✅ <info>Детали приложения {$appid} загружены и сохранены.</info>");
 
             if (
                 ($gameData['type'] ?? '') !== 'game' ||
@@ -130,21 +130,21 @@ class SteamGetGamesCommand extends Command
                 empty($gameData['genres']) ||
                 empty($gameData['price_overview'])
             ) {
-                $output->writeln("App {$appid} is not a game.");
+                $output->writeln("<comment>⏩ Приложение {$appid} не является игрой.</comment>");
                 continue;
             }
 
-            // Check if GameShop already exists
+            // Проверяем, существует ли GameShop
             $existingGameShop = $this->entityManager
                 ->getRepository(GameShop::class)
                 ->findOneBy(['link_game_id' => $appid]);
 
             if ($existingGameShop) {
-                $output->writeln("App {$appid} is existing game shop.");
+                $output->writeln("<comment>⏩ Приложение {$appid} уже связано с GameShop.</comment>");
                 continue;
             }
 
-            // Create or find Game
+            // Создаём или ищем Game
             $game = $this->entityManager
                 ->getRepository(Game::class)
                 ->findOneBy(['name' => $gameName]);
@@ -163,7 +163,7 @@ class SteamGetGamesCommand extends Command
                 $game->setIsFree(!empty($gameData['is_free']));
                 $game->setOwnersCount($ownersCount);
 
-                // Download and save image
+                // Сохраняем изображение
                 $imageUrl = $gameData['header_image'] ?? null;
                 if ($imageUrl) {
                     try {
@@ -178,7 +178,7 @@ class SteamGetGamesCommand extends Command
                         file_put_contents($savePath, $imageContents);
                         $game->setImage('/uploads/games/' . $imageName);
                     } catch (\Throwable) {
-                        $output->writeln("<comment>Could not save image for {$appid}</comment>");
+                        $output->writeln("<comment>⚠️ Не удалось сохранить изображение для {$appid}</comment>");
                     }
                 }
 
@@ -193,7 +193,7 @@ class SteamGetGamesCommand extends Command
                 $this->entityManager->persist($game);
             }
 
-            // Handle genres
+            // Жанры
             foreach ($gameData['genres'] as $genreItem) {
                 $genreName = trim($genreItem['description']);
 
@@ -220,7 +220,7 @@ class SteamGetGamesCommand extends Command
                 }
             }
 
-            // Save GameShop
+            // Сохраняем GameShop
             $gameShop = new GameShop();
             $gameShop->setGame($game);
             $gameShop->setShop($shopSteam);
@@ -232,12 +232,12 @@ class SteamGetGamesCommand extends Command
             $imported++;
             if ($imported % $batchSize === 0) {
                 $this->entityManager->flush();
-                $output->writeln("Imported {$imported} games so far...");
+                $output->writeln("📦 <info>Импортировано {$imported} игр на данный момент...</info>");
             }
         }
 
         $this->entityManager->flush();
-        $output->writeln("Finished! Total games imported: {$imported}");
+        $output->writeln("🎉 <info>Импорт завершён! Всего игр импортировано: {$imported}</info>");
 
         return Command::SUCCESS;
     }
