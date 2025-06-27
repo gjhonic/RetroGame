@@ -92,7 +92,7 @@ class SteamUpdatePricesCommand extends Command
                 continue;
             }
 
-            usleep(random_int(1000000, 1500000));
+            usleep(random_int(1000000, 2000000));
 
             $appid = $gameShop->getLinkGameId();
             $url = "https://store.steampowered.com/app/{$appid}/?cc=ru";

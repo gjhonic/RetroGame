@@ -105,7 +105,7 @@ class SteamGetGamesCommand extends Command
                 continue;
             }
 
-            usleep(random_int(1000000, 1500000));
+            usleep(random_int(1000000, 2000000));
 
             $raw = $detailsData[$appid] ?? null;
             $success = $raw['success'] ?? false;

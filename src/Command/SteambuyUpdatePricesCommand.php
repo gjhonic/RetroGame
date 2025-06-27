@@ -15,7 +15,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
     name: 'app:steambuy-update-prices',
     description: 'Fetches current prices from SteamBuy and saves them to price history',
 )]
-class SteambayUpdatePricesCommand extends Command
+class SteambuyUpdatePricesCommand extends Command
 {
     private EntityManagerInterface $entityManager;
     private HttpClientInterface $httpClient;
@@ -90,7 +90,7 @@ class SteambayUpdatePricesCommand extends Command
                 continue;
             }
 
-            usleep(random_int(1000000, 1500000));
+            usleep(random_int(1000000, 2000000));
 
             try {
                 $start = microtime(true);
