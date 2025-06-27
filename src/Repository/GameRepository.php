@@ -56,7 +56,7 @@ class GameRepository extends ServiceEntityRepository
     public function countByFilters(?string $search, ?int $genreId): int
     {
         $qb = $this->createQueryBuilder('g')
-            ->select('COUNT(g.id)')
+            ->select('COUNT(DISTINCT g.id)')
             ->leftJoin('g.genre', 'genre');
 
         if ($search) {
