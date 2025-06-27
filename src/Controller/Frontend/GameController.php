@@ -54,7 +54,7 @@ class GameController extends AbstractController
         $priceValues = [];
 
         foreach ($game->getShops() as $gameShop) {
-            // Берем историю цен и сортируем по дате
+            $shopId = $gameShop->getShop()?->getId();
             $history = $gameShop->getPriceHistory()->toArray();
 
             usort($history, function ($a, $b) {
@@ -62,8 +62,8 @@ class GameController extends AbstractController
             });
 
             foreach ($history as $entry) {
-                $priceDates[] = $entry->getUpdatedAt()->format('d.m.Y H:i');
-                $priceValues[] = $entry->getPrice();
+                $priceDates[$shopId][] = $entry->getUpdatedAt()->format('d.m.Y H:i');
+                $priceValues[$shopId][] = $entry->getPrice();
             }
         }
 

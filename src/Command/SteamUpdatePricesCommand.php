@@ -49,8 +49,8 @@ class SteamUpdatePricesCommand extends Command
         $checked = 0;
 
         foreach ($steamGames as $index => $gameShop) {
-            if ($checked >= 100) {
-                $output->writeln('⛔ Достигнут лимит в 100 игр. Завершаем.');
+            if ($checked >= 150) {
+                $output->writeln('⛔ Достигнут лимит в 150 игр. Завершаем.');
                 break;
             }
 
@@ -92,54 +92,53 @@ class SteamUpdatePricesCommand extends Command
             try {
                 $output->writeln("🌐 [$appid] Отправляем запрос по URL: {$url}");
 
-                $start = microtime(true);
                 $response = $this->httpClient->request('GET', $url, [
                     'headers' => [
                         'User-Agent' => 'Mozilla/5.0',
                     ]
                 ]);
-                $duration = round(microtime(true) - $start, 2);
 
                 $checked++;
 
                 $html = $response->getContent();
 
-                if (
-                    preg_match(
-                        '/<div class="game_purchase_price price"[^>]*>(.*?)<\/div>/s',
-                        $html,
-                        $matches
-                    )
-                ) {
+
+                // 1. Пробуем найти цену со скидкой
+                if (preg_match('/<div class="discount_final_price">([^<]+)<\/div>/s', $html, $matches)) {
                     $priceText = strip_tags(trim($matches[1]));
-                    $cleaned = str_replace(['₽', 'руб.', ' '], '', $priceText);
-                    $cleaned = str_replace(',', '.', $cleaned);
-
-                    $price = floatval($cleaned);
-
-                    if ($price > 0) {
-                        $history = new GameShopPriceHistory();
-                        $history->setGameShop($gameShop);
-                        $history->setPrice($price);
-                        $history->setUpdatedAt(new \DateTime());
-
-                        $this->entityManager->persist($history);
-
-                        $output->writeln(
-                            "✅ [$appid] {$gameShop->getName()} — {$price} ₽ (Запрос занял {$duration} сек)"
-                        );
-                        $updated++;
-                    } else {
-                        $output->writeln("✘ [$appid] Цена равна 0, не сохраняем.");
-                    }
+                    $output->writeln("💸 [$appid] Найдена цена со скидкой: $priceText");
+                } elseif (preg_match('/<div class="game_purchase_price price"[^>]*>(.*?)<\/div>/s', $html, $matches)) {
+                    $priceText = strip_tags(trim($matches[1]));
+                    $output->writeln("💰 [$appid] Найдена обычная цена: $priceText");
                 } else {
                     $output->writeln("❌ [$appid] Цена не найдена. Отключаем импорт.");
                     $gameShop->setShouldImportPrice(false);
                     $this->entityManager->persist($gameShop);
                     $this->entityManager->flush();
+                    continue;
                 }
 
-                usleep(1500000); // Пауза 1.5 секунды
+                // Очистка и конвертация
+                $cleaned = str_replace(['₽', 'руб.', ' '], '', $priceText);
+                $cleaned = str_replace(',', '.', $cleaned);
+                $price = floatval($cleaned);
+
+                // Сохраняем, если цена > 0
+                if ($price > 0) {
+                    $history = new GameShopPriceHistory();
+                    $history->setGameShop($gameShop);
+                    $history->setPrice($price);
+                    $history->setUpdatedAt(new \DateTime());
+
+                    $this->entityManager->persist($history);
+                    $output->writeln("✅ [$appid] {$gameShop->getName()} — {$price} ₽");
+                    $updated++;
+                } else {
+                    $output->writeln("✘ [$appid] Цена равна 0, не сохраняем.");
+                }
+
+
+                usleep(2000000); // Пауза 1.5 секунды
             } catch (\Throwable $e) {
                 $output->writeln("⚠ [$appid] Ошибка при запросе: {$e->getMessage()}");
             }
