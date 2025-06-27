@@ -29,6 +29,8 @@ class SteamUpdatePricesCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $startTime = microtime(true);
+
         $now = new \DateTime();
         $output->writeln('🚀 <info>Начинаем обновление цен Steam...</info>');
         $output->writeln('📅 <info>' . $now->format('Y-m-d H:i:s') . '</info>');
@@ -48,9 +50,26 @@ class SteamUpdatePricesCommand extends Command
         $updated = 0;
         $checked = 0;
 
+        $startOfDay = (new \DateTime())->setTime(0, 0, 0);
+        $endOfDay = (new \DateTime())->setTime(23, 59, 59);
+
+        $existingGameShops = $this->entityManager
+            ->getRepository(GameShopPriceHistory::class)
+            ->createQueryBuilder('h')
+            ->select('IDENTITY(h.gameShop) AS gameShopId')
+            ->where('h.updatedAt BETWEEN :start AND :end')
+            ->setParameter('start', $startOfDay)
+            ->setParameter('end', $endOfDay)
+            ->groupBy('h.gameShop')
+            ->getQuery()
+            ->getArrayResult();
+
+        // Преобразуем в простой массив ID
+        $alreadyUpdatedIds = array_column($existingGameShops, 'gameShopId');
+
         foreach ($steamGames as $index => $gameShop) {
-            if ($checked >= 300) {
-                $output->writeln('⏹️ <comment>Достигнут лимит в 300 игр. Завершаем.</comment>');
+            if ($checked >= 1000) {
+                $output->writeln('⏹️ <comment>Достигнут лимит в 1000 игр. Завершаем.</comment>');
                 break;
             }
 
@@ -63,30 +82,16 @@ class SteamUpdatePricesCommand extends Command
                 continue;
             }
 
-            $startOfDay = (new \DateTime())->setTime(0, 0, 0);
-            $endOfDay = (new \DateTime())->setTime(23, 59, 59);
-
-            $existing = $this->entityManager
-                ->getRepository(GameShopPriceHistory::class)
-                ->createQueryBuilder('h')
-                ->select('COUNT(h.id)')
-                ->where('h.gameShop = :gameShop')
-                ->andWhere('h.updatedAt >= :startOfDay')
-                ->andWhere('h.updatedAt <= :endOfDay')
-                ->setParameter('gameShop', $gameShop)
-                ->setParameter('startOfDay', $startOfDay)
-                ->setParameter('endOfDay', $endOfDay)
-                ->getQuery()
-                ->getSingleScalarResult();
-
-            if ($existing > 0) {
+            if (in_array($gameShop->getId(), $alreadyUpdatedIds)) {
                 $output->writeln(
-                    "🔄 <comment>[{$gameShop->getLinkGameId()}] {$gameShop->getName()} — Цена уже есть на сегодня, пропускаем.</comment>"
+                    "🔄 <comment> " .
+                    "[{$gameShop->getLinkGameId()}] {$gameShop->getName()} — Цена уже есть на сегодня, пропускаем." .
+                        "</comment>"
                 );
                 continue;
             }
 
-            usleep(2000000);
+            usleep(random_int(1000000, 1500000));
 
             $appid = $gameShop->getLinkGameId();
             $url = "https://store.steampowered.com/app/{$appid}/?cc=ru";
@@ -145,6 +150,10 @@ class SteamUpdatePricesCommand extends Command
 
         $this->entityManager->flush();
         $output->writeln("🎉 <info>Цены обновлены для {$updated} игр из {$checked} проверенных.</info>");
+
+        $endTime = microtime(true);
+        $duration = $endTime - $startTime;
+        $output->writeln(sprintf("⏱️ <info>Время выполнения: %.2f секунд</info>", $duration));
 
         return Command::SUCCESS;
     }

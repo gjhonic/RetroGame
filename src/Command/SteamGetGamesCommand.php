@@ -83,7 +83,8 @@ class SteamGetGamesCommand extends Command
             if ($checked === 30) {
                 $this->entityManager->flush();
                 $output->writeln("⏳ <info>Обработано 30 приложений, пауза 10 секунд...</info>");
-                usleep(10000000);
+
+                usleep(random_int(7000000, 10000000));
                 $checked = 0;
             }
 
@@ -104,7 +105,7 @@ class SteamGetGamesCommand extends Command
                 continue;
             }
 
-            usleep(2000000); // 2 секунды пауза
+            usleep(random_int(1000000, 1500000));
 
             $raw = $detailsData[$appid] ?? null;
             $success = $raw['success'] ?? false;

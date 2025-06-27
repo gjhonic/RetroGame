@@ -54,9 +54,25 @@ class SteambayUpdatePricesCommand extends Command
         $updated = 0;
         $checked = 0;
 
+        $startOfDay = (new \DateTime())->setTime(0, 0, 0);
+        $endOfDay = (new \DateTime())->setTime(23, 59, 59);
+
+        $existingGameShops = $this->entityManager
+            ->getRepository(GameShopPriceHistory::class)
+            ->createQueryBuilder('h')
+            ->select('IDENTITY(h.gameShop) AS gameShopId')
+            ->where('h.updatedAt BETWEEN :start AND :end')
+            ->setParameter('start', $startOfDay)
+            ->setParameter('end', $endOfDay)
+            ->groupBy('h.gameShop')
+            ->getQuery()
+            ->getArrayResult();
+
+        $alreadyUpdatedIds = array_column($existingGameShops, 'gameShopId');
+
         foreach ($gameShops as $gameShop) {
-            if ($checked >= 300) {
-                $output->writeln('⏹️ <comment>Достигнут лимит в 100 игр. Завершаем.</comment>');
+            if ($checked >= 1000) {
+                $output->writeln('⏹️ <comment>Достигнут лимит в 1000 игр. Завершаем.</comment>');
                 break;
             }
 
@@ -65,30 +81,16 @@ class SteambayUpdatePricesCommand extends Command
 
             $output->writeln("🌐 <info>Запрос цены для '{$gameShop->getName()}', URL: $url</info>");
 
-            $startOfDay = (new \DateTime())->setTime(0, 0, 0);
-            $endOfDay = (new \DateTime())->setTime(23, 59, 59);
-
-            $existing = $this->entityManager
-                ->getRepository(GameShopPriceHistory::class)
-                ->createQueryBuilder('h')
-                ->select('COUNT(h.id)')
-                ->where('h.gameShop = :gameShop')
-                ->andWhere('h.updatedAt >= :startOfDay')
-                ->andWhere('h.updatedAt <= :endOfDay')
-                ->setParameter('gameShop', $gameShop)
-                ->setParameter('startOfDay', $startOfDay)
-                ->setParameter('endOfDay', $endOfDay)
-                ->getQuery()
-                ->getSingleScalarResult();
-
-            if ($existing > 0) {
+            if (in_array($gameShop->getId(), $alreadyUpdatedIds)) {
                 $output->writeln(
-                    "🔄 <comment>[{$gameShop->getLinkGameId()}] {$gameShop->getName()} — Цена уже есть на сегодня, пропускаем.</comment>"
+                    "🔄 <comment> " .
+                    "[{$gameShop->getLinkGameId()}] {$gameShop->getName()} — Цена уже есть на сегодня, пропускаем." .
+                    "</comment>"
                 );
                 continue;
             }
 
-            usleep(2000000);
+            usleep(random_int(1000000, 1500000));
 
             try {
                 $start = microtime(true);

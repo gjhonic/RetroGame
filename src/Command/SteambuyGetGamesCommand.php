@@ -77,7 +77,7 @@ class SteambuyGetGamesCommand extends Command
                 continue;
             }
 
-            usleep(2000000);
+            usleep(random_int(1000000, 1500000));
 
             try {
                 $output->writeln("🌐 <info>Запрашиваем URL: $url</info>");
