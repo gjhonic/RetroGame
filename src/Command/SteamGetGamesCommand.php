@@ -119,7 +119,10 @@ class SteamGetGamesCommand extends Command
             $this->entityManager->flush();
 
             if (!$success || empty($gameData)) {
-                $output->writeln("<comment>⚠️ Приложение {$appid} пустое или не удалось загрузить. Сохраняем как type=empty.</comment>");
+                $output->writeln(
+                    "<comment>" .
+                    "⚠️ Приложение {$appid} пустое или не удалось загрузить. Сохраняем как type=empty.</comment>"
+                );
                 continue;
             }
 

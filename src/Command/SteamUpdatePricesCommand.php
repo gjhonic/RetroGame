@@ -77,7 +77,8 @@ class SteamUpdatePricesCommand extends Command
 
             if ($game && $game->isFree()) {
                 $output->writeln(
-                    "⏩ <comment>[{$gameShop->getLinkGameId()}] {$gameShop->getName()} — Бесплатная игра, пропускаем.</comment>"
+                    "⏩ <comment> " .
+                     "[{$gameShop->getLinkGameId()}] {$gameShop->getName()} — Бесплатная игра, пропускаем.</comment>"
                 );
                 continue;
             }
@@ -113,7 +114,13 @@ class SteamUpdatePricesCommand extends Command
                 if (preg_match('/<div class=\"discount_final_price\">([^<]+)<\/div>/s', $html, $matches)) {
                     $priceText = strip_tags(trim($matches[1]));
                     $output->writeln("💸 <info>[{$appid}] Найдена цена со скидкой: $priceText</info>");
-                } elseif (preg_match('/<div class=\"game_purchase_price price\"[^>]*>(.*?)<\/div>/s', $html, $matches)) {
+                } elseif (
+                    preg_match(
+                        '/<div class=\"game_purchase_price price\"[^>]*>(.*?)<\/div>/s',
+                        $html,
+                        $matches
+                    )
+                ) {
                     $priceText = strip_tags(trim($matches[1]));
                     $output->writeln("💰 <info>[{$appid}] Найдена обычная цена: $priceText</info>");
                 } else {

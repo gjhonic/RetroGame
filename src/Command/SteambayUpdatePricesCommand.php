@@ -128,11 +128,13 @@ class SteambayUpdatePricesCommand extends Command
                     } elseif (mb_strtolower($priceText) === 'скоро') {
                         // Товар временно нет в продаже, НЕ отключаем импорт
                         $output->writeln(
-                            "ℹ️ <comment>Товар временно отсутствует (Скоро), пропускаем, импорт оставлен включённым.</comment>"
+                            "ℹ️ <comment>" .
+                            "Товар временно отсутствует (Скоро), пропускаем, импорт оставлен включённым.</comment>"
                         );
                     } else {
                         // Неизвестный формат цены
-                        $output->writeln("❌ <comment>Неизвестный формат цены: '{$priceText}', отключаем импорт для игры.</comment>");
+                        $output->writeln("❌ <comment> " .
+                            "Неизвестный формат цены: '{$priceText}', отключаем импорт для игры.</comment>");
                         $gameShop->setShouldImportPrice(false);
                         $this->entityManager->persist($gameShop);
                     }
