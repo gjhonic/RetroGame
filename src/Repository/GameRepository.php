@@ -28,7 +28,11 @@ class GameRepository extends ServiceEntityRepository
     {
         $qb = $this->createQueryBuilder('g')
             ->leftJoin('g.genre', 'genre')
-            ->addSelect('genre');
+            ->addSelect('genre')
+            ->leftJoin('g.shops', 'shops')
+            ->addSelect('shops')
+            ->leftJoin('shops.shop', 'shop') // Жадно подгружаем Shop внутри GameShop
+            ->addSelect('shop');
 
         if ($search) {
             $qb->andWhere('g.name LIKE :search')

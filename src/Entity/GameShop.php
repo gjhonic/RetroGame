@@ -19,7 +19,7 @@ class GameShop
     #[ORM\JoinColumn(name: 'game_id', referencedColumnName: 'id', nullable: false)]
     private ?Game $game = null;
 
-    #[ORM\ManyToOne(inversedBy: 'gameShops')]
+    #[ORM\ManyToOne(inversedBy: 'gameShops', fetch: 'EAGER')]
     #[ORM\JoinColumn(name: 'shop_id', referencedColumnName: 'id', nullable: false)]
     private ?Shop $shop = null;
 
@@ -40,6 +40,9 @@ class GameShop
 
     #[ORM\Column(type: 'boolean', options: ['default' => true])]
     private bool $shouldImportPrice = true;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $externalKey = null;
 
     public function __construct()
     {
@@ -148,6 +151,17 @@ class GameShop
     public function setShouldImportPrice(bool $shouldImportPrice): static
     {
         $this->shouldImportPrice = $shouldImportPrice;
+        return $this;
+    }
+
+    public function getExternalKey(): ?string
+    {
+        return $this->externalKey;
+    }
+
+    public function setExternalKey(?string $externalKey): static
+    {
+        $this->externalKey = $externalKey;
         return $this;
     }
 }
