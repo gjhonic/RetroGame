@@ -68,16 +68,16 @@
             </div>
         </div>
 
-        {% if priceValues is not empty %}
+        {% if gameCharts is not empty %}
             <div class="mt-5">
                 <h3 class="mb-4">Динамика цен</h3>
                 <div class="row g-4">
-                    {% for gameShop in game.shops %}
+                    {% for gameChart in gameCharts %}
                         <div class="col-md-6">
                             <div class="card shadow-sm">
                                 <div class="card-body">
-                                    <h5 class="card-title text-center">{{ gameShop.shop.name }}</h5>
-                                    <canvas id="priceChart_{{ gameShop.shop.id }}" height="200"></canvas>
+                                    <h5 class="card-title text-center">{{ gameChart['name'] }}</h5>
+                                    <canvas id="priceChart_{{ gameChart['id'] }}" height="200"></canvas>
                                 </div>
                             </div>
                         </div>
@@ -87,17 +87,17 @@
         {% endif %}
     </div>
 
-    {% if priceValues is not empty %}
+    {% if gameCharts is not empty %}
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
-            {% for gameShop in game.shops %}
-            new Chart(document.getElementById('priceChart_{{ gameShop.shop.id }}').getContext('2d'), {
+            {% for gameChart in gameCharts %}
+            new Chart(document.getElementById('priceChart_{{ gameChart['id'] }}').getContext('2d'), {
                 type: 'line',
                 data: {
-                    labels: {{ priceDates[gameShop.shop.id]|json_encode|raw }},
+                    labels: {{ gameChart['priceDates']|json_encode|raw }},
                     datasets: [{
                         label: 'Цена в ₽',
-                        data: {{ priceValues[gameShop.shop.id]|json_encode|raw }},
+                        data: {{ gameChart['priceValues']|json_encode|raw }},
                         borderColor: 'rgba(75, 192, 192, 1)',
                         backgroundColor: 'rgba(75, 192, 192, 0.2)',
                         fill: true,

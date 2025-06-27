@@ -49,28 +49,50 @@ class GameController extends AbstractController
             throw $this->createNotFoundException('Game not found');
         }
 
-        // Собираем данные по всем магазинам
-        $priceDates = [];
-        $priceValues = [];
+        $shopsWithPrices = [];
+        $gameCharts = [];
 
         foreach ($game->getShops() as $gameShop) {
-            $shopId = $gameShop->getShop()?->getId();
+            $shop = $gameShop->getShop();
+            $shopId = $shop?->getId();
+            if (!$shopId) {
+                continue;
+            }
+
+            // Получаем историю цен и сортируем по дате
             $history = $gameShop->getPriceHistory()->toArray();
 
             usort($history, function ($a, $b) {
                 return $a->getUpdatedAt() <=> $b->getUpdatedAt();
             });
 
-            foreach ($history as $entry) {
-                $priceDates[$shopId][] = $entry->getUpdatedAt()->format('d.m.Y H:i');
-                $priceValues[$shopId][] = $entry->getPrice();
+            if (empty($history)) {
+                continue;
             }
+
+            $gameChart = [
+                'id' => $shopId,
+                'name' => $shop->getName(),
+                'priceDates' => [],
+                'priceValues' => [],
+            ];
+
+            // Собираем данные по датам и ценам
+            foreach ($history as $entry) {
+                $gameChart['priceDates'][] = $entry->getUpdatedAt()->format('d.m.Y H:i');
+                $gameChart['priceValues'][] = $entry->getPrice();
+            }
+
+            $gameCharts[] = $gameChart;
+
+            // Добавляем в список только магазины с данными
+            $shopsWithPrices[] = $gameShop;
         }
 
         return $this->render('frontend/game/show.html.twig', [
             'game' => $game,
-            'priceDates' => $priceDates,
-            'priceValues' => $priceValues,
+            'shopsWithPrices' => $shopsWithPrices, // Только магазины с данными
+            'gameCharts' => $gameCharts,
         ]);
     }
 }

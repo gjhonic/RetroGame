@@ -5,7 +5,7 @@ namespace App\Command;
 use App\Entity\Game;
 use App\Entity\GameShop;
 use App\Entity\Shop;
-use App\Entity\SteambuyApp;
+use App\Entity\SteampayApp;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -14,10 +14,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 #[AsCommand(
-    name: 'app:steambuy-get-games',
-    description: 'Links games with SteamBuy if a valid page exists.',
+    name: 'app:steampay-get-games',
+    description: 'Links games with SteamPay if a valid page exists.',
 )]
-class SteambuyGetGamesCommand extends Command
+class SteampayGetGamesCommand extends Command
 {
     public function __construct(
         private readonly HttpClientInterface $httpClient,
@@ -29,10 +29,10 @@ class SteambuyGetGamesCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $games = $this->entityManager->getRepository(Game::class)->findAll();
-        $shop = $this->entityManager->getRepository(Shop::class)->findOneBy(['id' => 2]);
+        $shop = $this->entityManager->getRepository(Shop::class)->findOneBy(['id' => 3]);
 
         if (!$shop) {
-            $output->writeln('<error>⛔ Магазин с ID 2 не найден</error>');
+            $output->writeln('<error>⛔ Магазин с ID 3 не найден</error>');
             return Command::FAILURE;
         }
 
@@ -49,8 +49,8 @@ class SteambuyGetGamesCommand extends Command
                 break;
             }
 
-            $slug = $this->slugify((string)$game->getName()) . '-russia';
-            $url = "https://steambuy.com/steam/{$slug}/";
+            $slug = $this->slugify((string)$game->getName());
+            $url = "https://steampay.com/game/{$slug}/";
 
             $output->writeln("🎮 <info>Обрабатываем игру: '{$game->getName()}', slug: $slug</info>");
 
@@ -66,12 +66,12 @@ class SteambuyGetGamesCommand extends Command
                 continue;
             }
 
-            // Проверка SteambuyApp
-            $steambuyApp = $this->entityManager->getRepository(SteambuyApp::class)->findOneBy([
+            // Проверка SteampayApp
+            $SteampayApp = $this->entityManager->getRepository(SteampayApp::class)->findOneBy([
                 'slug' => $slug,
             ]);
 
-            if ($steambuyApp && $steambuyApp->isNotFound()) {
+            if ($SteampayApp && $SteampayApp->isNotFound()) {
                 $output->writeln("⏩ <comment>Ранее отмечено как 404 (не найдено). Пропускаем.</comment>");
                 $skippedNotFound++;
                 continue;
@@ -84,23 +84,26 @@ class SteambuyGetGamesCommand extends Command
                 $response = $this->httpClient->request('GET', $url);
                 $content = $response->getContent(false);
 
-                if (!$steambuyApp) {
-                    $steambuyApp = new SteambuyApp();
-                    $steambuyApp->setSlug($slug);
-                    $output->writeln("🆕 <info>Создана новая запись SteambuyApp для slug.</info>");
+                if (!$SteampayApp) {
+                    $SteampayApp = new SteampayApp();
+                    $SteampayApp->setSlug($slug);
+                    $output->writeln("🆕 <info>Создана новая запись SteampayApp для slug.</info>");
                 } else {
-                    $output->writeln("🔄 <info>Найдена существующая запись SteambuyApp, обновляем.</info>");
+                    $output->writeln("🔄 <info>Найдена существующая запись SteampayApp, обновляем.</info>");
                 }
 
-                $steambuyApp->setCheckedAt(new \DateTimeImmutable());
+                $SteampayApp->setCheckedAt(new \DateTimeImmutable());
 
-                if (str_contains($content, '<div class=\"review-heaing__title\">Ошибка 404</div>')) {
-                    $steambuyApp->setNotFound(true);
-                    $steambuyApp->setRawHtml(null);
+                if (
+                    str_contains($content, 'Ошибка! Страница не найдена') ||
+                    preg_match('/<h1[^>]*not-found-error__title[^>]*>Ошибка! Страница не найдена\./', $content)
+                ) {
+                    $SteampayApp->setNotFound(true);
+                    $SteampayApp->setRawHtml(null);
                     $output->writeln("❌ <comment>Страница вернула 404. Отмечаем как не найдено.</comment>");
                 } else {
-                    $steambuyApp->setNotFound(false);
-                    $steambuyApp->setRawHtml(null);
+                    $SteampayApp->setNotFound(false);
+                    $SteampayApp->setRawHtml(null);
 
                     $gameShop = new GameShop();
                     $gameShop->setGame($game);
@@ -117,7 +120,7 @@ class SteambuyGetGamesCommand extends Command
                     $imported++;
                 }
 
-                $this->entityManager->persist($steambuyApp);
+                $this->entityManager->persist($SteampayApp);
                 $this->entityManager->flush();
             } catch (\Throwable $e) {
                 $errorsCount++;
