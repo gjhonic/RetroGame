@@ -49,8 +49,8 @@ class SteamUpdatePricesCommand extends Command
         $checked = 0;
 
         foreach ($steamGames as $index => $gameShop) {
-            if ($checked >= 250) {
-                $output->writeln('⏹️ <comment>Достигнут лимит в 250 игр. Завершаем.</comment>');
+            if ($checked >= 300) {
+                $output->writeln('⏹️ <comment>Достигнут лимит в 300 игр. Завершаем.</comment>');
                 break;
             }
 
@@ -85,6 +85,8 @@ class SteamUpdatePricesCommand extends Command
                 );
                 continue;
             }
+
+            usleep(2000000);
 
             $appid = $gameShop->getLinkGameId();
             $url = "https://store.steampowered.com/app/{$appid}/?cc=ru";
@@ -135,8 +137,6 @@ class SteamUpdatePricesCommand extends Command
                 } else {
                     $output->writeln("⚠️ <comment>[{$appid}] Цена равна 0, не сохраняем.</comment>");
                 }
-
-                usleep(2000000); // Пауза 2 секунды
             } catch (\Throwable $e) {
                 $output->writeln("<error>⛔ [{$appid}] Ошибка при запросе: {$e->getMessage()}</error>");
             }

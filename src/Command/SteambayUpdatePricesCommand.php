@@ -55,7 +55,7 @@ class SteambayUpdatePricesCommand extends Command
         $checked = 0;
 
         foreach ($gameShops as $gameShop) {
-            if ($checked >= 150) {
+            if ($checked >= 300) {
                 $output->writeln('⏹️ <comment>Достигнут лимит в 100 игр. Завершаем.</comment>');
                 break;
             }
@@ -87,6 +87,8 @@ class SteambayUpdatePricesCommand extends Command
                 );
                 continue;
             }
+
+            usleep(2000000);
 
             try {
                 $start = microtime(true);
@@ -137,10 +139,14 @@ class SteambayUpdatePricesCommand extends Command
                     $gameShop->setShouldImportPrice(false);
                     $this->entityManager->persist($gameShop);
                 }
-
-                usleep(1500000); // 1.5 секунды пауза между запросами
             } catch (\Throwable $e) {
-                $output->writeln("<error>⛔ Ошибка при запросе: {$e->getMessage()}</error>");
+                if ($e->getCode() == 404) {
+                    $output->writeln("❌ <comment>Цена не найдена, отключаем импорт для игры.</comment>");
+                    $gameShop->setShouldImportPrice(false);
+                    $this->entityManager->persist($gameShop);
+                } else {
+                    $output->writeln("<error>⛔ Ошибка при запросе: {$e->getMessage()}</error>");
+                }
             }
 
             $this->entityManager->flush();

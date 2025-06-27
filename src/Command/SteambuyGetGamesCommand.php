@@ -77,6 +77,8 @@ class SteambuyGetGamesCommand extends Command
                 continue;
             }
 
+            usleep(2000000);
+
             try {
                 $output->writeln("🌐 <info>Запрашиваем URL: $url</info>");
                 $response = $this->httpClient->request('GET', $url);
@@ -121,8 +123,6 @@ class SteambuyGetGamesCommand extends Command
                 $errorsCount++;
                 $output->writeln("<error>⛔ Ошибка при запросе $slug: {$e->getMessage()}</error>");
             }
-
-            usleep(1000000); // 1 секунда
         }
 
         $output->writeln('');
