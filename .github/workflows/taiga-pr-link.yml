@@ -36,10 +36,14 @@ jobs:
 
       - name: Authenticate to Taiga
         id: taiga_auth
+        env:
+          TAIGA_USERNAME: ${{ env.TAIGA_USERNAME }}
+          TAIGA_PASSWORD: ${{ secrets.TAIGA_PASSWORD }}
+          TAIGA_API: ${{ env.TAIGA_API }}
         run: |
           AUTH_RESPONSE=$(jq -n \
             --arg username "$TAIGA_USERNAME" \
-            --arg password "${{ secrets.TAIGA_PASSWORD }}" \
+            --arg password "$TAIGA_PASSWORD" \
             '{type: "normal", username: $username, password: $password}' \
             | curl -s -X POST "$TAIGA_API/auth" \
               -H "Content-Type: application/json" \
