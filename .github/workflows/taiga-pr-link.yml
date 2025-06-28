@@ -1,0 +1,47 @@
+name: Link PR to Taiga Task
+
+on:
+  pull_request:
+    types: [opened, edited, reopened]
+
+jobs:
+  link-to-taiga:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract task number and send to Taiga
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prTitle = context.payload.pull_request.title;
+            const prUrl = context.payload.pull_request.html_url;
+            const match = prTitle.match(/RG-(\d+)/);
+
+            if (!match) {
+              console.log("No RG-<number> pattern found in PR title.");
+              return;
+            }
+
+            const taskId = match[1];  // Taiga task ID
+            const taigaHost = 'https://tree.taiga.io'; // или свой self-hosted URL
+            const projectSlug = 'retrogame'; // замени на свой
+            const token = process.env.TAIGA_TOKEN;
+
+            const comment = `🔗 This PR is linked: [${prTitle}](${prUrl})`;
+
+            const res = await fetch(`${taigaHost}/api/v1/tasks/${taskId}/comments`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+              },
+              body: JSON.stringify({ comment })
+            });
+
+            if (!res.ok) {
+              const errText = await res.text();
+              throw new Error(`Failed to comment on Taiga task ${taskId}: ${res.status} ${errText}`);
+            } else {
+              console.log(`Commented on Taiga task #${taskId}`);
+            }
+        env:
+          TAIGA_TOKEN: ${{ secrets.TAIGA_TOKEN }}
