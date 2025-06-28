@@ -4,44 +4,68 @@ on:
   pull_request:
     types: [opened, edited, reopened]
 
+env:
+  TAIGA_API: https://api.taiga.io/api/v1
+  PROJECT_ID: 1704107
+  CUSTOM_FIELD_ID: 56350
+  TAIGA_USERNAME: gjhonic
+
 jobs:
   link-to-taiga:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Extract task number and send to Taiga
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const prTitle = context.payload.pull_request.title;
-            const prUrl = context.payload.pull_request.html_url;
-            const match = prTitle.match(/RG-(\d+)/);
+      - name: Extract userstory ref from PR title
+        id: extract_ref
+        run: |
+          echo "PR_TITLE='${{ github.event.pull_request.title }}'"
+          if [[ "${{ github.event.pull_request.title }}" =~ RG-([0-9]+) ]]; then
+            echo "USERSTORY_REF=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+          else
+            echo "Error: Cannot parse userstory ref from PR title" >&2
+            exit 1
+          fi
 
-            if (!match) {
-              console.log("No RG-<number> pattern found in PR title.");
-              return;
-            }
+      - name: Authenticate to Taiga
+        id: taiga_auth
+        run: |
+          AUTH_RESPONSE=$(curl -s -X POST "$TAIGA_API/auth" \
+            -H "Content-Type: application/json" \
+            -d "{\"type\":\"normal\",\"username\":\"$TAIGA_USERNAME\",\"password\":\"${{ secrets.TAIGA_PASSWORD }}\"}")
+          TOKEN=$(echo "$AUTH_RESPONSE" | jq -r '.auth_token')
+          if [[ "$TOKEN" == "null" || -z "$TOKEN" ]]; then
+            echo "Failed to get auth token" >&2
+            exit 1
+          fi
+          echo "TOKEN=$TOKEN" >> $GITHUB_OUTPUT
 
-            const taskId = match[1];  // Taiga task ID
-            const taigaHost = 'https://api.taiga.io'; // или свой self-hosted URL
-            const projectSlug = 'retrogame'; // замени на свой
-            const token = process.env.TAIGA_TOKEN;
+      - name: Get Userstory ID by ref
+        id: get_userstory
+        run: |
+          USERSTORY_REF=${{ steps.extract_ref.outputs.USERSTORY_REF }}
+          TOKEN=${{ steps.taiga_auth.outputs.TOKEN }}
+          USERSTORY=$(curl -s -X GET "$TAIGA_API/userstories?project=$PROJECT_ID&ref=$USERSTORY_REF" \
+            -H "Authorization: Bearer $TOKEN")
+          USERSTORY_ID=$(echo "$USERSTORY" | jq '.[0].id')
+          if [[ "$USERSTORY_ID" == "null" || -z "$USERSTORY_ID" ]]; then
+            echo "Userstory not found" >&2
+            exit 1
+          fi
+          echo "USERSTORY_ID=$USERSTORY_ID" >> $GITHUB_OUTPUT
 
-            const comment = `🔗 This PR is linked: [${prTitle}](${prUrl})`;
+      - name: Update custom field with PR URL
+        run: |
+          USERSTORY_ID=${{ steps.get_userstory.outputs.USERSTORY_ID }}
+          TOKEN=${{ steps.taiga_auth.outputs.TOKEN }}
+          CUSTOM_FIELD_ID=$CUSTOM_FIELD_ID
+          PR_URL=${{ github.event.pull_request.html_url }}
 
-            const res = await fetch(`${taigaHost}/api/v1/tasks/${taskId}/comments`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
-              },
-              body: JSON.stringify({ comment })
-            });
+          PATCH_DATA=$(jq -n --arg id "$CUSTOM_FIELD_ID" --arg url "$PR_URL" \
+            '{attributes_values: {($id): $url}, version: 1}')
 
-            if (!res.ok) {
-              const errText = await res.text();
-              throw new Error(`Failed to comment on Taiga task ${taskId}: ${res.status} ${errText}`);
-            } else {
-              console.log(`Commented on Taiga task #${taskId}`);
-            }
-        env:
-          TAIGA_TOKEN: ${{ secrets.TAIGA_TOKEN }}
+          RESPONSE=$(curl -s -X PATCH "$TAIGA_API/userstories/custom-attributes-values/$USERSTORY_ID" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $TOKEN" \
+            -d "$PATCH_DATA")
+
+          echo "Update response: $RESPONSE"
