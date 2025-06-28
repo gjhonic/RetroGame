@@ -18,7 +18,13 @@ class SteamGameDataProcessor
 
     /**
      * Обрабатывает данные из Steam API и создает Game и GameShop
-     * Возвращает true если игра была успешно обработана, false если пропущена
+     *  Возвращает true если игра была успешно обработана, false если пропущена
+     *
+     * @param array<mixed> $detailsData
+     * @param OutputInterface|null $output
+     * @param array<mixed> $existingGameNames
+     * @param array<mixed> $existingGameShopIds
+     * @return bool
      */
     public function processGameData(
         array $detailsData,
@@ -119,6 +125,9 @@ class SteamGameDataProcessor
 
     /**
      * Извлекает appId из данных Steam API
+     *
+     * @param array<mixed> $detailsData
+     * @return int|null
      */
     private function extractAppId(array $detailsData): ?int
     {
@@ -128,6 +137,9 @@ class SteamGameDataProcessor
 
     /**
      * Извлекает имя игры из данных
+     *
+     * @param array<mixed> $gameData
+     * @return string|null
      */
     private function extractGameName(array $gameData): ?string
     {
@@ -147,9 +159,19 @@ class SteamGameDataProcessor
 
     /**
      * Создает новую игру на основе данных из Steam API
+     *
+     * @param array<mixed> $gameData
+     * @param string $gameName
+     * @param OutputInterface|null $output
+     * @param array<mixed> $existingGameNames
+     * @return Game
      */
-    private function createNewGame(array $gameData, string $gameName, ?OutputInterface $output, array &$existingGameNames = []): Game
-    {
+    private function createNewGame(
+        array $gameData,
+        string $gameName,
+        ?OutputInterface $output,
+        array &$existingGameNames = []
+    ): Game {
         $recommendations = $gameData['recommendations']['total'] ?? null;
         $ownersCount = null;
 
@@ -183,9 +205,21 @@ class SteamGameDataProcessor
 
     /**
      * Создает GameShop для игры
+     *
+     * @param Game $game
+     * @param Shop $shop
+     * @param int $appId
+     * @param string $gameName
+     * @param OutputInterface|null $output
+     * @return void
      */
-    private function createGameShop(Game $game, Shop $shop, int $appId, string $gameName, ?OutputInterface $output): void
-    {
+    private function createGameShop(
+        Game $game,
+        Shop $shop,
+        int $appId,
+        string $gameName,
+        ?OutputInterface $output
+    ): void {
         $gameShop = new GameShop();
         $gameShop->setGame($game);
         $gameShop->setShop($shop);
@@ -203,6 +237,11 @@ class SteamGameDataProcessor
 
     /**
      * Сохраняет изображение игры
+     *
+     * @param Game $game
+     * @param array<mixed> $gameData
+     * @param OutputInterface|null $output
+     * @return void
      */
     private function saveGameImage(Game $game, array $gameData, ?OutputInterface $output): void
     {
@@ -242,6 +281,10 @@ class SteamGameDataProcessor
 
     /**
      * Устанавливает дату релиза игры
+     *
+     * @param Game $game
+     * @param array<mixed> $gameData
+     * @return void
      */
     private function setReleaseDate(Game $game, array $gameData): void
     {
@@ -255,6 +298,11 @@ class SteamGameDataProcessor
 
     /**
      * Обрабатывает жанры игры
+     *
+     * @param Game $game
+     * @param array<mixed> $gameData
+     * @param OutputInterface|null $output
+     * @return void
      */
     private function processGenres(Game $game, array $gameData, ?OutputInterface $output): void
     {
@@ -302,6 +350,9 @@ class SteamGameDataProcessor
 
     /**
      * Проверяет, является ли приложение игрой
+     *
+     * @param array<mixed> $gameData
+     * @return bool
      */
     public function isGame(array $gameData): bool
     {
@@ -313,6 +364,9 @@ class SteamGameDataProcessor
 
     /**
      * Получает количество владельцев из данных Steam
+     *
+     * @param array<mixed> $gameData
+     * @return int|null
      */
     public function getOwnersCount(array $gameData): ?int
     {

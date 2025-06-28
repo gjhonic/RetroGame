@@ -32,7 +32,7 @@ class SteamGameDataProcessorTest extends TestCase
                 'data' => [
                     'type' => 'game',
                     'name' => 'Counter-Strike 2',
-                    'short_description' => 'Counter-Strike 2 is the largest technical leap forward in Counter-Strike history.',
+                    'short_description' => 'Counter-Strike 2 is the largest technical leap forward.',
                     'genres' => [
                         ['description' => 'Action'],
                         ['description' => 'FPS']
