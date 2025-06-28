@@ -32,6 +32,7 @@ jobs:
           AUTH_RESPONSE=$(curl -s -X POST "$TAIGA_API/auth" \
             -H "Content-Type: application/json" \
             -d "{\"type\":\"normal\",\"username\":\"$TAIGA_USERNAME\",\"password\":\"${{ secrets.TAIGA_PASSWORD }}\"}")
+          echo "AUTH_RESPONSE: $AUTH_RESPONSE"  # временный лог
           TOKEN=$(echo "$AUTH_RESPONSE" | jq -r '.auth_token')
           if [[ "$TOKEN" == "null" || -z "$TOKEN" ]]; then
             echo "Failed to get auth token" >&2
