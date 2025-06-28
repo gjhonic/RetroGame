@@ -27,10 +27,12 @@ jobs:
           fi
 
       - name: DEBUG — проверить пароль
-        id: check_pass
         run: |
-          echo "USERNAME: ${{ env.TAIGA_USERNAME }}"
-          echo "PASSWORD длина: ${#{{ secrets.TAIGA_PASSWORD }}}"
+          echo "USERNAME: $TAIGA_USERNAME"
+          echo "PASSWORD длина: ${#TAIGA_PASSWORD}"
+        env:
+          TAIGA_USERNAME: ${{ env.TAIGA_USERNAME }}
+          TAIGA_PASSWORD: ${{ secrets.TAIGA_PASSWORD }}
 
       - name: Authenticate to Taiga
         id: taiga_auth
