@@ -1,11 +1,10 @@
-name: Link PR to Taiga Task
+name: Link PR to Taiga Task (Hybrid Auth)
 
 on:
   pull_request:
     types: [opened, edited, reopened]
 
 env:
-  # API endpoint для tree.taiga.io
   TAIGA_API: https://api.taiga.io/api/v1
   PROJECT_ID: 1704107
   CUSTOM_FIELD_ID: 56350
@@ -28,47 +27,48 @@ jobs:
             exit 1
           fi
 
-      - name: DEBUG — проверить настройки
-        run: |
-          echo "USERNAME: $TAIGA_USERNAME"
-          echo "PASSWORD длина: ${#TAIGA_PASSWORD}"
-          echo "TAIGA_API: $TAIGA_API"
-          echo "PROJECT_ID: $PROJECT_ID"
-          echo "CUSTOM_FIELD_ID: $CUSTOM_FIELD_ID"
+      - name: Get authentication token
+        id: get_auth
         env:
           TAIGA_USERNAME: ${{ env.TAIGA_USERNAME }}
           TAIGA_PASSWORD: ${{ secrets.TAIGA_PASSWORD }}
-          TAIGA_API: ${{ env.TAIGA_API }}
-          PROJECT_ID: ${{ env.PROJECT_ID }}
-          CUSTOM_FIELD_ID: ${{ env.CUSTOM_FIELD_ID }}
-
-      - name: Authenticate to Taiga
-        id: taiga_auth
-        env:
-          TAIGA_USERNAME: ${{ env.TAIGA_USERNAME }}
-          TAIGA_PASSWORD: ${{ secrets.TAIGA_PASSWORD }}
-          TAIGA_API: ${{ env.TAIGA_API }}
+          TAIGA_TOKEN: ${{ secrets.TAIGA_TOKEN }}
         run: |
-          echo "Attempting to authenticate with Taiga API: $TAIGA_API"
+          echo "=== Getting authentication token ==="
           
-          # Используем точно такой же формат как в Postman
-          AUTH_PAYLOAD='{"type":"normal","username":"'$TAIGA_USERNAME'","password":"'$TAIGA_PASSWORD'"}'
+          # Try application token first
+          if [ -n "$TAIGA_TOKEN" ]; then
+            echo "Trying application token..."
+            USER_RESPONSE=$(curl -s -X GET "$TAIGA_API/users/me" \
+              -H "Authorization: Bearer $TAIGA_TOKEN")
           
-          echo "Auth payload: $AUTH_PAYLOAD"
+            if echo "$USER_RESPONSE" | jq -e '.id' > /dev/null; then
+              echo "✅ Application token works!"
+              echo "TOKEN=$TAIGA_TOKEN" >> $GITHUB_OUTPUT
+              echo "AUTH_METHOD=token" >> $GITHUB_OUTPUT
+              return 0
+            else
+              echo "❌ Application token failed: $USER_RESPONSE"
+            fi
+          fi
           
+          # Fallback to username/password
+          echo "Trying username/password authentication..."
           AUTH_RESPONSE=$(curl -s -X POST "$TAIGA_API/auth" \
             -H "Content-Type: application/json" \
-            -d "$AUTH_PAYLOAD")
-
-          echo "AUTH_RESPONSE: $AUTH_RESPONSE"
-
-          TOKEN=$(echo "$AUTH_RESPONSE" | jq -r '.auth_token')
-          if [[ "$TOKEN" == "null" || -z "$TOKEN" ]]; then
-            echo "Failed to get auth token. Response: $AUTH_RESPONSE" >&2
+            -d '{"type":"normal","username":"'$TAIGA_USERNAME'","password":"'$TAIGA_PASSWORD'"}')
+          
+          AUTH_TOKEN=$(echo "$AUTH_RESPONSE" | jq -r '.auth_token')
+          
+          if [[ "$AUTH_TOKEN" != "null" && -n "$AUTH_TOKEN" ]]; then
+            echo "✅ Username/password authentication successful!"
+            echo "TOKEN=$AUTH_TOKEN" >> $GITHUB_OUTPUT
+            echo "AUTH_METHOD=password" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Both authentication methods failed"
+            echo "Token response: $AUTH_RESPONSE" >&2
             exit 1
           fi
-          echo "TOKEN=$TOKEN" >> $GITHUB_OUTPUT
-          echo "Successfully obtained auth token"
 
       - name: Get Userstory ID by ref
         id: get_userstory
@@ -77,9 +77,10 @@ jobs:
           PROJECT_ID: ${{ env.PROJECT_ID }}
         run: |
           USERSTORY_REF=${{ steps.extract_ref.outputs.USERSTORY_REF }}
-          TOKEN=${{ steps.taiga_auth.outputs.TOKEN }}
+          TOKEN=${{ steps.get_auth.outputs.TOKEN }}
           
           echo "Looking for userstory with ref: $USERSTORY_REF in project: $PROJECT_ID"
+          echo "Using auth method: ${{ steps.get_auth.outputs.AUTH_METHOD }}"
           
           USERSTORY_RESPONSE=$(curl -s -X GET "$TAIGA_API/userstories?project=$PROJECT_ID&ref=$USERSTORY_REF" \
             -H "Authorization: Bearer $TOKEN")
@@ -103,11 +104,12 @@ jobs:
           CUSTOM_FIELD_ID: ${{ env.CUSTOM_FIELD_ID }}
         run: |
           USERSTORY_ID=${{ steps.get_userstory.outputs.userstory_id }}
-          TOKEN=${{ steps.taiga_auth.outputs.TOKEN }}
+          TOKEN=${{ steps.get_auth.outputs.TOKEN }}
           PR_URL=${{ github.event.pull_request.html_url }}
 
           echo "Updating userstory $USERSTORY_ID with PR URL: $PR_URL"
           echo "Custom field ID: $CUSTOM_FIELD_ID"
+          echo "Auth method used: ${{ steps.get_auth.outputs.AUTH_METHOD }}"
 
           PATCH_DATA=$(jq -n --arg id "$CUSTOM_FIELD_ID" --arg url "$PR_URL" \
             '{attributes_values: {($id): $url}, version: 1}')
