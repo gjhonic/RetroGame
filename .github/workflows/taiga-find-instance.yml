@@ -1,0 +1,80 @@
+name: Find Taiga Instance
+
+on:
+  workflow_dispatch:
+
+jobs:
+  find-instance:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Test different Taiga instances
+        env:
+          TAIGA_USERNAME: ${{ env.TAIGA_USERNAME }}
+          TAIGA_PASSWORD: ${{ secrets.TAIGA_PASSWORD }}
+        run: |
+          echo "Testing different Taiga instances..."
+          
+          # Common Taiga instances
+          INSTANCES=(
+            "https://api.taiga.io/api/v1"
+            "https://tree.taiga.io/api/v1"
+            "https://taiga.io/api/v1"
+          )
+          
+          for INSTANCE in "${INSTANCES[@]}"; do
+            echo "=== Testing: $INSTANCE ==="
+            
+            # Test API accessibility
+            API_RESPONSE=$(curl -s -w "%{http_code}" "$INSTANCE/")
+            HTTP_CODE="${API_RESPONSE: -3}"
+            
+            if [[ "$HTTP_CODE" == "200" ]]; then
+              echo "✅ API accessible"
+              
+              # Try authentication
+              AUTH_PAYLOAD=$(jq -n \
+                --arg username "$TAIGA_USERNAME" \
+                --arg password "$TAIGA_PASSWORD" \
+                '{type: "normal", username: $username, password: $password}')
+              
+              AUTH_RESPONSE=$(curl -s -w "%{http_code}" -X POST "$INSTANCE/auth" \
+                -H "Content-Type: application/json" \
+                -d "$AUTH_PAYLOAD")
+              
+              AUTH_HTTP_CODE="${AUTH_RESPONSE: -3}"
+              AUTH_BODY="${AUTH_RESPONSE%???}"
+              
+              echo "Auth HTTP Code: $AUTH_HTTP_CODE"
+              
+              if [[ "$AUTH_HTTP_CODE" == "200" ]]; then
+                echo "✅ Authentication successful!"
+                TOKEN=$(echo "$AUTH_BODY" | jq -r '.auth_token')
+                echo "Token: ${TOKEN:0:20}..."
+                
+                # Get user info
+                USER_RESPONSE=$(curl -s -X GET "$INSTANCE/users/me" \
+                  -H "Authorization: Bearer $TOKEN")
+                echo "User info: $USER_RESPONSE"
+                
+                # Get projects
+                PROJECTS_RESPONSE=$(curl -s -X GET "$INSTANCE/projects" \
+                  -H "Authorization: Bearer $TOKEN")
+                echo "Projects count: $(echo "$PROJECTS_RESPONSE" | jq 'length')"
+                
+                echo "🎉 Found working instance: $INSTANCE"
+                break
+              else
+                echo "❌ Authentication failed: $AUTH_BODY"
+              fi
+            else
+              echo "❌ API not accessible (HTTP $HTTP_CODE)"
+            fi
+            echo ""
+          done
+          
+          echo "=== Manual check needed ==="
+          echo "If none of the above worked, you need to:"
+          echo "1. Find your Taiga instance URL"
+          echo "2. Update TAIGA_API in the workflow"
+          echo "3. Make sure your credentials are correct" 

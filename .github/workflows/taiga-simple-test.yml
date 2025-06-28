@@ -1,0 +1,58 @@
+name: Simple Taiga Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Test different API endpoints
+        env:
+          TAIGA_USERNAME: gjhonic
+          TAIGA_PASSWORD: ${{ secrets.TAIGA_PASSWORD }}
+        run: |
+          echo "Testing different Taiga API endpoints..."
+          
+          # Test 1: api.taiga.io
+          echo "=== Testing api.taiga.io ==="
+          RESPONSE1=$(curl -s -X POST "https://api.taiga.io/api/v1/auth" \
+            -H "Content-Type: application/json" \
+            -d '{"type":"normal","username":"'$TAIGA_USERNAME'","password":"'$TAIGA_PASSWORD'"}')
+          echo "Response 1: $RESPONSE1"
+          echo ""
+          
+          # Test 2: tree.taiga.io
+          echo "=== Testing tree.taiga.io ==="
+          RESPONSE2=$(curl -s -X POST "https://tree.taiga.io/api/v1/auth" \
+            -H "Content-Type: application/json" \
+            -d '{"type":"normal","username":"'$TAIGA_USERNAME'","password":"'$TAIGA_PASSWORD'"}')
+          echo "Response 2: $RESPONSE2"
+          echo ""
+          
+          # Test 3: taiga.io
+          echo "=== Testing taiga.io ==="
+          RESPONSE3=$(curl -s -X POST "https://taiga.io/api/v1/auth" \
+            -H "Content-Type: application/json" \
+            -d '{"type":"normal","username":"'$TAIGA_USERNAME'","password":"'$TAIGA_PASSWORD'"}')
+          echo "Response 3: $RESPONSE3"
+          echo ""
+          
+          # Check which one worked
+          if echo "$RESPONSE1" | jq -e '.auth_token' > /dev/null; then
+            echo "✅ api.taiga.io works!"
+            TOKEN=$(echo "$RESPONSE1" | jq -r '.auth_token')
+            echo "Token: ${TOKEN:0:20}..."
+          elif echo "$RESPONSE2" | jq -e '.auth_token' > /dev/null; then
+            echo "✅ tree.taiga.io works!"
+            TOKEN=$(echo "$RESPONSE2" | jq -r '.auth_token')
+            echo "Token: ${TOKEN:0:20}..."
+          elif echo "$RESPONSE3" | jq -e '.auth_token' > /dev/null; then
+            echo "✅ taiga.io works!"
+            TOKEN=$(echo "$RESPONSE3" | jq -r '.auth_token')
+            echo "Token: ${TOKEN:0:20}..."
+          else
+            echo "❌ None of the endpoints worked"
+            echo "This suggests the credentials might be wrong or the account is not active"
+          fi 
