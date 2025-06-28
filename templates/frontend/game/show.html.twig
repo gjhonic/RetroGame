@@ -51,7 +51,7 @@
                                 </div>
                                 <div>
                                     {% if latestPrice is not null %}
-                                        {{ latestPrice }} ₽
+                                        <strong>{{ latestPrice }} ₽</strong>
                                         {% if latestUpdate %}
                                             <small class="text-muted ms-2">(обновлено {{ latestUpdate|date('d.m.Y') }})</small>
                                         {% endif %}
