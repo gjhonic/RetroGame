@@ -4,9 +4,8 @@ namespace App\Command;
 
 use App\Entity\Game;
 use App\Entity\GameShop;
-use App\Entity\Genre;
-use App\Entity\Shop;
 use App\Entity\SteamApp;
+use App\Service\SteamGameDataProcessor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -24,6 +23,7 @@ class SteamGetGamesCommand extends Command
     public function __construct(
         private readonly HttpClientInterface $httpClient,
         private readonly EntityManagerInterface $entityManager,
+        private readonly SteamGameDataProcessor $gameDataProcessor,
     ) {
         parent::__construct();
     }
@@ -43,23 +43,48 @@ class SteamGetGamesCommand extends Command
         $apps = $data['applist']['apps'] ?? [];
         $output->writeln('🔍 <info>Всего приложений найдено: ' . count($apps) . '</info>');
 
-        $shopSteam = $this->entityManager
-            ->getRepository(Shop::class)
-            ->find(1);
-
-        if (!$shopSteam) {
-            $output->writeln('<error>⛔ Магазин Steam (id=1) не найден в базе данных.</error>');
-            return Command::FAILURE;
-        }
+        // Получаем заранее все существующие ID для оптимизации
+        $output->writeln('📊 <info>Загружаем существующие данные для оптимизации...</info>');
+        
+        // Получаем все существующие app_id из SteamApp
+        $existingSteamAppIds = $this->entityManager
+            ->getRepository(SteamApp::class)
+            ->createQueryBuilder('sa')
+            ->select('sa.app_id')
+            ->getQuery()
+            ->getSingleColumnResult();
+        $existingSteamAppIds = array_flip($existingSteamAppIds);
+        
+        // Получаем все существующие link_game_id из GameShop
+        $existingGameShopIds = $this->entityManager
+            ->getRepository(GameShop::class)
+            ->createQueryBuilder('gs')
+            ->select('gs.link_game_id')
+            ->where('gs.link_game_id IS NOT NULL')
+            ->getQuery()
+            ->getSingleColumnResult();
+        $existingGameShopIds = array_flip($existingGameShopIds);
+        
+        // Получаем все существующие имена игр
+        $existingGameNames = $this->entityManager
+            ->getRepository(Game::class)
+            ->createQueryBuilder('g')
+            ->select('g.name')
+            ->getQuery()
+            ->getSingleColumnResult();
+        $existingGameNames = array_flip($existingGameNames);
+        
+        $output->writeln(sprintf('📈 <info>Найдено существующих: SteamApp=%d, GameShop=%d, Game=%d</info>', 
+            count($existingSteamAppIds), count($existingGameShopIds), count($existingGameNames)));
 
         $imported = 0;
+        $processedCount = 0;
         $checked = 0;
-        $genreCache = [];
         $batchSize = 10;
 
         foreach ($apps as $app) {
-            if ($imported >= 200) {
-                $output->writeln('⏹️ <comment>Достигнут лимит 200 новых игр. Останавливаем импорт.</comment>');
+            if ($processedCount >= 300) {
+                $output->writeln('⏹️ <comment>Достигнут лимит 300 обработанных игр. Останавливаем импорт.</comment>');
                 break;
             }
 
@@ -70,12 +95,8 @@ class SteamGetGamesCommand extends Command
                 continue;
             }
 
-            // Уже обработано?
-            $existingSteamApp = $this->entityManager
-                ->getRepository(SteamApp::class)
-                ->findOneBy(['app_id' => $appid]);
-
-            if ($existingSteamApp) {
+            // Уже обработано? (используем предзагруженный список)
+            if (isset($existingSteamAppIds[$appid])) {
                 $output->writeln("<comment>⏩ Приложение {$appid} уже импортировано.</comment>");
                 continue;
             }
@@ -105,138 +126,31 @@ class SteamGetGamesCommand extends Command
                 continue;
             }
 
-            usleep(random_int(1000000, 2000000));
+            $processedCount++;
 
-            $raw = $detailsData[$appid] ?? null;
-            $success = $raw['success'] ?? false;
-            $gameData = $raw['data'] ?? null;
+            usleep(random_int(1000000, 2000000));
 
             $steamApp = new SteamApp();
             $steamApp->setAppId($appid);
-            $steamApp->setType($gameData['type'] ?? 'empty');
-            $steamApp->setRawData((string)json_encode($raw, JSON_UNESCAPED_UNICODE));
+            $steamApp->setType($detailsData[$appid]['data']['type'] ?? 'empty');
+            $steamApp->setRawData((string)json_encode($detailsData, JSON_UNESCAPED_UNICODE));
             $this->entityManager->persist($steamApp);
             $this->entityManager->flush();
 
-            if (!$success || empty($gameData)) {
-                $output->writeln(
-                    "<comment>" .
-                    "⚠️ Приложение {$appid} пустое или не удалось загрузить. Сохраняем как type=empty.</comment>"
-                );
-                continue;
-            }
+            // Обрабатываем данные игры через сервис
+            $processed = $this->gameDataProcessor->processGameData(
+                $detailsData, 
+                $output, 
+                $existingGameNames,
+                $existingGameShopIds
+            );
 
-            $output->writeln("✅ <info>Детали приложения {$appid} загружены и сохранены.</info>");
-
-            if (
-                ($gameData['type'] ?? '') !== 'game' ||
-                empty($gameData['short_description']) ||
-                empty($gameData['genres']) ||
-                empty($gameData['price_overview'])
-            ) {
-                $output->writeln("<comment>⏩ Приложение {$appid} не является игрой.</comment>");
-                continue;
-            }
-
-            // Проверяем, существует ли GameShop
-            $existingGameShop = $this->entityManager
-                ->getRepository(GameShop::class)
-                ->findOneBy(['link_game_id' => $appid]);
-
-            if ($existingGameShop) {
-                $output->writeln("<comment>⏩ Приложение {$appid} уже связано с GameShop.</comment>");
-                continue;
-            }
-
-            // Создаём или ищем Game
-            $game = $this->entityManager
-                ->getRepository(Game::class)
-                ->findOneBy(['name' => $gameName]);
-
-            if (!$game) {
-                $recommendations = $gameData['recommendations']['total'] ?? null;
-                $ownersCount = null;
-
-                if ($recommendations !== null) {
-                    $ownersCount = (int) $recommendations;
+            if ($processed) {
+                $imported++;
+                if ($imported % $batchSize === 0) {
+                    $this->entityManager->flush();
+                    $output->writeln("📦 <info>Импортировано {$imported} игр на данный момент...</info>");
                 }
-
-                $game = new Game();
-                $game->setName($gameName);
-                $game->setDescription($gameData['short_description']);
-                $game->setIsFree(!empty($gameData['is_free']));
-                $game->setOwnersCount($ownersCount);
-
-                // Сохраняем изображение
-                $imageUrl = $gameData['header_image'] ?? null;
-                if ($imageUrl) {
-                    try {
-                        $imageContents = file_get_contents($imageUrl);
-                        $imageName = uniqid('game_') . '.jpg';
-                        $savePath = __DIR__ . '/../../public/uploads/games/' . $imageName;
-
-                        if (!is_dir(dirname($savePath))) {
-                            mkdir(dirname($savePath), 0777, true);
-                        }
-
-                        file_put_contents($savePath, $imageContents);
-                        $game->setImage('/uploads/games/' . $imageName);
-                    } catch (\Throwable) {
-                        $output->writeln("<comment>⚠️ Не удалось сохранить изображение для {$appid}</comment>");
-                    }
-                }
-
-                try {
-                    $game->setReleaseDate(new \DateTime($gameData['release_date']['date'] ?? '2000-01-01'));
-                } catch (\Exception) {
-                    $game->setReleaseDate(new \DateTime('2000-01-01'));
-                }
-
-                $game->setCreatedAt(new \DateTimeImmutable());
-                $game->setCreatedBy('system');
-                $this->entityManager->persist($game);
-            }
-
-            // Жанры
-            foreach ($gameData['genres'] as $genreItem) {
-                $genreName = trim($genreItem['description']);
-
-                if (isset($genreCache[$genreName])) {
-                    $genre = $genreCache[$genreName];
-                } else {
-                    $genre = $this->entityManager
-                        ->getRepository(Genre::class)
-                        ->findOneBy(['name' => $genreName]);
-
-                    if (!$genre) {
-                        $genre = new Genre();
-                        $genre->setName($genreName);
-                        $genre->setCreatedAt(new \DateTimeImmutable());
-                        $genre->setCreatedBy('system');
-                        $this->entityManager->persist($genre);
-                    }
-
-                    $genreCache[$genreName] = $genre;
-                }
-
-                if (!$game->getGenre()->contains($genre)) {
-                    $game->addGenre($genre);
-                }
-            }
-
-            // Сохраняем GameShop
-            $gameShop = new GameShop();
-            $gameShop->setGame($game);
-            $gameShop->setShop($shopSteam);
-            $gameShop->setLinkGameId($appid);
-            $gameShop->setName($gameName);
-            $gameShop->setLink("https://store.steampowered.com/app/{$appid}/");
-            $this->entityManager->persist($gameShop);
-
-            $imported++;
-            if ($imported % $batchSize === 0) {
-                $this->entityManager->flush();
-                $output->writeln("📦 <info>Импортировано {$imported} игр на данный момент...</info>");
             }
         }
 
