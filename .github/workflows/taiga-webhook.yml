@@ -1,0 +1,129 @@
+name: Taiga Webhook Integration
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, closed]
+  push:
+    branches: [main, master]
+
+jobs:
+  notify-taiga:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Extract issue reference
+        id: extract_ref
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            PR_TITLE="${{ github.event.pull_request.title }}"
+            echo "PR_TITLE=$PR_TITLE"
+            
+            # Extract RG-XXX pattern
+            if [[ "$PR_TITLE" =~ RG-([0-9]+) ]]; then
+              echo "ISSUE_REF=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+              echo "Found issue ref: ${BASH_REMATCH[1]}"
+            else
+              echo "No RG-XXX pattern found in PR title"
+              exit 0
+            fi
+          else
+            # For push events, check commit messages
+            COMMIT_MSG="${{ github.event.head_commit.message }}"
+            echo "COMMIT_MSG=$COMMIT_MSG"
+            
+            if [[ "$COMMIT_MSG" =~ RG-([0-9]+) ]]; then
+              echo "ISSUE_REF=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+              echo "Found issue ref: ${BASH_REMATCH[1]}"
+            else
+              echo "No RG-XXX pattern found in commit message"
+              exit 0
+            fi
+          fi
+
+      - name: Send webhook to Taiga
+        if: steps.extract_ref.outputs.ISSUE_REF
+        env:
+          TAIGA_WEBHOOK_URL: ${{ secrets.TAIGA_WEBHOOK_URL }}
+        run: |
+          ISSUE_REF=${{ steps.extract_ref.outputs.ISSUE_REF }}
+          
+          # Prepare webhook payload
+          WEBHOOK_PAYLOAD=$(jq -n \
+            --arg event "${{ github.event_name }}" \
+            --arg issue_ref "$ISSUE_REF" \
+            --arg repo "${{ github.repository }}" \
+            --arg pr_url "${{ github.event.pull_request.html_url }}" \
+            --arg commit_url "${{ github.event.head_commit.url }}" \
+            --arg action "${{ github.event.action }}" \
+            '{
+              event: $event,
+              issue_ref: $issue_ref,
+              repository: $repo,
+              pr_url: $pr_url,
+              commit_url: $commit_url,
+              action: $action,
+              timestamp: now | todateiso8601
+            }')
+          
+          echo "Webhook payload: $WEBHOOK_PAYLOAD"
+          
+          if [ -n "$TAIGA_WEBHOOK_URL" ]; then
+            echo "Sending webhook to Taiga..."
+            RESPONSE=$(curl -s -X POST "$TAIGA_WEBHOOK_URL" \
+              -H "Content-Type: application/json" \
+              -H "X-GitHub-Event: ${{ github.event_name }}" \
+              -d "$WEBHOOK_PAYLOAD")
+            
+            echo "Webhook response: $RESPONSE"
+          else
+            echo "⚠️  TAIGA_WEBHOOK_URL not configured"
+            echo "To configure:"
+            echo "1. Go to your Taiga project settings"
+            echo "2. Find GitHub integration"
+            echo "3. Copy the webhook URL"
+            echo "4. Add it as TAIGA_WEBHOOK_URL in GitHub Secrets"
+          fi
+
+      - name: Alternative - Direct API call
+        if: steps.extract_ref.outputs.ISSUE_REF && env.TAIGA_WEBHOOK_URL == ''
+        env:
+          TAIGA_USERNAME: gjhonic
+          TAIGA_PASSWORD: ${{ secrets.TAIGA_PASSWORD }}
+        run: |
+          echo "=== Alternative: Direct API call ==="
+          
+          ISSUE_REF=${{ steps.extract_ref.outputs.ISSUE_REF }}
+          
+          # Try to authenticate and update issue
+          echo "Trying to authenticate with Taiga API..."
+          
+          # Try different endpoints
+          ENDPOINTS=(
+            "https://api.taiga.io/api/v1"
+            "https://tree.taiga.io/api/v1"
+          )
+          
+          for ENDPOINT in "${ENDPOINTS[@]}"; do
+            echo "Trying endpoint: $ENDPOINT"
+            
+            AUTH_RESPONSE=$(curl -s -X POST "$ENDPOINT/auth" \
+              -H "Content-Type: application/json" \
+              -d '{"type":"normal","username":"'$TAIGA_USERNAME'","password":"'$TAIGA_PASSWORD'"}')
+            
+            AUTH_TOKEN=$(echo "$AUTH_RESPONSE" | jq -r '.auth_token')
+            
+            if [[ "$AUTH_TOKEN" != "null" && -n "$AUTH_TOKEN" ]]; then
+              echo "✅ Authentication successful with $ENDPOINT"
+              
+              # Try to find and update the issue
+              echo "Looking for issue with ref: $ISSUE_REF"
+              
+              # This would be the actual implementation
+              # For now, just log that we found the right endpoint
+              echo "Found working endpoint: $ENDPOINT"
+              echo "Would update issue RG-$ISSUE_REF with PR link"
+              break
+            else
+              echo "❌ Failed with $ENDPOINT"
+            fi
+          done 
