@@ -89,14 +89,14 @@ class SteamGameDataProcessor
 
         // Создаём или ищем Game
         $game = null;
-        
+
         // Проверяем в предзагруженном списке
         if (!empty($existingGameNames) && isset($existingGameNames[$gameName])) {
             $game = $this->entityManager
                 ->getRepository(Game::class)
                 ->findOneBy(['name' => $gameName]);
         }
-        
+
         // Если не найдено в кэше или кэш пустой, ищем в базе
         if (!$game) {
             $game = $this->entityManager
@@ -193,7 +193,7 @@ class SteamGameDataProcessor
         $gameShop->setName($gameName);
         $gameShop->setLink("https://store.steampowered.com/app/{$appId}/");
         $gameShop->setShouldImportPrice(true);
-        
+
         $this->entityManager->persist($gameShop);
 
         if ($output) {
@@ -317,11 +317,11 @@ class SteamGameDataProcessor
     public function getOwnersCount(array $gameData): ?int
     {
         $recommendations = $gameData['recommendations']['total'] ?? null;
-        
+
         if ($recommendations !== null) {
             return (int) $recommendations;
         }
 
         return null;
     }
-} 
+}

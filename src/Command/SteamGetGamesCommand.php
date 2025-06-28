@@ -45,7 +45,7 @@ class SteamGetGamesCommand extends Command
 
         // Получаем заранее все существующие ID для оптимизации
         $output->writeln('📊 <info>Загружаем существующие данные для оптимизации...</info>');
-        
+
         // Получаем все существующие app_id из SteamApp
         $existingSteamAppIds = $this->entityManager
             ->getRepository(SteamApp::class)
@@ -54,7 +54,7 @@ class SteamGetGamesCommand extends Command
             ->getQuery()
             ->getSingleColumnResult();
         $existingSteamAppIds = array_flip($existingSteamAppIds);
-        
+
         // Получаем все существующие link_game_id из GameShop
         $existingGameShopIds = $this->entityManager
             ->getRepository(GameShop::class)
@@ -64,7 +64,7 @@ class SteamGetGamesCommand extends Command
             ->getQuery()
             ->getSingleColumnResult();
         $existingGameShopIds = array_flip($existingGameShopIds);
-        
+
         // Получаем все существующие имена игр
         $existingGameNames = $this->entityManager
             ->getRepository(Game::class)
@@ -73,9 +73,13 @@ class SteamGetGamesCommand extends Command
             ->getQuery()
             ->getSingleColumnResult();
         $existingGameNames = array_flip($existingGameNames);
-        
-        $output->writeln(sprintf('📈 <info>Найдено существующих: SteamApp=%d, GameShop=%d, Game=%d</info>', 
-            count($existingSteamAppIds), count($existingGameShopIds), count($existingGameNames)));
+
+        $output->writeln(sprintf(
+            '📈 <info>Найдено существующих: SteamApp=%d, GameShop=%d, Game=%d</info>',
+            count($existingSteamAppIds),
+            count($existingGameShopIds),
+            count($existingGameNames)
+        ));
 
         $imported = 0;
         $processedCount = 0;
@@ -139,8 +143,8 @@ class SteamGetGamesCommand extends Command
 
             // Обрабатываем данные игры через сервис
             $processed = $this->gameDataProcessor->processGameData(
-                $detailsData, 
-                $output, 
+                $detailsData,
+                $output,
                 $existingGameNames,
                 $existingGameShopIds
             );

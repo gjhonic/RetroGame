@@ -247,4 +247,4 @@ class SteamGameDataProcessorTest extends TestCase
         $gameDataWithoutRecommendations = [];
         $this->assertNull($processor->getOwnersCount($gameDataWithoutRecommendations));
     }
-} 
+}
