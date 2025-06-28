@@ -5,6 +5,7 @@ on:
     types: [opened, edited, reopened]
 
 env:
+  # API endpoint для tree.taiga.io
   TAIGA_API: https://api.taiga.io/api/v1
   PROJECT_ID: 1704107
   CUSTOM_FIELD_ID: 56350
@@ -27,15 +28,19 @@ jobs:
             exit 1
           fi
 
-      - name: DEBUG — проверить пароль
+      - name: DEBUG — проверить настройки
         run: |
           echo "USERNAME: $TAIGA_USERNAME"
           echo "PASSWORD длина: ${#TAIGA_PASSWORD}"
           echo "TAIGA_API: $TAIGA_API"
+          echo "PROJECT_ID: $PROJECT_ID"
+          echo "CUSTOM_FIELD_ID: $CUSTOM_FIELD_ID"
         env:
           TAIGA_USERNAME: ${{ env.TAIGA_USERNAME }}
           TAIGA_PASSWORD: ${{ secrets.TAIGA_PASSWORD }}
           TAIGA_API: ${{ env.TAIGA_API }}
+          PROJECT_ID: ${{ env.PROJECT_ID }}
+          CUSTOM_FIELD_ID: ${{ env.CUSTOM_FIELD_ID }}
 
       - name: Authenticate to Taiga
         id: taiga_auth
@@ -46,10 +51,8 @@ jobs:
         run: |
           echo "Attempting to authenticate with Taiga API: $TAIGA_API"
           
-          AUTH_PAYLOAD=$(jq -n \
-            --arg username "$TAIGA_USERNAME" \
-            --arg password "$TAIGA_PASSWORD" \
-            '{type: "normal", username: $username, password: $password}')
+          # Используем точно такой же формат как в Postman
+          AUTH_PAYLOAD='{"type":"normal","username":"'$TAIGA_USERNAME'","password":"'$TAIGA_PASSWORD'"}'
           
           echo "Auth payload: $AUTH_PAYLOAD"
           
@@ -86,6 +89,9 @@ jobs:
           USERSTORY_ID=$(echo "$USERSTORY_RESPONSE" | jq '.[0].id')
           if [[ "$USERSTORY_ID" == "null" || -z "$USERSTORY_ID" ]]; then
             echo "Userstory not found with ref: $USERSTORY_REF" >&2
+            echo "Available userstories in project:"
+            curl -s -X GET "$TAIGA_API/userstories?project=$PROJECT_ID" \
+              -H "Authorization: Bearer $TOKEN" | jq '.[] | {id: .id, ref: .ref, subject: .subject}'
             exit 1
           fi
           echo "userstory_id=$USERSTORY_ID" >> $GITHUB_OUTPUT
