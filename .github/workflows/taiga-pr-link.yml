@@ -29,16 +29,22 @@ jobs:
       - name: Authenticate to Taiga
         id: taiga_auth
         run: |
-          AUTH_RESPONSE=$(curl -s -X POST "$TAIGA_API/auth" \
-            -H "Content-Type: application/json" \
-            -d "{\"type\":\"normal\",\"username\":\"$TAIGA_USERNAME\",\"password\":\"${{ secrets.TAIGA_PASSWORD }}\"}")
-          echo "AUTH_RESPONSE: $AUTH_RESPONSE"  # временный лог
+          AUTH_RESPONSE=$(jq -n \
+            --arg username "$TAIGA_USERNAME" \
+            --arg password "${{ secrets.TAIGA_PASSWORD }}" \
+            '{type: "normal", username: $username, password: $password}' \
+            | curl -s -X POST "$TAIGA_API/auth" \
+              -H "Content-Type: application/json" \
+              -d @-)
+
+          echo "AUTH_RESPONSE: $AUTH_RESPONSE"
+
           TOKEN=$(echo "$AUTH_RESPONSE" | jq -r '.auth_token')
           if [[ "$TOKEN" == "null" || -z "$TOKEN" ]]; then
             echo "Failed to get auth token" >&2
             exit 1
           fi
-          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+          echo "TOKEN=$TOKEN" >> $GITHUB_OUTPUT
 
       - name: Get Userstory ID by ref
         id: get_userstory
