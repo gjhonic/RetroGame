@@ -21,6 +21,7 @@ jobs:
           echo "PR_TITLE=${{ github.event.pull_request.title }}"
           if [[ "${{ github.event.pull_request.title }}" =~ RG-([0-9]+) ]]; then
             echo "USERSTORY_REF=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+            echo "Found userstory ref: ${BASH_REMATCH[1]}"
           else
             echo "Error: Cannot parse userstory ref from PR title" >&2
             exit 1
@@ -30,9 +31,11 @@ jobs:
         run: |
           echo "USERNAME: $TAIGA_USERNAME"
           echo "PASSWORD длина: ${#TAIGA_PASSWORD}"
+          echo "TAIGA_API: $TAIGA_API"
         env:
           TAIGA_USERNAME: ${{ env.TAIGA_USERNAME }}
           TAIGA_PASSWORD: ${{ secrets.TAIGA_PASSWORD }}
+          TAIGA_API: ${{ env.TAIGA_API }}
 
       - name: Authenticate to Taiga
         id: taiga_auth
@@ -41,46 +44,69 @@ jobs:
           TAIGA_PASSWORD: ${{ secrets.TAIGA_PASSWORD }}
           TAIGA_API: ${{ env.TAIGA_API }}
         run: |
-          AUTH_RESPONSE=$(jq -n \
+          echo "Attempting to authenticate with Taiga API: $TAIGA_API"
+          
+          AUTH_PAYLOAD=$(jq -n \
             --arg username "$TAIGA_USERNAME" \
             --arg password "$TAIGA_PASSWORD" \
-            '{type: "normal", username: $username, password: $password}' \
-            | curl -s -X POST "$TAIGA_API/auth" \
-              -H "Content-Type: application/json" \
-              -d @-)
+            '{type: "normal", username: $username, password: $password}')
+          
+          echo "Auth payload: $AUTH_PAYLOAD"
+          
+          AUTH_RESPONSE=$(curl -s -X POST "$TAIGA_API/auth" \
+            -H "Content-Type: application/json" \
+            -d "$AUTH_PAYLOAD")
 
           echo "AUTH_RESPONSE: $AUTH_RESPONSE"
 
           TOKEN=$(echo "$AUTH_RESPONSE" | jq -r '.auth_token')
           if [[ "$TOKEN" == "null" || -z "$TOKEN" ]]; then
-            echo "Failed to get auth token" >&2
+            echo "Failed to get auth token. Response: $AUTH_RESPONSE" >&2
             exit 1
           fi
           echo "TOKEN=$TOKEN" >> $GITHUB_OUTPUT
+          echo "Successfully obtained auth token"
 
       - name: Get Userstory ID by ref
         id: get_userstory
+        env:
+          TAIGA_API: ${{ env.TAIGA_API }}
+          PROJECT_ID: ${{ env.PROJECT_ID }}
         run: |
           USERSTORY_REF=${{ steps.extract_ref.outputs.USERSTORY_REF }}
-          TOKEN=${{ steps.taiga_auth.outputs.token }}
-          USERSTORY=$(curl -s -X GET "$TAIGA_API/userstories?project=$PROJECT_ID&ref=$USERSTORY_REF" \
+          TOKEN=${{ steps.taiga_auth.outputs.TOKEN }}
+          
+          echo "Looking for userstory with ref: $USERSTORY_REF in project: $PROJECT_ID"
+          
+          USERSTORY_RESPONSE=$(curl -s -X GET "$TAIGA_API/userstories?project=$PROJECT_ID&ref=$USERSTORY_REF" \
             -H "Authorization: Bearer $TOKEN")
-          USERSTORY_ID=$(echo "$USERSTORY" | jq '.[0].id')
+          
+          echo "Userstory response: $USERSTORY_RESPONSE"
+          
+          USERSTORY_ID=$(echo "$USERSTORY_RESPONSE" | jq '.[0].id')
           if [[ "$USERSTORY_ID" == "null" || -z "$USERSTORY_ID" ]]; then
-            echo "Userstory not found" >&2
+            echo "Userstory not found with ref: $USERSTORY_REF" >&2
             exit 1
           fi
           echo "userstory_id=$USERSTORY_ID" >> $GITHUB_OUTPUT
+          echo "Found userstory ID: $USERSTORY_ID"
 
       - name: Update custom field with PR URL
+        env:
+          TAIGA_API: ${{ env.TAIGA_API }}
+          CUSTOM_FIELD_ID: ${{ env.CUSTOM_FIELD_ID }}
         run: |
           USERSTORY_ID=${{ steps.get_userstory.outputs.userstory_id }}
-          TOKEN=${{ steps.taiga_auth.outputs.token }}
+          TOKEN=${{ steps.taiga_auth.outputs.TOKEN }}
           PR_URL=${{ github.event.pull_request.html_url }}
-          CUSTOM_FIELD_ID=$CUSTOM_FIELD_ID
+
+          echo "Updating userstory $USERSTORY_ID with PR URL: $PR_URL"
+          echo "Custom field ID: $CUSTOM_FIELD_ID"
 
           PATCH_DATA=$(jq -n --arg id "$CUSTOM_FIELD_ID" --arg url "$PR_URL" \
             '{attributes_values: {($id): $url}, version: 1}')
+
+          echo "Patch data: $PATCH_DATA"
 
           RESPONSE=$(curl -s -X PATCH "$TAIGA_API/userstories/custom-attributes-values/$USERSTORY_ID" \
             -H "Content-Type: application/json" \
@@ -88,3 +114,10 @@ jobs:
             -d "$PATCH_DATA")
 
           echo "Update response: $RESPONSE"
+          
+          if echo "$RESPONSE" | jq -e '.id' > /dev/null; then
+            echo "Successfully updated userstory with PR link"
+          else
+            echo "Failed to update userstory. Response: $RESPONSE" >&2
+            exit 1
+          fi
