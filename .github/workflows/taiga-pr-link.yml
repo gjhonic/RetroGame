@@ -22,7 +22,7 @@ jobs:
             }
 
             const taskId = match[1];  // Taiga task ID
-            const taigaHost = 'https://tree.taiga.io'; // или свой self-hosted URL
+            const taigaHost = 'https://api.taiga.io'; // или свой self-hosted URL
             const projectSlug = 'retrogame'; // замени на свой
             const token = process.env.TAIGA_TOKEN;
 
