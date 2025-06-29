@@ -101,7 +101,6 @@ class SteamGetGamesCommand extends Command
 
             // Уже обработано? (используем предзагруженный список)
             if (isset($existingSteamAppIds[$appid])) {
-                $output->writeln("<comment>⏩ Приложение {$appid} уже импортировано.</comment>");
                 continue;
             }
 

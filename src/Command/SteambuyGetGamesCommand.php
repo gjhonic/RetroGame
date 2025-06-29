@@ -6,6 +6,7 @@ use App\Entity\Game;
 use App\Entity\GameShop;
 use App\Entity\Shop;
 use App\Entity\SteambuyApp;
+use App\Service\SlugifyProcessor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -49,7 +50,7 @@ class SteambuyGetGamesCommand extends Command
                 break;
             }
 
-            $slug = $this->slugify((string)$game->getName()) . '-russia';
+            $slug = SlugifyProcessor::process((string)$game->getName()) . '-russia';
             $url = "https://steambuy.com/steam/{$slug}/";
 
             $output->writeln("🎮 <info>Обрабатываем игру: '{$game->getName()}', slug: $slug</info>");
@@ -61,7 +62,6 @@ class SteambuyGetGamesCommand extends Command
             ]);
 
             if ($existingShop) {
-                $output->writeln("⏩ <comment>GameShop уже существует для этой игры и магазина. Пропускаем.</comment>");
                 $skippedExistingShop++;
                 continue;
             }
@@ -94,7 +94,9 @@ class SteambuyGetGamesCommand extends Command
 
                 $steambuyApp->setCheckedAt(new \DateTimeImmutable());
 
-                if (str_contains($content, '<div class=\"review-heaing__title\">Ошибка 404</div>')) {
+
+                if (str_contains($content, 'Ошибка 404') ||
+                    preg_match('/<div\s+class="review-heaing__title">\s*Ошибка 404\s*<\/div>/i', $content) ) {
                     $steambuyApp->setNotFound(true);
                     $steambuyApp->setRawHtml(null);
                     $output->writeln("❌ <comment>Страница вернула 404. Отмечаем как не найдено.</comment>");
