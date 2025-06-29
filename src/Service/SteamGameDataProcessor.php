@@ -28,7 +28,7 @@ class SteamGameDataProcessor
      */
     public function processGameData(
         array $detailsData,
-        OutputInterface $output = null,
+        ?OutputInterface $output = null,
         array &$existingGameNames = [],
         array $existingGameShopIds = []
     ): bool {
