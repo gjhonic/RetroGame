@@ -87,11 +87,9 @@ class GameController extends AbstractController
                 $gameChart['priceValues'][] = (int)$entry->getPrice();
             }
 
-            if (!empty($history)) {
-                $gameChart['maxPrice'] = max($gameChart['priceValues']);
-                $gameChart['minPrice'] = min($gameChart['priceValues']);
-                $gameChart['avgPrice'] = array_sum($gameChart['priceValues']) / count($gameChart['priceValues']);
-            }
+            $gameChart['maxPrice'] = max($gameChart['priceValues']);
+            $gameChart['minPrice'] = min($gameChart['priceValues']);
+            $gameChart['avgPrice'] = array_sum($gameChart['priceValues']) / count($gameChart['priceValues']);
 
             $gameCharts[] = $gameChart;
 

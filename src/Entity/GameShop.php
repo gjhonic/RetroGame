@@ -45,6 +45,9 @@ class GameShop
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $externalKey = null;
 
+    /**
+     * @var array<mixed>|null
+     */
     #[ORM\Column(type: Types::JSON, nullable: true)]
     private ?array $extraParams = null;
 
@@ -169,17 +172,27 @@ class GameShop
         return $this;
     }
 
+    /**
+     * @return array<mixed>|null
+     */
     public function getExtraParams(): ?array
     {
         return $this->extraParams;
     }
 
+    /**
+     * @param array<mixed>|null $extraParams
+     * @return $this
+     */
     public function setExtraParams(?array $extraParams): static
     {
         $this->extraParams = $extraParams;
         return $this;
     }
 
+    /**
+     * @return array<mixed>|null
+     */
     public function getParamPrice(): ?array
     {
         if (!is_array($this->extraParams)) {
