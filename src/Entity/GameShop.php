@@ -179,4 +179,13 @@ class GameShop
         $this->extraParams = $extraParams;
         return $this;
     }
+
+    public function getParamPrice(): ?array
+    {
+        if (!is_array($this->extraParams)) {
+            return null;
+        }
+
+        return $this->extraParams['paramPrice'] ?? null;
+    }
 }

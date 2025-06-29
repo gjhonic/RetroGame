@@ -118,7 +118,7 @@ class SteamGetGamesCommand extends Command
             try {
                 $detailsResponse = $this->httpClient->request(
                     'GET',
-                    "https://store.steampowered.com/api/appdetails?appids={$appid}&cc=ru&l=ru"
+                    "https://store.steampowered.com/api/appdetails?appids={$appid}"
                 );
                 $detailsData = $detailsResponse->toArray();
             } catch (TransportExceptionInterface $e) {
