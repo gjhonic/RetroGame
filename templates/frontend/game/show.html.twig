@@ -47,7 +47,7 @@
                                 <div>
                                     <strong>{{ shopName ?? 'Steam' }}</strong>
                                     {% if priceParam %}
-                                        <span class="badge text-bg-{{ priceParam['type'] }}"> {{ priceParam['value'] }} </span>
+                                        <span class="badge text-bg-{{ priceParam['type'] }}"> {{ priceParam['value']|lower  }} </span>
                                     {% endif %}
                                     {% if shopLink %}
                                         <a href="{{ shopLink }}?cc=ru" target="_blank" class="ms-2 text-decoration-none">

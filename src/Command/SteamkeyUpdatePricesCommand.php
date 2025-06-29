@@ -105,6 +105,22 @@ class SteamkeyUpdatePricesCommand extends Command
 
                 $html = $response->getContent();
 
+                $extraParams = $gameShop->getExtraParams();
+
+                if (str_contains($html, 'Товар в наличии')) {
+                    $extraParams['paramPrice'] = [
+                        'type' => 'success',
+                        'value' => 'товар в наличии',
+                    ];
+                } else {
+                    $extraParams['paramPrice'] = [
+                        'type' => 'danger',
+                        'value' => 'Нету',
+                    ];
+                }
+
+                $gameShop->setExtraParams($extraParams);
+
                 if (preg_match('/<div class="price_value">(.*?)<\/div>/s', $html, $matches) ||
                     preg_match('/<div class="price_value big">(.*?)<\/div>/s', $html, $matches)) {
                     $priceBlock = trim(strip_tags($matches[1]));

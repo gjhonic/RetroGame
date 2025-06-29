@@ -105,6 +105,29 @@ class SteampayUpdatePricesCommand extends Command
 
                 $html = $response->getContent();
 
+                $extraParams = $gameShop->getExtraParams();
+
+                // Попытка найти параметр "Наличие" из <ul class="product__advantages-list">
+                if (preg_match_all(
+                    '#<li[^>]*class="product__advantages-item[^"]*--[^"]*available[^"]*"[^>]*>\s*Наличие:\s*(?:<span[^>]*class="product__advantages-(\w+)"[^>]*>)?([^<]+)(?:</span>)?#su',
+                    $html,
+                    $matches,
+                    PREG_SET_ORDER
+                )) {
+                    foreach ($matches as $match) {
+                        $value = trim($match[2]);
+                        $type = $this->getMapTypePrice($value);
+
+                        $extraParams['paramPrice'] = [
+                            'type' => $type,
+                            'value' => $value,
+                        ];
+                        break;
+                    }
+                }
+
+                $gameShop->setExtraParams($extraParams);
+
                 if (preg_match('/<div class="product__current-price">(.*?)<\/div>/s', $html, $matches)) {
                     $priceBlock = trim(strip_tags($matches[1]));
                     $priceText = preg_replace('/\s+/', ' ', $priceBlock); // убираем лишние пробелы
@@ -161,5 +184,27 @@ class SteampayUpdatePricesCommand extends Command
         $output->writeln("🎉 <info>Цены обновлены для {$updated} игр из {$checked} проверенных.</info>");
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * @param string $value
+     * @return string
+     */
+    public function getMapTypePrice(string $value): string
+    {
+        switch ($value) {
+            case 'мало':
+                return "warning";
+            case 'много':
+                return "success";
+            case 'Достаточно':
+                return "primary";
+            case 'закончился':
+                return "danger";
+            case 'ожидается':
+                return "danger";
+        }
+
+        return 'dark';
     }
 }
