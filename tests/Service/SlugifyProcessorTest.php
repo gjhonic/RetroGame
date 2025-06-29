@@ -32,7 +32,7 @@ class SlugifyProcessorTest extends TestCase
                 'Привет Мир',
                 'privet-mir'
             ],
-            
+
             // Тесты с латиницей
             'латиница в нижнем регистре' => [
                 'hello world',
@@ -46,7 +46,7 @@ class SlugifyProcessorTest extends TestCase
                 'Hello World',
                 'hello-world'
             ],
-            
+
             // Тесты с цифрами
             'с цифрами' => [
                 'Game 2023',
@@ -56,7 +56,7 @@ class SlugifyProcessorTest extends TestCase
                 '12345',
                 '12345'
             ],
-            
+
             // Тесты с специальными символами
             'с запятыми' => [
                 'привет, мир',
@@ -82,7 +82,7 @@ class SlugifyProcessorTest extends TestCase
                 '-game-title-',
                 'game-title'
             ],
-            
+
             // Тесты с различными символами
             'с апострофами' => [
                 "game's title",
@@ -104,7 +104,7 @@ class SlugifyProcessorTest extends TestCase
                 'game—title',
                 'game-title'
             ],
-            
+
             // Сложные случаи
             'сложная кириллица' => [
                 'Специальные символы: @#$%',
@@ -130,55 +130,55 @@ class SlugifyProcessorTest extends TestCase
                 '@#$%^&*()',
                 ''
             ],
-            
+
             // Тесты с буквой ё
             'с буквой ё' => [
                 'ёлка',
                 'elka'
             ],
-            
+
             // Тесты с буквой й
             'с буквой й' => [
                 'мой',
                 'moy'
             ],
-            
+
             // Тесты с буквой х
             'с буквой х' => [
                 'хорошо',
                 'khorosho'
             ],
-            
+
             // Тесты с буквой ц
             'с буквой ц' => [
                 'цвет',
                 'tsvet'
             ],
-            
+
             // Тесты с буквой ч
             'с буквой ч' => [
                 'часы',
                 'chasy'
             ],
-            
+
             // Тесты с буквой ш
             'с буквой ш' => [
                 'школа',
                 'shkola'
             ],
-            
+
             // Тесты с буквой щ
             'с буквой щ' => [
                 'щука',
                 'shchuka'
             ],
-            
+
             // Тесты с буквой ю
             'с буквой ю' => [
                 'юг',
                 'yug'
             ],
-            
+
             // Тесты с буквой я
             'с буквой я' => [
                 'яблоко',
@@ -191,7 +191,7 @@ class SlugifyProcessorTest extends TestCase
     {
         $longText = str_repeat('Привет мир ', 100);
         $result = SlugifyProcessor::process($longText);
-        
+
         // Проверяем, что результат не пустой и содержит только допустимые символы
         $this->assertNotEmpty($result);
         $this->assertMatchesRegularExpression('/^[a-z0-9\-]+$/', $result);
@@ -201,7 +201,7 @@ class SlugifyProcessorTest extends TestCase
     {
         $text = 'Привет мир с эмодзи 😀🎮';
         $result = SlugifyProcessor::process($text);
-        
+
         // Эмодзи должны быть удалены
         $this->assertEquals('privet-mir-s-emodzi', $result);
     }
@@ -210,7 +210,7 @@ class SlugifyProcessorTest extends TestCase
     {
         $text = 'Game Приключения 2023';
         $result = SlugifyProcessor::process($text);
-        
+
         $this->assertEquals('game-priklyucheniya-2023', $result);
     }
-} 
+}

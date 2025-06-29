@@ -96,8 +96,10 @@ class SteamkeyGetGamesCommand extends Command
 
                 if (
                     str_contains($content, 'Данной страницы не существует') ||
-                    preg_match('/<h1\s+class="page-header__title">\s*Данной страницы не существует\s*<\/h1>/i',
-                        $content)
+                    preg_match(
+                        '/<h1\s+class="page-header__title">\s*Данной страницы не существует\s*<\/h1>/i',
+                        $content
+                    )
                 ) {
                     $SteamkeyApp->setNotFound(true);
                     $SteamkeyApp->setRawHtml(null);
