@@ -108,12 +108,16 @@ class SteambuyUpdatePricesCommand extends Command
                 // --- Парсим наличие ---
                 $extraParams = $gameShop->getExtraParams();
 
-                if (preg_match_all(
-                    '#<div class="product-about__option-unit">\s*<div class="product-about__option-label"(?:[^>]*)>(.*?)</div>\s*<div class="product-about__option-value(?:\s+([\w\-]+))?">(.*?)</div>\s*</div>#su',
-                    $html,
-                    $matches,
-                    PREG_SET_ORDER
-                )) {
+                if (
+                    preg_match_all(
+                        '#<div class="product-about__option-unit">\s*<div' .
+                        ' class="product-about__option-label"(?:[^>]*)>(.*?)</div>\s*<div ' .
+                        ' class="product-about__option-value(?:\s+([\w\-]+))?">(.*?)</div>\s*</div>#su',
+                        $html,
+                        $matches,
+                        PREG_SET_ORDER
+                    )
+                ) {
                     foreach ($matches as $match) {
                         $label = trim($match[1], " :\t\n\r\0\x0B");       // Например: "Наличие"
                         $value = trim($match[3]);                         // Например: "Мало"

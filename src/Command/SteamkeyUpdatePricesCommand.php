@@ -121,8 +121,10 @@ class SteamkeyUpdatePricesCommand extends Command
 
                 $gameShop->setExtraParams($extraParams);
 
-                if (preg_match('/<div class="price_value">(.*?)<\/div>/s', $html, $matches) ||
-                    preg_match('/<div class="price_value big">(.*?)<\/div>/s', $html, $matches)) {
+                if (
+                    preg_match('/<div class="price_value">(.*?)<\/div>/s', $html, $matches) ||
+                    preg_match('/<div class="price_value big">(.*?)<\/div>/s', $html, $matches)
+                ) {
                     $priceBlock = trim(strip_tags($matches[1]));
                     $priceText = preg_replace('/\s+/', ' ', $priceBlock); // убираем лишние пробелы
 

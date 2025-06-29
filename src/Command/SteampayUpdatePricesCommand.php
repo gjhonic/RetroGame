@@ -108,12 +108,15 @@ class SteampayUpdatePricesCommand extends Command
                 $extraParams = $gameShop->getExtraParams();
 
                 // Попытка найти параметр "Наличие" из <ul class="product__advantages-list">
-                if (preg_match_all(
-                    '#<li[^>]*class="product__advantages-item[^"]*--[^"]*available[^"]*"[^>]*>\s*Наличие:\s*(?:<span[^>]*class="product__advantages-(\w+)"[^>]*>)?([^<]+)(?:</span>)?#su',
-                    $html,
-                    $matches,
-                    PREG_SET_ORDER
-                )) {
+                if (
+                    preg_match_all(
+                        '#<li[^>]*class="product__advantages-item[^"]*--[^"]*available[^"]*"[^>]*>\s*Наличие:\s*' .
+                        '(?:<span[^>]*class="product__advantages-(\w+)"[^>]*>)?([^<]+)(?:</span>)?#su',
+                        $html,
+                        $matches,
+                        PREG_SET_ORDER
+                    )
+                ) {
                     foreach ($matches as $match) {
                         $value = trim($match[2]);
                         $type = $this->getMapTypePrice($value);

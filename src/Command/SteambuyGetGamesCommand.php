@@ -95,8 +95,10 @@ class SteambuyGetGamesCommand extends Command
                 $steambuyApp->setCheckedAt(new \DateTimeImmutable());
 
 
-                if (str_contains($content, 'Ошибка 404') ||
-                    preg_match('/<div\s+class="review-heaing__title">\s*Ошибка 404\s*<\/div>/i', $content)) {
+                if (
+                    str_contains($content, 'Ошибка 404') ||
+                    preg_match('/<div\s+class="review-heaing__title">\s*Ошибка 404\s*<\/div>/i', $content)
+                ) {
                     $steambuyApp->setNotFound(true);
                     $steambuyApp->setRawHtml(null);
                     $output->writeln("❌ <comment>Страница вернула 404. Отмечаем как не найдено.</comment>");

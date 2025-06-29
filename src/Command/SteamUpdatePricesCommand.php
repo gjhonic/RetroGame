@@ -77,7 +77,7 @@ class SteamUpdatePricesCommand extends Command
 
             if ($game && $game->isFree()) {
                 $output->writeln(
-                    "⏩ <comment> " .
+                    "⏩ <comment>" .
                      "[{$gameShop->getLinkGameId()}] {$gameShop->getName()} — Бесплатная игра, пропускаем.</comment>"
                 );
                 continue;
@@ -85,7 +85,7 @@ class SteamUpdatePricesCommand extends Command
 
             if (in_array($gameShop->getId(), $alreadyUpdatedIds)) {
                 $output->writeln(
-                    "🔄 <comment> " .
+                    "🔄 <comment>" .
                     "[{$gameShop->getLinkGameId()}] {$gameShop->getName()} — Цена уже есть на сегодня, пропускаем." .
                         "</comment>"
                 );
@@ -129,7 +129,10 @@ class SteamUpdatePricesCommand extends Command
 
                 // 2. Проверка валюты
                 if (!str_contains($priceText, '₽') && !str_contains(mb_strtolower($priceText), 'руб')) {
-                    $output->writeln("🚫 <comment>[{$appid}] Цена в неподдерживаемой валюте: {$priceText}. Пропускаем.</comment>");
+                    $output->writeln(
+                        "🚫 <comment>" .
+                        "[{$appid}] Цена в неподдерживаемой валюте: {$priceText}. Пропускаем.</comment>"
+                    );
                     continue;
                 }
 
