@@ -12,10 +12,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 #[AsCommand(
-    name: 'app:steampay-update-prices',
-    description: 'Fetches current prices from SteamPay and saves them to price history',
+    name: 'app:steamkey-update-prices',
+    description: 'Fetches current prices from SteamKey and saves them to price history',
 )]
-class SteampayUpdatePricesCommand extends Command
+class SteamkeyUpdatePricesCommand extends Command
 {
     private EntityManagerInterface $entityManager;
     private HttpClientInterface $httpClient;
@@ -33,9 +33,9 @@ class SteampayUpdatePricesCommand extends Command
         $output->writeln('🚀 <info>Начинаем обновление цен SteamBuy...</info>');
         $output->writeln('📅 <info>' . $now->format('Y-m-d H:i:s') . '</info>');
 
-        $shop = $this->entityManager->getRepository(\App\Entity\Shop::class)->find(3);
+        $shop = $this->entityManager->getRepository(\App\Entity\Shop::class)->find(4);
         if (!$shop) {
-            $output->writeln('<error>⛔ Магазин SteamPay (id=3) не найден</error>');
+            $output->writeln('<error>⛔ Магазин SteamKey (id=4) не найден</error>');
             return Command::FAILURE;
         }
 
@@ -77,7 +77,7 @@ class SteampayUpdatePricesCommand extends Command
             }
 
             $slug = $gameShop->getExternalKey();
-            $url = "https://steampay.com/game/{$slug}/";
+            $url = "https://steamkey.com/{$slug}/";
 
             $output->writeln("🌐 <info>Запрос цены для '{$gameShop->getName()}', URL: $url</info>");
 
@@ -107,44 +107,33 @@ class SteampayUpdatePricesCommand extends Command
 
                 $extraParams = $gameShop->getExtraParams();
 
-                // Попытка найти параметр "Наличие" из <ul class="product__advantages-list">
-                if (
-                    preg_match_all(
-                        '#<li[^>]*class="product__advantages-item[^"]*--[^"]*available[^"]*"[^>]*>\s*Наличие:\s*' .
-                        '(?:<span[^>]*class="product__advantages-(\w+)"[^>]*>)?([^<]+)(?:</span>)?#su',
-                        $html,
-                        $matches,
-                        PREG_SET_ORDER
-                    )
-                ) {
-                    foreach ($matches as $match) {
-                        $value = trim($match[2]);
-                        $type = $this->getMapTypePrice($value);
-
-                        $extraParams['paramPrice'] = [
-                            'type' => $type,
-                            'value' => $value,
-                        ];
-                        break;
-                    }
+                if (str_contains($html, 'Товар в наличии')) {
+                    $extraParams['paramPrice'] = [
+                        'type' => 'success',
+                        'value' => 'товар в наличии',
+                    ];
+                } else {
+                    $extraParams['paramPrice'] = [
+                        'type' => 'danger',
+                        'value' => 'Нету',
+                    ];
                 }
 
                 $gameShop->setExtraParams($extraParams);
 
-                if (preg_match('/<div class="product__current-price">(.*?)<\/div>/s', $html, $matches)) {
+                if (
+                    preg_match('/<div class="price_value">(.*?)<\/div>/s', $html, $matches) ||
+                    preg_match('/<div class="price_value big">(.*?)<\/div>/s', $html, $matches)
+                ) {
                     $priceBlock = trim(strip_tags($matches[1]));
                     $priceText = preg_replace('/\s+/', ' ', $priceBlock); // убираем лишние пробелы
 
                     // Удаляем 'руб.' или 'руб' (на всякий случай)
                     $priceText = preg_replace('/руб\.?/ui', '', (string)$priceText);
+                    $priceText = preg_replace('/₽\.?/ui', '', (string)$priceText);
                     $priceText = trim((string)$priceText);
 
-                    if (mb_strtolower($priceText) === 'скоро') {
-                        $output->writeln(
-                            "ℹ️ <comment> " .
-                            "Товар временно отсутствует (Скоро), пропускаем, импорт оставлен включённым.</comment>"
-                        );
-                    } elseif (preg_match('/^\d[\d\s]*$/u', $priceText)) {
+                    if (preg_match('/^\d[\d\s]*$/u', $priceText)) {
                         $priceClean = str_replace(' ', '', $priceText);
                         $price = floatval($priceClean);
 
@@ -187,27 +176,5 @@ class SteampayUpdatePricesCommand extends Command
         $output->writeln("🎉 <info>Цены обновлены для {$updated} игр из {$checked} проверенных.</info>");
 
         return Command::SUCCESS;
-    }
-
-    /**
-     * @param string $value
-     * @return string
-     */
-    public function getMapTypePrice(string $value): string
-    {
-        switch ($value) {
-            case 'мало':
-                return "warning";
-            case 'много':
-                return "success";
-            case 'Достаточно':
-                return "primary";
-            case 'закончился':
-                return "danger";
-            case 'ожидается':
-                return "danger";
-        }
-
-        return 'dark';
     }
 }

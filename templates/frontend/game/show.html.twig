@@ -39,19 +39,28 @@
                             {% set latestUpdate = gameShop.latestPriceUpdatedAt %}
                             {% set shopLink = gameShop.link %}
                             {% set shopName = gameShop.shop.getName() %}
+                            {% set priceParam = gameShop.getParamPrice() %}
+
+
 
                             <li class="list-group-item d-flex justify-content-between align-items-center flex-column flex-md-row">
                                 <div>
                                     <strong>{{ shopName ?? 'Steam' }}</strong>
+                                    {% if priceParam %}
+                                        <span class="badge text-bg-{{ priceParam['type'] }}"> {{ priceParam['value']|lower  }} </span>
+                                    {% endif %}
                                     {% if shopLink %}
                                         <a href="{{ shopLink }}?cc=ru" target="_blank" class="ms-2 text-decoration-none">
                                             <i class="bi bi-box-arrow-up-right"></i> Перейти
                                         </a>
+
                                     {% endif %}
                                 </div>
                                 <div>
                                     {% if latestPrice is not null %}
+
                                         <strong>{{ latestPrice }} ₽</strong>
+
                                         {% if latestUpdate %}
                                             <small class="text-muted ms-2">(обновлено {{ latestUpdate|date('d.m.Y') }})</small>
                                         {% endif %}
@@ -78,6 +87,20 @@
                                 <div class="card-body">
                                     <h5 class="card-title text-center">{{ gameChart['name'] }}</h5>
                                     <canvas id="priceChart_{{ gameChart['id'] }}" height="200"></canvas>
+                                    <br>
+                                    <div class="card">
+                                        <ul class="list-group list-group-flush">
+                                            <li class="list-group-item">Максимальная цена:
+                                                <strong>{{ gameChart['maxPrice'] }} </strong> руб
+                                            </li>
+                                            <li class="list-group-item">Минимальная цена:
+                                                <strong>{{ gameChart['minPrice'] }} </strong> руб
+                                            </li>
+                                            <li class="list-group-item">Средняя цена:
+                                                <strong>{{ gameChart['avgPrice'] }} </strong> руб
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>

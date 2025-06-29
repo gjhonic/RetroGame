@@ -77,7 +77,7 @@ class SteamUpdatePricesCommand extends Command
 
             if ($game && $game->isFree()) {
                 $output->writeln(
-                    "⏩ <comment> " .
+                    "⏩ <comment>" .
                      "[{$gameShop->getLinkGameId()}] {$gameShop->getName()} — Бесплатная игра, пропускаем.</comment>"
                 );
                 continue;
@@ -85,7 +85,7 @@ class SteamUpdatePricesCommand extends Command
 
             if (in_array($gameShop->getId(), $alreadyUpdatedIds)) {
                 $output->writeln(
-                    "🔄 <comment> " .
+                    "🔄 <comment>" .
                     "[{$gameShop->getLinkGameId()}] {$gameShop->getName()} — Цена уже есть на сегодня, пропускаем." .
                         "</comment>"
                 );
@@ -115,11 +115,7 @@ class SteamUpdatePricesCommand extends Command
                     $priceText = strip_tags(trim($matches[1]));
                     $output->writeln("💸 <info>[{$appid}] Найдена цена со скидкой: $priceText</info>");
                 } elseif (
-                    preg_match(
-                        '/<div class=\"game_purchase_price price\"[^>]*>(.*?)<\/div>/s',
-                        $html,
-                        $matches
-                    )
+                    preg_match('/<div class=\"game_purchase_price price\"[^>]*>(.*?)<\/div>/s', $html, $matches)
                 ) {
                     $priceText = strip_tags(trim($matches[1]));
                     $output->writeln("💰 <info>[{$appid}] Найдена обычная цена: $priceText</info>");
@@ -131,12 +127,21 @@ class SteamUpdatePricesCommand extends Command
                     continue;
                 }
 
-                // Очистка и конвертация
-                $cleaned = str_replace(['₽', 'руб.', ' '], '', $priceText);
+                // 2. Проверка валюты
+                if (!str_contains($priceText, '₽') && !str_contains(mb_strtolower($priceText), 'руб')) {
+                    $output->writeln(
+                        "🚫 <comment>" .
+                        "[{$appid}] Цена в неподдерживаемой валюте: {$priceText}. Пропускаем.</comment>"
+                    );
+                    continue;
+                }
+
+                // 3. Очистка и конвертация
+                $cleaned = str_replace(['₽', 'руб.', 'руб', ' '], '', mb_strtolower($priceText));
                 $cleaned = str_replace(',', '.', $cleaned);
                 $price = floatval($cleaned);
 
-                // Сохраняем, если цена > 0
+                // 4. Сохраняем, если цена > 0
                 if ($price > 0) {
                     $history = new GameShopPriceHistory();
                     $history->setGameShop($gameShop);

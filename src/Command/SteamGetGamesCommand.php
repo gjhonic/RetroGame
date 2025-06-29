@@ -101,7 +101,6 @@ class SteamGetGamesCommand extends Command
 
             // Уже обработано? (используем предзагруженный список)
             if (isset($existingSteamAppIds[$appid])) {
-                $output->writeln("<comment>⏩ Приложение {$appid} уже импортировано.</comment>");
                 continue;
             }
 
@@ -119,7 +118,7 @@ class SteamGetGamesCommand extends Command
             try {
                 $detailsResponse = $this->httpClient->request(
                     'GET',
-                    "https://store.steampowered.com/api/appdetails?appids={$appid}&cc=ru&l=ru"
+                    "https://store.steampowered.com/api/appdetails?appids={$appid}"
                 );
                 $detailsData = $detailsResponse->toArray();
             } catch (TransportExceptionInterface $e) {

@@ -76,13 +76,20 @@ class GameController extends AbstractController
                 'name' => $shop->getName(),
                 'priceDates' => [],
                 'priceValues' => [],
+                'maxPrice' => 0,
+                'minPrice' => 0,
+                'avgPrice' => 0,
             ];
 
             // Собираем данные по датам и ценам
             foreach ($history as $entry) {
-                $gameChart['priceDates'][] = $entry->getUpdatedAt()->format('d.m.Y H:i');
-                $gameChart['priceValues'][] = $entry->getPrice();
+                $gameChart['priceDates'][] = $entry->getUpdatedAt()->format('d.m.Y');
+                $gameChart['priceValues'][] = (int)$entry->getPrice();
             }
+
+            $gameChart['maxPrice'] = max($gameChart['priceValues']);
+            $gameChart['minPrice'] = min($gameChart['priceValues']);
+            $gameChart['avgPrice'] = array_sum($gameChart['priceValues']) / count($gameChart['priceValues']);
 
             $gameCharts[] = $gameChart;
 

@@ -25,6 +25,6 @@
 /.php-cs-fixer.cache
 ###< friendsofphp/php-cs-fixer ###
 
-/public/uploads/*
+/public/uploads/games/*
 
 .idea/

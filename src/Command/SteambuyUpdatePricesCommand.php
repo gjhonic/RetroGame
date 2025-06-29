@@ -105,6 +105,40 @@ class SteambuyUpdatePricesCommand extends Command
 
                 $html = $response->getContent();
 
+                // --- Парсим наличие ---
+                $extraParams = $gameShop->getExtraParams();
+
+                if (
+                    preg_match_all(
+                        '#<div class="product-about__option-unit">\s*<div' .
+                        ' class="product-about__option-label"(?:[^>]*)>(.*?)</div>\s*<div ' .
+                        ' class="product-about__option-value(?:\s+([\w\-]+))?">(.*?)</div>\s*</div>#su',
+                        $html,
+                        $matches,
+                        PREG_SET_ORDER
+                    )
+                ) {
+                    foreach ($matches as $match) {
+                        $label = trim($match[1], " :\t\n\r\0\x0B");       // Например: "Наличие"
+                        $value = trim($match[3]);                         // Например: "Мало"
+
+                        if (mb_strtolower($label) === 'наличие') {
+                            // Извлечь "red", "green" и т.п. из CSS-класса
+
+                            $type = $this->getMapTypePrice($value);
+
+                            $extraParams['paramPrice'] = [
+                                'type' => $type,
+                                'value' => $value,
+                            ];
+                            break; // нашли "Наличие" — дальше не идём
+                        }
+                    }
+                }
+
+                $gameShop->setExtraParams($extraParams);
+
+
                 if (preg_match('/<div class=\"product-price__cost\">\s*(.*?)\s*<\/div>/', $html, $matches)) {
                     $priceText = trim($matches[1]);
 
@@ -127,6 +161,12 @@ class SteambuyUpdatePricesCommand extends Command
                         }
                     } elseif (mb_strtolower($priceText) === 'скоро') {
                         // Товар временно нет в продаже, НЕ отключаем импорт
+                        $extraParams['paramPrice'] = [
+                            'type' => 'danger',
+                            'value' => 'Нету',
+                        ];
+                        $gameShop->setExtraParams($extraParams);
+
                         $output->writeln(
                             "ℹ️ <comment>" .
                             "Товар временно отсутствует (Скоро), пропускаем, импорт оставлен включённым.</comment>"
@@ -159,5 +199,25 @@ class SteambuyUpdatePricesCommand extends Command
         $output->writeln("🎉 <info>Цены обновлены для {$updated} игр из {$checked} проверенных.</info>");
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * @param string $value
+     * @return string
+     */
+    public function getMapTypePrice(string $value): string
+    {
+        switch ($value) {
+            case 'Мало':
+                return "warning";
+            case 'Много':
+                return "success";
+            case 'Достаточно':
+                return "primary";
+            case 'Скоро':
+                return "danger";
+        }
+
+        return 'dark';
     }
 }
