@@ -25,8 +25,9 @@ class GameController extends AbstractController
             $genreId = (int)$genreId;
         }
 
-        $games = $gameRepo->findByFilters($search, $genreId, $page, $limit);
+        $games = $gameRepo->findGamesByFilters($search, $genreId, $page, $limit);
         $total = $gameRepo->countByFilters($search, $genreId);
+
         $totalPages = (int) ceil($total / $limit);
 
         $genres = $genreRepo->findAll();

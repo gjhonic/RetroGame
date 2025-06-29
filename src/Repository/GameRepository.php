@@ -25,16 +25,9 @@ class GameRepository extends ServiceEntityRepository
     /**
      * @return array<string, mixed>
      */
-    public function findByFilters(?string $search, ?int $genreId, int $page = 1, int $limit = 40): array
+    public function findGamesByFilters(?string $search, ?int $genreId, int $page = 1, int $limit = 40): array
     {
         $qb = $this->createQueryBuilder('g')
-            ->distinct()
-            ->leftJoin('g.genre', 'genre')
-            ->addSelect('genre')
-            ->leftJoin('g.shops', 'shops')
-            ->addSelect('shops')
-            ->leftJoin('shops.shop', 'shop')
-            ->addSelect('shop')
             ->orderBy('g.ownersCount', 'DESC')
             ->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit);
@@ -56,8 +49,7 @@ class GameRepository extends ServiceEntityRepository
     public function countByFilters(?string $search, ?int $genreId): int
     {
         $qb = $this->createQueryBuilder('g')
-            ->select('COUNT(DISTINCT g.id)')
-            ->leftJoin('g.genre', 'genre');
+            ->select('COUNT(g.id)');
 
         if ($search) {
             $qb->andWhere('g.name LIKE :search')
