@@ -23,7 +23,7 @@
                     {% if game.genre|length > 0 %}
                         <div class="d-flex flex-wrap gap-2">
                             {% for genre in game.genre %}
-                                <span class="badge bg-info text-dark">{{ genre.name }}</span>
+                                <span class="badge bg-info text-dark">{{ genre.getNameRussia() }}</span>
                             {% endfor %}
                         </div>
                     {% else %}

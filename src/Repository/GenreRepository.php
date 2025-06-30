@@ -23,7 +23,7 @@ class GenreRepository extends ServiceEntityRepository
     public function findAllOrderedByName(): array
     {
         return $this->createQueryBuilder('g')
-            ->orderBy('g.name', 'ASC')
+            ->orderBy('g.name_russia', 'ASC')
             ->getQuery()
             ->getResult();
     }

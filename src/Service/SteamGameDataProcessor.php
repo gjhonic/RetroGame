@@ -331,7 +331,6 @@ class SteamGameDataProcessor
                     $genre = new Genre();
                     $genre->setName($genreName);
                     $genre->setCreatedAt(new \DateTimeImmutable());
-                    $genre->setCreatedBy('system');
                     $this->entityManager->persist($genre);
 
                     if ($output) {

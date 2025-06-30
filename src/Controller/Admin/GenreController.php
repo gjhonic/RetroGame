@@ -30,11 +30,6 @@ class GenreController extends AbstractController
         $genre = new Genre();
         $form = $this->createForm(GenreType::class, $genre);
         $form->handleRequest($request);
-        if ($this->getUser() != null) {
-            $genre->setCreatedBy($this->getUser()->getUserIdentifier());
-            $genre->setUpdatedBy($this->getUser()->getUserIdentifier());
-        }
-
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($genre);
@@ -62,9 +57,6 @@ class GenreController extends AbstractController
     {
         $form = $this->createForm(GenreType::class, $genre);
         $form->handleRequest($request);
-        if ($this->getUser() != null) {
-            $genre->setUpdatedBy($this->getUser()->getUserIdentifier());
-        }
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
