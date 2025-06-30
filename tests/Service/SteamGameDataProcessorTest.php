@@ -233,7 +233,7 @@ class SteamGameDataProcessorTest extends TestCase
         $this->assertFalse($processor->isGame($invalidGameData));
     }
 
-    public function testGetOwnersCountMethod(): void
+    public function testGetSteamPopularityMethod(): void
     {
         $processor = new SteamGameDataProcessor($this->entityManager);
 
@@ -241,10 +241,10 @@ class SteamGameDataProcessorTest extends TestCase
         $gameDataWithRecommendations = [
             'recommendations' => ['total' => 1000000]
         ];
-        $this->assertEquals(1000000, $processor->getOwnersCount($gameDataWithRecommendations));
+        $this->assertEquals(1000000, $processor->getSteamPopularity($gameDataWithRecommendations));
 
         // Тест без рекомендаций
         $gameDataWithoutRecommendations = [];
-        $this->assertNull($processor->getOwnersCount($gameDataWithoutRecommendations));
+        $this->assertNull($processor->getSteamPopularity($gameDataWithoutRecommendations));
     }
 }

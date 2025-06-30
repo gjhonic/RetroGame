@@ -173,17 +173,17 @@ class SteamGameDataProcessor
         array &$existingGameNames = []
     ): Game {
         $recommendations = $gameData['recommendations']['total'] ?? null;
-        $ownersCount = null;
+        $steamPopularity = null;
 
         if ($recommendations !== null) {
-            $ownersCount = (int) $recommendations;
+            $steamPopularity = (int) $recommendations;
         }
 
         $game = new Game();
         $game->setName($gameName);
         $game->setDescription($gameData['short_description']);
         $game->setIsFree(!empty($gameData['is_free']));
-        $game->setOwnersCount($ownersCount);
+        $game->setSteamPopularity($steamPopularity);
 
         // Сохраняем изображение
         $this->saveGameImage($game, $gameData, $output);
@@ -362,17 +362,17 @@ class SteamGameDataProcessor
     }
 
     /**
-     * Получает количество владельцев из данных Steam
+     * Получает популярность игры из данных Steam
      *
-     * @param array<mixed> $gameData
+     * @param array<string, mixed> $gameData
      * @return int|null
      */
-    public function getOwnersCount(array $gameData): ?int
+    public function getSteamPopularity(array $gameData): ?int
     {
-        $recommendations = $gameData['recommendations']['total'] ?? null;
+        $steamPopularity = $gameData['recommendations']['total'] ?? null;
 
-        if ($recommendations !== null) {
-            return (int) $recommendations;
+        if ($steamPopularity !== null) {
+            return (int) $steamPopularity;
         }
 
         return null;
