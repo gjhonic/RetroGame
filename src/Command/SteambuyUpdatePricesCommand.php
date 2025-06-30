@@ -111,7 +111,7 @@ class SteambuyUpdatePricesCommand extends Command
                 if (
                     preg_match_all(
                         '#<div class="product-about__option-unit">\s*<div' .
-                        ' class="product-about__option-label"(?:[^>]*)>(.*?)</div>\s*<div ' .
+                        ' class="product-about__option-label"(?:[^>]*)>(.*?)</div>\s*<div' .
                         ' class="product-about__option-value(?:\s+([\w\-]+))?">(.*?)</div>\s*</div>#su',
                         $html,
                         $matches,
