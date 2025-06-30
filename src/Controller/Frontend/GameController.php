@@ -76,9 +76,6 @@ class GameController extends AbstractController
                 'name' => $shop->getName(),
                 'priceDates' => [],
                 'priceValues' => [],
-                'maxPrice' => 0,
-                'minPrice' => 0,
-                'avgPrice' => 0,
             ];
 
             // Собираем данные по датам и ценам
@@ -89,7 +86,9 @@ class GameController extends AbstractController
 
             $gameChart['maxPrice'] = max($gameChart['priceValues']);
             $gameChart['minPrice'] = min($gameChart['priceValues']);
-            $gameChart['avgPrice'] = array_sum($gameChart['priceValues']) / count($gameChart['priceValues']);
+            $gameChart['avgPrice'] = round(
+                array_sum($gameChart['priceValues']) / count($gameChart['priceValues']),
+                2);
 
             $gameCharts[] = $gameChart;
 
