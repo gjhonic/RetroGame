@@ -27,10 +27,8 @@
 
 ### Технологический стек
 - **Backend**: PHP 8.1+, Symfony 6.2
-- **Database**: MySQL/PostgreSQL с Doctrine ORM
+- **Database**: MySQL с Doctrine ORM
 - **Frontend**: Twig templates, Bootstrap 5
-- **API**: RESTful API для интеграции с магазинами
-- **Queue**: Symfony Messenger для фоновых задач
 
 ### Структура проекта
 ```
@@ -53,8 +51,7 @@ RetroGame/
 ### Требования
 - PHP 8.1 или выше
 - Composer
-- MySQL 8.0+ или PostgreSQL 13+
-- Node.js 16+ (для сборки assets)
+- MySQL 8.0+
 
 ### Установка
 
@@ -101,10 +98,14 @@ php bin/console app:steambuy-get-games
 # Импорт игр из Steampay
 php bin/console app:steampay-get-games
 
+# Импорт игр из Steamkey
+php bin/console app:steamkey-get-games
+
 # Обновление цен
 php bin/console app:steam-update-prices
 php bin/console app:steambuy-update-prices
 php bin/console app:steampay-update-prices
+php bin/console app:steamkey-update-prices
 ```
 
 ## 📊 Модели данных
@@ -121,6 +122,7 @@ php bin/console app:steampay-update-prices
 - **SteamApp** - Данные из Steam API
 - **SteambuyApp** - Данные из Steambuy
 - **SteampayApp** - Данные из Steampay
+- **SteamkeyApp** - Данные из Steamkey
 
 ## 🔧 Конфигурация
 
@@ -131,15 +133,8 @@ DATABASE_URL="mysql://user:password@localhost/retrogame"
 
 # Настройки приложения
 APP_ENV=prod
-APP_SECRET=your_app_secret
 ```
 
-### Настройка магазинов
-В административной панели можно настроить:
-- Список магазинов
-- API ключи и endpoints
-- Частоту обновления цен
-- Фильтры для импорта игр
 
 ## 🧪 Тестирование
 
@@ -148,25 +143,11 @@ APP_SECRET=your_app_secret
 php bin/phpunit
 
 # Статический анализ кода
-php bin/console phpstan:analyse
+make test-phpstan
 
 # Проверка стиля кода
-php bin/console php-cs-fixer:fix
+make test-phpcs
 ```
-
-## 📈 Мониторинг и аналитика
-
-### Метрики производительности
-- Время ответа API
-- Количество импортированных игр
-- Частота обновления цен
-- Статистика пользователей
-
-### Логирование
-- Логи импорта данных
-- Ошибки API запросов
-- Действия пользователей
-- Системные события
 
 ## 🤝 Разработка
 
@@ -182,21 +163,6 @@ php bin/console php-cs-fixer:fix
 - Автоматические тесты в CI/CD
 - Семантическое версионирование
 
-### Команды для разработки
-```bash
-# Создание новой сущности
-php bin/console make:entity
-
-# Создание миграции
-php bin/console make:migration
-
-# Создание контроллера
-php bin/console make:controller
-
-# Очистка кэша
-php bin/console cache:clear
-```
-
 ## 📝 Лицензия
 
 Этот проект является проприетарным программным обеспечением. Все права защищены.
@@ -205,12 +171,6 @@ php bin/console cache:clear
 
 - **Разработчик**: [Gjhonic](https://github.com/gjhonic)
 - **Технологии**: PHP, Symfony, Doctrine, MySQL
-
-## 📞 Поддержка
-
-Если у вас есть вопросы или предложения:
-- Создайте Issue в GitHub
-- Напишите на email: [ваш-email@example.com]
 
 ---
 
