@@ -92,7 +92,7 @@ class SteambuyGetGamesCommand extends Command
                     $output->writeln("🔄 <info>Найдена существующая запись SteambuyApp, обновляем.</info>");
                 }
 
-                $steambuyApp->setCheckedAt(new \DateTimeImmutable());
+                $steambuyApp->setCreatedAt(new \DateTimeImmutable());
 
 
                 if (

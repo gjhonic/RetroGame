@@ -6,6 +6,7 @@ use App\Repository\SteampayAppRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: SteampayAppRepository::class)]
+#[ORM\Table(name: 'steampay_apps')]
 class SteampayApp
 {
     #[ORM\Id]
@@ -23,7 +24,7 @@ class SteampayApp
     private ?string $rawHtml = null;
 
     #[ORM\Column]
-    private \DateTimeImmutable $checkedAt;
+    private \DateTimeImmutable $createdAt;
 
     public function getId(): ?int
     {
@@ -63,14 +64,14 @@ class SteampayApp
         return $this;
     }
 
-    public function getCheckedAt(): \DateTimeImmutable
+    public function getCreatedAt(): \DateTimeImmutable
     {
-        return $this->checkedAt;
+        return $this->createdAt;
     }
 
-    public function setCheckedAt(\DateTimeImmutable $checkedAt): static
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
-        $this->checkedAt = $checkedAt;
+        $this->createdAt = $createdAt;
         return $this;
     }
 }

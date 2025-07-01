@@ -92,7 +92,7 @@ class SteampayGetGamesCommand extends Command
                     $output->writeln("🔄 <info>Найдена существующая запись SteampayApp, обновляем.</info>");
                 }
 
-                $SteampayApp->setCheckedAt(new \DateTimeImmutable());
+                $SteampayApp->setCreatedAt(new \DateTimeImmutable());
 
                 if (
                     str_contains($content, 'Ошибка! Страница не найдена') ||

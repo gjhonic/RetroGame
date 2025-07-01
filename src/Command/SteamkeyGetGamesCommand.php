@@ -92,7 +92,7 @@ class SteamkeyGetGamesCommand extends Command
                     $output->writeln("🔄 <info>Найдена существующая запись SteamkeyApp, обновляем.</info>");
                 }
 
-                $SteamkeyApp->setCheckedAt(new \DateTimeImmutable());
+                $SteamkeyApp->setCreatedAt(new \DateTimeImmutable());
 
                 if (
                     str_contains($content, 'Данной страницы не существует') ||
