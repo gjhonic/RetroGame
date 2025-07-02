@@ -10,10 +10,10 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * Сущность жанра игры
- * 
+ *
  * Представляет жанр игры (например: Action, RPG, Strategy и т.д.).
  * Связан с играми через связь ManyToMany.
- * 
+ *
  * @ORM\Entity(repositoryClass=GenreRepository::class)
  * @ORM\Table(name="genres")
  */
@@ -23,7 +23,7 @@ class Genre
 {
     /**
      * Уникальный идентификатор жанра
-     * 
+     *
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
@@ -35,7 +35,7 @@ class Genre
 
     /**
      * Название жанра (уникальное)
-     * 
+     *
      * @ORM\Column(length=255, unique=true)
      */
     #[ORM\Column(length: 255, unique: true)]
@@ -43,7 +43,7 @@ class Genre
 
     /**
      * Название жанра на русском языке
-     * 
+     *
      * @ORM\Column(length=255, nullable=true)
      */
     #[ORM\Column(length: 255, nullable: true)]
@@ -51,7 +51,7 @@ class Genre
 
     /**
      * Описание жанра
-     * 
+     *
      * @ORM\Column(type="text", nullable=true)
      */
     #[ORM\Column(type: 'text', nullable: true)]
@@ -59,9 +59,9 @@ class Genre
 
     /**
      * Дата и время создания записи жанра
-     * 
+     *
      * Автоматически устанавливается при создании нового жанра
-     * 
+     *
      * @ORM\Column(type=Types::DATETIME_MUTABLE)
      */
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
@@ -69,9 +69,9 @@ class Genre
 
     /**
      * Дата и время последнего обновления записи жанра
-     * 
+     *
      * Автоматически обновляется при каждом изменении данных жанра
-     * 
+     *
      * @ORM\Column(type=Types::DATETIME_MUTABLE)
      */
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
@@ -79,7 +79,7 @@ class Genre
 
     /**
      * Коллекция игр данного жанра
-     * 
+     *
      * @var Collection<int, Game>
      * @ORM\ManyToMany(targetEntity=Game::class, mappedBy="genre")
      */
@@ -88,7 +88,7 @@ class Genre
 
     /**
      * Конструктор сущности
-     * 
+     *
      * Инициализирует коллекцию игр и поля дат создания и обновления
      */
     public function __construct()
@@ -100,7 +100,7 @@ class Genre
 
     /**
      * Получить ID жанра
-     * 
+     *
      * @return int|null Уникальный идентификатор жанра
      */
     public function getId(): ?int
@@ -110,7 +110,7 @@ class Genre
 
     /**
      * Получить название жанра
-     * 
+     *
      * @return string Название жанра
      */
     public function getName(): string
@@ -120,7 +120,7 @@ class Genre
 
     /**
      * Установить название жанра
-     * 
+     *
      * @param string $name Название жанра
      * @return self
      */
@@ -132,7 +132,7 @@ class Genre
 
     /**
      * Получить название жанра на русском языке
-     * 
+     *
      * @return string|null Название жанра на русском
      */
     public function getNameRussia(): ?string
@@ -142,7 +142,7 @@ class Genre
 
     /**
      * Установить название жанра на русском языке
-     * 
+     *
      * @param string|null $nameRussia Название жанра на русском
      * @return self
      */
@@ -154,7 +154,7 @@ class Genre
 
     /**
      * Получить описание жанра
-     * 
+     *
      * @return string|null Описание жанра
      */
     public function getDescription(): ?string
@@ -164,7 +164,7 @@ class Genre
 
     /**
      * Установить описание жанра
-     * 
+     *
      * @param string|null $description Описание жанра
      * @return self
      */
@@ -176,7 +176,7 @@ class Genre
 
     /**
      * Строковое представление жанра
-     * 
+     *
      * @return string Название жанра
      */
     public function __toString(): string
@@ -186,7 +186,7 @@ class Genre
 
     /**
      * Получить коллекцию игр данного жанра
-     * 
+     *
      * @return Collection<int, Game> Коллекция игр
      */
     public function getGames(): Collection
@@ -196,7 +196,7 @@ class Genre
 
     /**
      * Добавить игру к жанру
-     * 
+     *
      * @param Game $game Игра для добавления
      * @return static
      */
@@ -212,7 +212,7 @@ class Genre
 
     /**
      * Удалить игру из жанра
-     * 
+     *
      * @param Game $game Игра для удаления
      * @return static
      */
@@ -227,7 +227,7 @@ class Genre
 
     /**
      * Получить дату создания записи жанра
-     * 
+     *
      * @return \DateTimeInterface|null Дата и время создания
      */
     public function getCreatedAt(): ?\DateTimeInterface
@@ -237,7 +237,7 @@ class Genre
 
     /**
      * Установить дату создания записи жанра
-     * 
+     *
      * @param \DateTimeInterface $createdAt Дата и время создания
      * @return static
      */
@@ -249,7 +249,7 @@ class Genre
 
     /**
      * Получить дату последнего обновления записи жанра
-     * 
+     *
      * @return \DateTimeInterface|null Дата и время последнего обновления
      */
     public function getUpdatedAt(): ?\DateTimeInterface
@@ -259,7 +259,7 @@ class Genre
 
     /**
      * Установить дату последнего обновления записи жанра
-     * 
+     *
      * @param \DateTimeInterface $updatedAt Дата и время обновления
      * @return static
      */
@@ -271,9 +271,9 @@ class Genre
 
     /**
      * Автоматически обновить дату изменения записи
-     * 
+     *
      * Вызывается Doctrine перед каждым обновлением записи
-     * 
+     *
      * @ORM\PreUpdate
      */
     #[ORM\PreUpdate]

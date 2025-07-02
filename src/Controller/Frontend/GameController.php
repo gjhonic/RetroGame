@@ -88,7 +88,8 @@ class GameController extends AbstractController
             $gameChart['minPrice'] = min($gameChart['priceValues']);
             $gameChart['avgPrice'] = round(
                 array_sum($gameChart['priceValues']) / count($gameChart['priceValues']),
-                2);
+                2
+            );
 
             $gameCharts[] = $gameChart;
 
