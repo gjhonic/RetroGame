@@ -77,7 +77,7 @@ class SteamUpdatePricesCommand extends Command
 
             if ($game && $game->isFree()) {
                 $output->writeln(
-                    "⏩ <comment>" .
+                    '⏩ <comment>' .
                      "[{$gameShop->getLinkGameId()}] {$gameShop->getName()} — Бесплатная игра, пропускаем.</comment>"
                 );
                 continue;
@@ -85,9 +85,9 @@ class SteamUpdatePricesCommand extends Command
 
             if (in_array($gameShop->getId(), $alreadyUpdatedIds)) {
                 $output->writeln(
-                    "🔄 <comment>" .
+                    '🔄 <comment>' .
                     "[{$gameShop->getLinkGameId()}] {$gameShop->getName()} — Цена уже есть на сегодня, пропускаем." .
-                        "</comment>"
+                        '</comment>'
                 );
                 continue;
             }
@@ -103,10 +103,10 @@ class SteamUpdatePricesCommand extends Command
                 $response = $this->httpClient->request('GET', $url, [
                     'headers' => [
                         'User-Agent' => 'Mozilla/5.0',
-                    ]
+                    ],
                 ]);
 
-                $checked++;
+                ++$checked;
 
                 $html = $response->getContent();
 
@@ -130,7 +130,7 @@ class SteamUpdatePricesCommand extends Command
                 // 2. Проверка валюты
                 if (!str_contains($priceText, '₽') && !str_contains(mb_strtolower($priceText), 'руб')) {
                     $output->writeln(
-                        "🚫 <comment>" .
+                        '🚫 <comment>' .
                         "[{$appid}] Цена в неподдерживаемой валюте: {$priceText}. Пропускаем.</comment>"
                     );
                     continue;
@@ -150,7 +150,7 @@ class SteamUpdatePricesCommand extends Command
 
                     $this->entityManager->persist($history);
                     $output->writeln("✅ <info>[{$appid}] {$gameShop->getName()} — {$price} ₽</info>");
-                    $updated++;
+                    ++$updated;
                 } else {
                     $output->writeln("⚠️ <comment>[{$appid}] Цена равна 0, не сохраняем.</comment>");
                 }
@@ -165,7 +165,7 @@ class SteamUpdatePricesCommand extends Command
 
         $endTime = microtime(true);
         $duration = $endTime - $startTime;
-        $output->writeln(sprintf("⏱️ <info>Время выполнения: %.2f секунд</info>", $duration));
+        $output->writeln(sprintf('⏱️ <info>Время выполнения: %.2f секунд</info>', $duration));
 
         return Command::SUCCESS;
     }

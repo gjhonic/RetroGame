@@ -36,6 +36,7 @@ class SteampayUpdatePricesCommand extends Command
         $shop = $this->entityManager->getRepository(\App\Entity\Shop::class)->find(3);
         if (!$shop) {
             $output->writeln('<error>⛔ Магазин SteamPay (id=3) не найден</error>');
+
             return Command::FAILURE;
         }
 
@@ -83,9 +84,9 @@ class SteampayUpdatePricesCommand extends Command
 
             if (in_array($gameShop->getId(), $alreadyUpdatedIds)) {
                 $output->writeln(
-                    "🔄 <comment> " .
+                    '🔄 <comment> ' .
                     "[{$gameShop->getLinkGameId()}] {$gameShop->getName()} — Цена уже есть на сегодня, пропускаем." .
-                    "</comment>"
+                    '</comment>'
                 );
                 continue;
             }
@@ -97,11 +98,11 @@ class SteampayUpdatePricesCommand extends Command
                 $response = $this->httpClient->request('GET', $url, [
                     'headers' => [
                         'User-Agent' => 'Mozilla/5.0',
-                    ]
+                    ],
                 ]);
                 $duration = round(microtime(true) - $start, 2);
 
-                $checked++;
+                ++$checked;
 
                 $html = $response->getContent();
 
@@ -136,13 +137,13 @@ class SteampayUpdatePricesCommand extends Command
                     $priceText = preg_replace('/\s+/', ' ', $priceBlock); // убираем лишние пробелы
 
                     // Удаляем 'руб.' или 'руб' (на всякий случай)
-                    $priceText = preg_replace('/руб\.?/ui', '', (string)$priceText);
-                    $priceText = trim((string)$priceText);
+                    $priceText = preg_replace('/руб\.?/ui', '', (string) $priceText);
+                    $priceText = trim((string) $priceText);
 
-                    if (mb_strtolower($priceText) === 'скоро') {
+                    if ('скоро' === mb_strtolower($priceText)) {
                         $output->writeln(
-                            "ℹ️ <comment> " .
-                            "Товар временно отсутствует (Скоро), пропускаем, импорт оставлен включённым.</comment>"
+                            'ℹ️ <comment> ' .
+                            'Товар временно отсутствует (Скоро), пропускаем, импорт оставлен включённым.</comment>'
                         );
                     } elseif (preg_match('/^\d[\d\s]*$/u', $priceText)) {
                         $priceClean = str_replace(' ', '', $priceText);
@@ -156,24 +157,24 @@ class SteampayUpdatePricesCommand extends Command
 
                             $this->entityManager->persist($history);
                             $output->writeln("✅ <info>Цена {$price} ₽ получена за {$duration} сек.</info>");
-                            $updated++;
+                            ++$updated;
                         } else {
-                            $output->writeln("⚠️ <comment>Цена равна 0, не сохраняем.</comment>");
+                            $output->writeln('⚠️ <comment>Цена равна 0, не сохраняем.</comment>');
                         }
                     } else {
-                        $output->writeln("❌ <comment> " .
+                        $output->writeln('❌ <comment> ' .
                             "Неизвестный формат цены: '{$priceText}', отключаем импорт для игры.</comment>");
                         $gameShop->setShouldImportPrice(false);
                         $this->entityManager->persist($gameShop);
                     }
                 } else {
-                    $output->writeln("❌ <comment>Цена не найдена, отключаем импорт для игры.</comment>");
+                    $output->writeln('❌ <comment>Цена не найдена, отключаем импорт для игры.</comment>');
                     $gameShop->setShouldImportPrice(false);
                     $this->entityManager->persist($gameShop);
                 }
             } catch (\Throwable $e) {
-                if ($e->getCode() == 404) {
-                    $output->writeln("❌ <comment>Цена не найдена, отключаем импорт для игры.</comment>");
+                if (404 == $e->getCode()) {
+                    $output->writeln('❌ <comment>Цена не найдена, отключаем импорт для игры.</comment>');
                     $gameShop->setShouldImportPrice(false);
                     $this->entityManager->persist($gameShop);
                 } else {
@@ -189,23 +190,19 @@ class SteampayUpdatePricesCommand extends Command
         return Command::SUCCESS;
     }
 
-    /**
-     * @param string $value
-     * @return string
-     */
     public function getMapTypePrice(string $value): string
     {
         switch ($value) {
             case 'мало':
-                return "warning";
+                return 'warning';
             case 'много':
-                return "success";
+                return 'success';
             case 'Достаточно':
-                return "primary";
+                return 'primary';
             case 'закончился':
-                return "danger";
+                return 'danger';
             case 'ожидается':
-                return "danger";
+                return 'danger';
         }
 
         return 'dark';

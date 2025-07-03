@@ -35,22 +35,22 @@ class SteamGameDataProcessorTest extends TestCase
                     'short_description' => 'Counter-Strike 2 is the largest technical leap forward.',
                     'genres' => [
                         ['description' => 'Action'],
-                        ['description' => 'FPS']
+                        ['description' => 'FPS'],
                     ],
                     'price_overview' => [
                         'final' => 0,
-                        'currency' => 'RUB'
+                        'currency' => 'RUB',
                     ],
                     'is_free' => true,
                     'header_image' => 'https://example.com/image.jpg',
                     'release_date' => [
-                        'date' => '2023-09-27'
+                        'date' => '2023-09-27',
                     ],
                     'recommendations' => [
-                        'total' => 1000000
-                    ]
-                ]
-            ]
+                        'total' => 1000000,
+                    ],
+                ],
+            ],
         ];
 
         // Мокаем репозитории
@@ -63,7 +63,7 @@ class SteamGameDataProcessorTest extends TestCase
             ->willReturnMap([
                 [Shop::class, $shopRepository],
                 [Game::class, $gameRepository],
-                [Genre::class, $genreRepository]
+                [Genre::class, $genreRepository],
             ]);
 
         // Магазин Steam существует
@@ -103,8 +103,8 @@ class SteamGameDataProcessorTest extends TestCase
         $detailsData = [
             '730' => [
                 'success' => false,
-                'data' => null
-            ]
+                'data' => null,
+            ],
         ];
 
         // Создаем переменные для массивов, передаваемых по ссылке
@@ -134,9 +134,9 @@ class SteamGameDataProcessorTest extends TestCase
                     'name' => 'Some DLC',
                     'short_description' => 'Some description',
                     'genres' => [],
-                    'price_overview' => null
-                ]
-            ]
+                    'price_overview' => null,
+                ],
+            ],
         ];
 
         // Мокаем репозиторий магазина
@@ -179,9 +179,9 @@ class SteamGameDataProcessorTest extends TestCase
                     'price_overview' => ['final' => 0],
                     'is_free' => true,
                     'release_date' => ['date' => '2023-09-27'],
-                    'recommendations' => ['total' => 1000000]
-                ]
-            ]
+                    'recommendations' => ['total' => 1000000],
+                ],
+            ],
         ];
 
         // Мокаем репозиторий магазина
@@ -219,7 +219,7 @@ class SteamGameDataProcessorTest extends TestCase
             'type' => 'game',
             'short_description' => 'Description',
             'genres' => [['description' => 'Action']],
-            'price_overview' => ['final' => 0]
+            'price_overview' => ['final' => 0],
         ];
         $this->assertTrue($processor->isGame($validGameData));
 
@@ -228,7 +228,7 @@ class SteamGameDataProcessorTest extends TestCase
             'type' => 'dlc',
             'short_description' => 'Description',
             'genres' => [],
-            'price_overview' => null
+            'price_overview' => null,
         ];
         $this->assertFalse($processor->isGame($invalidGameData));
     }
@@ -239,7 +239,7 @@ class SteamGameDataProcessorTest extends TestCase
 
         // Тест с рекомендациями
         $gameDataWithRecommendations = [
-            'recommendations' => ['total' => 1000000]
+            'recommendations' => ['total' => 1000000],
         ];
         $this->assertEquals(1000000, $processor->getSteamPopularity($gameDataWithRecommendations));
 

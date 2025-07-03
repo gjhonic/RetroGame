@@ -39,6 +39,7 @@ class SteampayApp
     public function setSlug(string $slug): static
     {
         $this->slug = $slug;
+
         return $this;
     }
 
@@ -50,6 +51,7 @@ class SteampayApp
     public function setNotFound(bool $notFound): static
     {
         $this->notFound = $notFound;
+
         return $this;
     }
 
@@ -61,6 +63,7 @@ class SteampayApp
     public function setRawHtml(?string $rawHtml): static
     {
         $this->rawHtml = $rawHtml;
+
         return $this;
     }
 
@@ -72,6 +75,7 @@ class SteampayApp
     public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
+
         return $this;
     }
 }

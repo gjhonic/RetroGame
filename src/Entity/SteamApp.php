@@ -6,11 +6,12 @@ use App\Repository\SteamAppRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * Сущность приложения Steam
+ * Сущность приложения Steam.
  *
  * Представляет приложение (игру, DLC и т.д.) из Steam.
  *
  * @ORM\Entity(repositoryClass=SteamAppRepository::class)
+ *
  * @ORM\Table(name="steam_apps")
  */
 #[ORM\Entity(repositoryClass: SteamAppRepository::class)]
@@ -21,7 +22,9 @@ class SteamApp
      * Уникальный идентификатор
      *
      * @ORM\Id
+     *
      * @ORM\GeneratedValue
+     *
      * @ORM\Column
      */
     #[ORM\Id]
@@ -30,7 +33,7 @@ class SteamApp
     private ?int $id = null;
 
     /**
-     * ID приложения в Steam
+     * ID приложения в Steam.
      *
      * @ORM\Column
      */
@@ -38,7 +41,7 @@ class SteamApp
     private ?int $app_id = null;
 
     /**
-     * Тип приложения (например, "game", "dlc")
+     * Тип приложения (например, "game", "dlc").
      *
      * @ORM\Column(length=50)
      */
@@ -46,7 +49,7 @@ class SteamApp
     private ?string $type = null;
 
     /**
-     * Сырые данные, полученные от Steam API
+     * Сырые данные, полученные от Steam API.
      *
      * @ORM\Column(type="text", nullable=true)
      */
@@ -54,7 +57,7 @@ class SteamApp
     private ?string $rawData = null;
 
     /**
-     * Дата и время создания записи
+     * Дата и время создания записи.
      *
      * @ORM\Column
      */
@@ -62,7 +65,7 @@ class SteamApp
     private ?\DateTimeImmutable $createdAt = null;
 
     /**
-     * Конструктор сущности
+     * Конструктор сущности.
      *
      * Инициализирует дату создания
      */
@@ -72,7 +75,7 @@ class SteamApp
     }
 
     /**
-     * Получить ID
+     * Получить ID.
      *
      * @return int|null Уникальный идентификатор
      */
@@ -82,7 +85,7 @@ class SteamApp
     }
 
     /**
-     * Получить ID приложения Steam
+     * Получить ID приложения Steam.
      *
      * @return int|null ID приложения в Steam
      */
@@ -92,10 +95,9 @@ class SteamApp
     }
 
     /**
-     * Установить ID приложения Steam
+     * Установить ID приложения Steam.
      *
      * @param int $app_id ID приложения в Steam
-     * @return static
      */
     public function setAppId(int $app_id): static
     {
@@ -105,7 +107,7 @@ class SteamApp
     }
 
     /**
-     * Получить тип приложения
+     * Получить тип приложения.
      *
      * @return string|null Тип приложения
      */
@@ -115,19 +117,19 @@ class SteamApp
     }
 
     /**
-     * Установить тип приложения
+     * Установить тип приложения.
      *
      * @param string $type Тип приложения
-     * @return static
      */
     public function setType(string $type): static
     {
         $this->type = $type;
+
         return $this;
     }
 
     /**
-     * Получить сырые данные
+     * Получить сырые данные.
      *
      * @return string|null Сырые данные в формате JSON
      */
@@ -137,19 +139,19 @@ class SteamApp
     }
 
     /**
-     * Установить сырые данные
+     * Установить сырые данные.
      *
      * @param string|null $rawData Сырые данные в формате JSON
-     * @return static
      */
     public function setRawData(?string $rawData): static
     {
         $this->rawData = $rawData;
+
         return $this;
     }
 
     /**
-     * Получить дату создания
+     * Получить дату создания.
      *
      * @return \DateTimeImmutable|null Дата и время создания
      */
@@ -159,10 +161,9 @@ class SteamApp
     }
 
     /**
-     * Установить дату создания
+     * Установить дату создания.
      *
      * @param \DateTimeImmutable $createdAt Дата и время создания
-     * @return static
      */
     public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {

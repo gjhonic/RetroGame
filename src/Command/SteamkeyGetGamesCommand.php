@@ -34,6 +34,7 @@ class SteamkeyGetGamesCommand extends Command
 
         if (!$shop) {
             $output->writeln('<error>⛔ Магазин с ID 3 не найден</error>');
+
             return Command::FAILURE;
         }
 
@@ -50,7 +51,7 @@ class SteamkeyGetGamesCommand extends Command
                 break;
             }
 
-            $slug = SlugifyProcessor::process((string)$game->getName());
+            $slug = SlugifyProcessor::process((string) $game->getName());
             $url = "https://steamkey.com/{$slug}/";
 
             $output->writeln("🎮 <info>Обрабатываем игру: '{$game->getName()}', slug: $slug</info>");
@@ -62,7 +63,7 @@ class SteamkeyGetGamesCommand extends Command
             ]);
 
             if ($existingShop) {
-                $skippedExistingShop++;
+                ++$skippedExistingShop;
                 continue;
             }
 
@@ -72,8 +73,8 @@ class SteamkeyGetGamesCommand extends Command
             ]);
 
             if ($SteamkeyApp && $SteamkeyApp->isNotFound()) {
-                $output->writeln("⏩ <comment>Ранее отмечено как 404 (не найдено). Пропускаем.</comment>");
-                $skippedNotFound++;
+                $output->writeln('⏩ <comment>Ранее отмечено как 404 (не найдено). Пропускаем.</comment>');
+                ++$skippedNotFound;
                 continue;
             }
 
@@ -87,23 +88,23 @@ class SteamkeyGetGamesCommand extends Command
                 if (!$SteamkeyApp) {
                     $SteamkeyApp = new SteamkeyApp();
                     $SteamkeyApp->setSlug($slug);
-                    $output->writeln("🆕 <info>Создана новая запись SteamkeyApp для slug.</info>");
+                    $output->writeln('🆕 <info>Создана новая запись SteamkeyApp для slug.</info>');
                 } else {
-                    $output->writeln("🔄 <info>Найдена существующая запись SteamkeyApp, обновляем.</info>");
+                    $output->writeln('🔄 <info>Найдена существующая запись SteamkeyApp, обновляем.</info>');
                 }
 
                 $SteamkeyApp->setCreatedAt(new \DateTimeImmutable());
 
                 if (
-                    str_contains($content, 'Данной страницы не существует') ||
-                    preg_match(
+                    str_contains($content, 'Данной страницы не существует')
+                    || preg_match(
                         '/<h1\s+class="page-header__title">\s*Данной страницы не существует\s*<\/h1>/i',
                         $content
                     )
                 ) {
                     $SteamkeyApp->setNotFound(true);
                     $SteamkeyApp->setRawHtml(null);
-                    $output->writeln("❌ <comment>Страница вернула 404. Отмечаем как не найдено.</comment>");
+                    $output->writeln('❌ <comment>Страница вернула 404. Отмечаем как не найдено.</comment>');
                 } else {
                     $SteamkeyApp->setNotFound(false);
                     $SteamkeyApp->setRawHtml(null);
@@ -111,7 +112,7 @@ class SteamkeyGetGamesCommand extends Command
                     $gameShop = new GameShop();
                     $gameShop->setGame($game);
                     $gameShop->setShop($shop);
-                    $gameShop->setName((string)$game->getName());
+                    $gameShop->setName((string) $game->getName());
                     $gameShop->setLink($url);
                     $gameShop->setShouldImportPrice(true);
                     $gameShop->setExternalKey($slug);
@@ -120,20 +121,20 @@ class SteamkeyGetGamesCommand extends Command
                     $this->entityManager->persist($gameShop);
 
                     $output->writeln("✅ <info>GameShop создан и связан с игрой '{$game->getName()}'.</info>");
-                    $imported++;
+                    ++$imported;
                 }
 
                 $this->entityManager->persist($SteamkeyApp);
                 $this->entityManager->flush();
             } catch (\Throwable $e) {
-                $errorsCount++;
+                ++$errorsCount;
                 $output->writeln("<error>⛔ Ошибка при запросе $slug: {$e->getMessage()}</error>");
             }
         }
 
         $output->writeln('');
         $output->writeln('📊 <info>Итоги импорта:</info>');
-        $output->writeln(" - Всего игр обработано: " . count($games));
+        $output->writeln(' - Всего игр обработано: ' . count($games));
         $output->writeln(" - Связано/импортировано: $imported");
         $output->writeln(" - Пропущено (уже связано): $skippedExistingShop");
         $output->writeln(" - Пропущено (404 ранее): $skippedNotFound");

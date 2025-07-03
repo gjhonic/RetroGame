@@ -18,26 +18,25 @@ class SteamGameDataProcessor
 
     /**
      * Обрабатывает данные из Steam API и создает Game и GameShop
-     *  Возвращает true если игра была успешно обработана, false если пропущена
+     *  Возвращает true если игра была успешно обработана, false если пропущена.
      *
      * @param array<mixed> $detailsData
-     * @param OutputInterface|null $output
      * @param array<mixed> $existingGameNames
      * @param array<mixed> $existingGameShopIds
-     * @return bool
      */
     public function processGameData(
         array $detailsData,
         ?OutputInterface $output = null,
         array &$existingGameNames = [],
-        array $existingGameShopIds = []
+        array $existingGameShopIds = [],
     ): bool {
         // Извлекаем appId из данных
         $appId = $this->extractAppId($detailsData);
         if (!$appId) {
             if ($output) {
-                $output->writeln("<comment>⚠️ Не удалось извлечь appId из данных</comment>");
+                $output->writeln('<comment>⚠️ Не удалось извлечь appId из данных</comment>');
             }
+
             return false;
         }
 
@@ -48,10 +47,11 @@ class SteamGameDataProcessor
         if (!$success || empty($gameData)) {
             if ($output) {
                 $output->writeln(
-                    "<comment>" .
+                    '<comment>' .
                     "⚠️ Приложение {$appId} пустое или не удалось загрузить. Сохраняем как type=empty.</comment>"
                 );
             }
+
             return false;
         }
 
@@ -64,6 +64,7 @@ class SteamGameDataProcessor
             if ($output) {
                 $output->writeln("<comment>⏩ Приложение {$appId} не является игрой.</comment>");
             }
+
             return false;
         }
 
@@ -72,6 +73,7 @@ class SteamGameDataProcessor
             if ($output) {
                 $output->writeln("<comment>⏩ Приложение {$appId} уже связано с GameShop.</comment>");
             }
+
             return false;
         }
 
@@ -79,8 +81,9 @@ class SteamGameDataProcessor
         $shop = $this->getSteamShop();
         if (!$shop) {
             if ($output) {
-                $output->writeln("<error>⛔ Магазин Steam (id=1) не найден в базе данных.</error>");
+                $output->writeln('<error>⛔ Магазин Steam (id=1) не найден в базе данных.</error>');
             }
+
             return false;
         }
 
@@ -90,6 +93,7 @@ class SteamGameDataProcessor
             if ($output) {
                 $output->writeln("<comment>⚠️ Не удалось извлечь имя игры для appId {$appId}</comment>");
             }
+
             return false;
         }
 
@@ -124,31 +128,31 @@ class SteamGameDataProcessor
     }
 
     /**
-     * Извлекает appId из данных Steam API
+     * Извлекает appId из данных Steam API.
      *
      * @param array<mixed> $detailsData
-     * @return int|null
      */
     private function extractAppId(array $detailsData): ?int
     {
         $keys = array_keys($detailsData);
+
         return !empty($keys) ? (int) $keys[0] : null;
     }
 
     /**
-     * Извлекает имя игры из данных
+     * Извлекает имя игры из данных.
      *
      * @param array<mixed> $gameData
-     * @return string|null
      */
     private function extractGameName(array $gameData): ?string
     {
         $name = $gameData['name'] ?? null;
+
         return $name ? trim($name) : null;
     }
 
     /**
-     * Получает магазин Steam из базы данных
+     * Получает магазин Steam из базы данных.
      */
     private function getSteamShop(): ?Shop
     {
@@ -158,24 +162,21 @@ class SteamGameDataProcessor
     }
 
     /**
-     * Создает новую игру на основе данных из Steam API
+     * Создает новую игру на основе данных из Steam API.
      *
      * @param array<mixed> $gameData
-     * @param string $gameName
-     * @param OutputInterface|null $output
      * @param array<mixed> $existingGameNames
-     * @return Game
      */
     private function createNewGame(
         array $gameData,
         string $gameName,
         ?OutputInterface $output,
-        array &$existingGameNames = []
+        array &$existingGameNames = [],
     ): Game {
         $recommendations = $gameData['recommendations']['total'] ?? null;
         $steamPopularity = null;
 
-        if ($recommendations !== null) {
+        if (null !== $recommendations) {
             $steamPopularity = (int) $recommendations;
         }
 
@@ -204,21 +205,14 @@ class SteamGameDataProcessor
     }
 
     /**
-     * Создает GameShop для игры
-     *
-     * @param Game $game
-     * @param Shop $shop
-     * @param int $appId
-     * @param string $gameName
-     * @param OutputInterface|null $output
-     * @return void
+     * Создает GameShop для игры.
      */
     private function createGameShop(
         Game $game,
         Shop $shop,
         int $appId,
         string $gameName,
-        ?OutputInterface $output
+        ?OutputInterface $output,
     ): void {
         $gameShop = new GameShop();
         $gameShop->setGame($game);
@@ -236,12 +230,9 @@ class SteamGameDataProcessor
     }
 
     /**
-     * Сохраняет изображение игры
+     * Сохраняет изображение игры.
      *
-     * @param Game $game
      * @param array<mixed> $gameData
-     * @param OutputInterface|null $output
-     * @return void
      */
     private function saveGameImage(Game $game, array $gameData, ?OutputInterface $output): void
     {
@@ -252,10 +243,11 @@ class SteamGameDataProcessor
 
         try {
             $imageContents = file_get_contents($imageUrl);
-            if ($imageContents === false) {
+            if (false === $imageContents) {
                 if ($output) {
-                    $output->writeln("<comment>⚠️ Не удалось загрузить изображение</comment>");
+                    $output->writeln('<comment>⚠️ Не удалось загрузить изображение</comment>');
                 }
+
                 return;
             }
 
@@ -266,7 +258,7 @@ class SteamGameDataProcessor
                 mkdir(dirname($savePath), 0777, true);
             }
 
-            if (file_put_contents($savePath, $imageContents) !== false) {
+            if (false !== file_put_contents($savePath, $imageContents)) {
                 $game->setImage('/uploads/games/' . $imageName);
                 if ($output) {
                     $output->writeln("🖼️ <info>Изображение сохранено: {$imageName}</info>");
@@ -280,11 +272,9 @@ class SteamGameDataProcessor
     }
 
     /**
-     * Устанавливает дату релиза игры
+     * Устанавливает дату релиза игры.
      *
-     * @param Game $game
      * @param array<mixed> $gameData
-     * @return void
      */
     private function setReleaseDate(Game $game, array $gameData): void
     {
@@ -297,12 +287,9 @@ class SteamGameDataProcessor
     }
 
     /**
-     * Обрабатывает жанры игры
+     * Обрабатывает жанры игры.
      *
-     * @param Game $game
      * @param array<mixed> $gameData
-     * @param OutputInterface|null $output
-     * @return void
      */
     private function processGenres(Game $game, array $gameData, ?OutputInterface $output): void
     {
@@ -348,30 +335,28 @@ class SteamGameDataProcessor
     }
 
     /**
-     * Проверяет, является ли приложение игрой
+     * Проверяет, является ли приложение игрой.
      *
      * @param array<mixed> $gameData
-     * @return bool
      */
     public function isGame(array $gameData): bool
     {
-        return ($gameData['type'] ?? '') === 'game' &&
-               !empty($gameData['short_description']) &&
-               !empty($gameData['genres']) &&
-               !empty($gameData['price_overview']);
+        return ($gameData['type'] ?? '') === 'game'
+               && !empty($gameData['short_description'])
+               && !empty($gameData['genres'])
+               && !empty($gameData['price_overview']);
     }
 
     /**
-     * Получает популярность игры из данных Steam
+     * Получает популярность игры из данных Steam.
      *
      * @param array<string, mixed> $gameData
-     * @return int|null
      */
     public function getSteamPopularity(array $gameData): ?int
     {
         $steamPopularity = $gameData['recommendations']['total'] ?? null;
 
-        if ($steamPopularity !== null) {
+        if (null !== $steamPopularity) {
             return (int) $steamPopularity;
         }
 

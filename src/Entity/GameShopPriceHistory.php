@@ -36,6 +36,7 @@ class GameShopPriceHistory
     public function setGameShop(?GameShop $gameShop): static
     {
         $this->gameShop = $gameShop;
+
         return $this;
     }
 
@@ -47,6 +48,7 @@ class GameShopPriceHistory
     public function setPrice(float $price): static
     {
         $this->price = $price;
+
         return $this;
     }
 
@@ -58,6 +60,7 @@ class GameShopPriceHistory
     public function setUpdatedAt(\DateTimeInterface $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
+
         return $this;
     }
 }

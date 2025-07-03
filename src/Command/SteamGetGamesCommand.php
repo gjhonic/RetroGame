@@ -37,6 +37,7 @@ class SteamGetGamesCommand extends Command
             $data = $response->toArray();
         } catch (\Throwable $e) {
             $output->writeln('<error>⛔ Не удалось получить список приложений: ' . $e->getMessage() . '</error>');
+
             return Command::FAILURE;
         }
 
@@ -104,22 +105,24 @@ class SteamGetGamesCommand extends Command
                 continue;
             }
 
-            if ($checked === 30) {
+            if (30 === $checked) {
                 $this->entityManager->flush();
-                $output->writeln("⏳ <info>Обработано 30 приложений, пауза 10 секунд...</info>");
+                $output->writeln('⏳ <info>Обработано 30 приложений, пауза 10 секунд...</info>');
 
                 usleep(random_int(7000000, 10000000));
                 $checked = 0;
             }
 
-            $checked++;
+            ++$checked;
 
             // Получаем подробную информацию
             try {
-                $detailsResponse = $this->httpClient->request(
-                    'GET',
-                    "https://store.steampowered.com/api/appdetails?appids={$appid}"
-                );
+                $detailsResponse = $this->httpClient->request('GET', 'https://store.steampowered.com/api/appdetails', [
+                    'query' => [
+                        'appids' => $appid,
+                        'l' => 'russian',
+                    ],
+                ]);
                 $detailsData = $detailsResponse->toArray();
             } catch (TransportExceptionInterface $e) {
                 $output->writeln("<comment>⚠️ HTTP-ошибка для {$appid}: {$e->getMessage()}</comment>");
@@ -129,14 +132,14 @@ class SteamGetGamesCommand extends Command
                 continue;
             }
 
-            $processedCount++;
+            ++$processedCount;
 
             usleep(random_int(1000000, 2000000));
 
             $steamApp = new SteamApp();
             $steamApp->setAppId($appid);
             $steamApp->setType($detailsData[$appid]['data']['type'] ?? 'empty');
-            $steamApp->setRawData((string)json_encode($detailsData, JSON_UNESCAPED_UNICODE));
+            $steamApp->setRawData((string) json_encode($detailsData, JSON_UNESCAPED_UNICODE));
             $this->entityManager->persist($steamApp);
             $this->entityManager->flush();
 
@@ -149,8 +152,8 @@ class SteamGetGamesCommand extends Command
             );
 
             if ($processed) {
-                $imported++;
-                if ($imported % $batchSize === 0) {
+                ++$imported;
+                if (0 === $imported % $batchSize) {
                     $this->entityManager->flush();
                     $output->writeln("📦 <info>Импортировано {$imported} игр на данный момент...</info>");
                 }

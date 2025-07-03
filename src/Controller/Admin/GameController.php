@@ -29,11 +29,6 @@ class GameController extends AbstractController
         $form = $this->createForm(GameType::class, $game);
         $form->handleRequest($request);
 
-        if ($this->getUser() != null) {
-            $game->setCreatedBy($this->getUser()->getUserIdentifier());
-            $game->setUpdatedBy($this->getUser()->getUserIdentifier());
-        }
-
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($game);
             $entityManager->flush();
@@ -61,10 +56,6 @@ class GameController extends AbstractController
         $form = $this->createForm(GameType::class, $game);
         $form->handleRequest($request);
 
-        if ($this->getUser() != null) {
-            $game->setUpdatedBy($this->getUser()->getUserIdentifier());
-        }
-
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
 
@@ -80,7 +71,7 @@ class GameController extends AbstractController
     #[Route('/{id}', name: 'admin_game_delete', methods: ['POST'])]
     public function delete(Request $request, Game $game, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete' . $game->getId(), (string)$request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . $game->getId(), (string) $request->request->get('_token'))) {
             $entityManager->remove($game);
             $entityManager->flush();
         }

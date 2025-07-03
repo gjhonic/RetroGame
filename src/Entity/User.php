@@ -7,12 +7,13 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
- * Сущность пользователя системы
+ * Сущность пользователя системы.
  *
  * Представляет пользователя в системе с поддержкой аутентификации и авторизации.
  * Реализует интерфейсы Symfony для работы с безопасностью.
  *
  * @ORM\Entity
+ *
  * @ORM\Table(name="users")
  */
 #[ORM\Entity]
@@ -20,10 +21,12 @@ use Symfony\Component\Security\Core\User\UserInterface;
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     /**
-     * Уникальный идентификатор пользователя
+     * Уникальный идентификатор пользователя.
      *
      * @ORM\Id
+     *
      * @ORM\GeneratedValue
+     *
      * @ORM\Column(type="integer")
      */
     #[ORM\Id]
@@ -32,7 +35,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     /**
-     * Email пользователя (уникальный)
+     * Email пользователя (уникальный).
      *
      * Используется как логин для входа в систему
      *
@@ -42,30 +45,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $email = null;
 
     /**
-     * Роли пользователя в системе
+     * Роли пользователя в системе.
      *
      * Хранится в формате JSON. По умолчанию каждый пользователь имеет ROLE_USER.
      * Пример: ["ROLE_USER", "ROLE_ADMIN"]
      *
      * @var array<string>
+     *
      * @ORM\Column(type="json")
      */
     #[ORM\Column(type: 'json')]
     private array $roles = [];
 
     /**
-     * Хешированный пароль пользователя
+     * Хешированный пароль пользователя.
      *
      * Пароль хранится в зашифрованном виде для безопасности
      *
-     * @var string
      * @ORM\Column(type="string")
      */
     #[ORM\Column(type: 'string')]
     private ?string $password = null;
 
     /**
-     * Дата и время создания записи пользователя
+     * Дата и время создания записи пользователя.
      *
      * Автоматически устанавливается при создании нового пользователя
      *
@@ -75,7 +78,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?\DateTimeInterface $createdAt = null;
 
     /**
-     * Дата и время последнего обновления записи пользователя
+     * Дата и время последнего обновления записи пользователя.
      *
      * Автоматически обновляется при каждом изменении данных пользователя
      *
@@ -85,7 +88,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?\DateTimeInterface $updatedAt = null;
 
     /**
-     * Конструктор сущности
+     * Конструктор сущности.
      *
      * Инициализирует поля дат создания и обновления текущим временем
      */
@@ -96,7 +99,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * Получить ID пользователя
+     * Получить ID пользователя.
      *
      * @return int|null Уникальный идентификатор пользователя
      */
@@ -106,7 +109,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * Получить email пользователя
+     * Получить email пользователя.
      *
      * @return string|null Email пользователя
      */
@@ -116,10 +119,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * Установить email пользователя
+     * Установить email пользователя.
      *
      * @param string $email Email пользователя
-     * @return self
      */
     public function setEmail(string $email): self
     {
@@ -129,7 +131,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * Получить уникальный идентификатор пользователя для аутентификации
+     * Получить уникальный идентификатор пользователя для аутентификации.
      *
      * Используется Symfony Security для идентификации пользователя
      *
@@ -141,9 +143,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * Получить имя пользователя (устаревший метод)
+     * Получить имя пользователя (устаревший метод).
      *
      * @deprecated since Symfony 5.3, use getUserIdentifier()
+     *
      * @return string Email пользователя
      */
     public function getUsername(): string
@@ -152,7 +155,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * Получить роли пользователя
+     * Получить роли пользователя.
      *
      * Гарантирует, что каждый пользователь имеет хотя бы ROLE_USER
      *
@@ -169,10 +172,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * Установить роли пользователя
+     * Установить роли пользователя.
      *
      * @param list<string> $roles Массив ролей для установки
-     * @return self
      */
     public function setRoles(array $roles): self
     {
@@ -182,7 +184,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * Получить хешированный пароль пользователя
+     * Получить хешированный пароль пользователя.
      *
      * @return string|null Хешированный пароль
      */
@@ -192,10 +194,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * Установить хешированный пароль пользователя
+     * Установить хешированный пароль пользователя.
      *
      * @param string $password Хешированный пароль
-     * @return self
      */
     public function setPassword(string $password): self
     {
@@ -205,7 +206,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * Очистить временные чувствительные данные пользователя
+     * Очистить временные чувствительные данные пользователя.
      *
      * Вызывается Symfony Security после аутентификации
      */
@@ -215,7 +216,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * Получить дату создания записи пользователя
+     * Получить дату создания записи пользователя.
      *
      * @return \DateTimeInterface|null Дата и время создания
      */
@@ -225,19 +226,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * Установить дату создания записи пользователя
+     * Установить дату создания записи пользователя.
      *
      * @param \DateTimeInterface $createdAt Дата и время создания
-     * @return self
      */
     public function setCreatedAt(\DateTimeInterface $createdAt): self
     {
         $this->createdAt = $createdAt;
+
         return $this;
     }
 
     /**
-     * Получить дату последнего обновления записи пользователя
+     * Получить дату последнего обновления записи пользователя.
      *
      * @return \DateTimeInterface|null Дата и время последнего обновления
      */
@@ -247,19 +248,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * Установить дату последнего обновления записи пользователя
+     * Установить дату последнего обновления записи пользователя.
      *
      * @param \DateTimeInterface $updatedAt Дата и время обновления
-     * @return self
      */
     public function setUpdatedAt(\DateTimeInterface $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
+
         return $this;
     }
 
     /**
-     * Автоматически обновить дату изменения записи
+     * Автоматически обновить дату изменения записи.
      *
      * Вызывается Doctrine перед каждым обновлением записи
      *

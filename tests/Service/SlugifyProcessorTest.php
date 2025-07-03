@@ -22,167 +22,167 @@ class SlugifyProcessorTest extends TestCase
             // Базовые тесты с кириллицей
             'кириллица в нижнем регистре' => [
                 'привет мир',
-                'privet-mir'
+                'privet-mir',
             ],
             'кириллица в верхнем регистре' => [
                 'ПРИВЕТ МИР',
-                'privet-mir'
+                'privet-mir',
             ],
             'смешанный регистр' => [
                 'Привет Мир',
-                'privet-mir'
+                'privet-mir',
             ],
 
             // Тесты с латиницей
             'латиница в нижнем регистре' => [
                 'hello world',
-                'hello-world'
+                'hello-world',
             ],
             'латиница в верхнем регистре' => [
                 'HELLO WORLD',
-                'hello-world'
+                'hello-world',
             ],
             'смешанная латиница' => [
                 'Hello World',
-                'hello-world'
+                'hello-world',
             ],
 
             // Тесты с цифрами
             'с цифрами' => [
                 'Game 2023',
-                'game-2023'
+                'game-2023',
             ],
             'только цифры' => [
                 '12345',
-                '12345'
+                '12345',
             ],
 
             // Тесты с специальными символами
             'с запятыми' => [
                 'привет, мир',
-                'privet-mir'
+                'privet-mir',
             ],
             'с точками' => [
                 'game.title',
-                'gametitle'
+                'gametitle',
             ],
             'с двоеточиями' => [
                 'game: title',
-                'game-title'
+                'game-title',
             ],
             'с дефисами' => [
                 'game-title',
-                'game-title'
+                'game-title',
             ],
             'с множественными дефисами' => [
                 'game--title',
-                'game-title'
+                'game-title',
             ],
             'с дефисами в начале и конце' => [
                 '-game-title-',
-                'game-title'
+                'game-title',
             ],
 
             // Тесты с различными символами
             'с апострофами' => [
                 "game's title",
-                'games-title'
+                'games-title',
             ],
             'с кавычками' => [
                 '"game title"',
-                'game-title'
+                'game-title',
             ],
             'с слешами' => [
                 'game/title',
-                'game-title'
+                'game-title',
             ],
             'с тире' => [
                 'game–title',
-                'game-title'
+                'game-title',
             ],
             'с длинным тире' => [
                 'game—title',
-                'game-title'
+                'game-title',
             ],
 
             // Сложные случаи
             'сложная кириллица' => [
                 'Специальные символы: @#$%',
-                'spetsialnye-simvoly'
+                'spetsialnye-simvoly',
             ],
             'смешанный текст' => [
                 'Game Title 2023 - Приключения',
-                'game-title-2023-priklyucheniya'
+                'game-title-2023-priklyucheniya',
             ],
             'множественные пробелы' => [
                 'game    title',
-                'game-title'
+                'game-title',
             ],
             'пустая строка' => [
                 '',
-                ''
+                '',
             ],
             'только пробелы' => [
                 '   ',
-                ''
+                '',
             ],
             'только специальные символы' => [
                 '@#$%^&*()',
-                ''
+                '',
             ],
 
             // Тесты с буквой ё
             'с буквой ё' => [
                 'ёлка',
-                'elka'
+                'elka',
             ],
 
             // Тесты с буквой й
             'с буквой й' => [
                 'мой',
-                'moy'
+                'moy',
             ],
 
             // Тесты с буквой х
             'с буквой х' => [
                 'хорошо',
-                'khorosho'
+                'khorosho',
             ],
 
             // Тесты с буквой ц
             'с буквой ц' => [
                 'цвет',
-                'tsvet'
+                'tsvet',
             ],
 
             // Тесты с буквой ч
             'с буквой ч' => [
                 'часы',
-                'chasy'
+                'chasy',
             ],
 
             // Тесты с буквой ш
             'с буквой ш' => [
                 'школа',
-                'shkola'
+                'shkola',
             ],
 
             // Тесты с буквой щ
             'с буквой щ' => [
                 'щука',
-                'shchuka'
+                'shchuka',
             ],
 
             // Тесты с буквой ю
             'с буквой ю' => [
                 'юг',
-                'yug'
+                'yug',
             ],
 
             // Тесты с буквой я
             'с буквой я' => [
                 'яблоко',
-                'yabloko'
+                'yabloko',
             ],
         ];
     }

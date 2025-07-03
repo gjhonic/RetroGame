@@ -71,7 +71,7 @@ class GameShopController extends AbstractController
     #[Route('/{id}', name: 'app_game_shop_delete', methods: ['POST'])]
     public function delete(Request $request, GameShop $gameShop, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete' . $gameShop->getId(), (string)$request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . $gameShop->getId(), (string) $request->request->get('_token'))) {
             $entityManager->remove($gameShop);
             $entityManager->flush();
         }

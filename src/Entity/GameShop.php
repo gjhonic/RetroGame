@@ -85,6 +85,7 @@ class GameShop
     public function setGame(?Game $game): self
     {
         $this->game = $game;
+
         return $this;
     }
 
@@ -96,6 +97,7 @@ class GameShop
     public function setShop(?Shop $shop): self
     {
         $this->shop = $shop;
+
         return $this;
     }
 
@@ -107,6 +109,7 @@ class GameShop
     public function setLinkGameId(int $link_game_id): static
     {
         $this->link_game_id = $link_game_id;
+
         return $this;
     }
 
@@ -118,6 +121,7 @@ class GameShop
     public function setName(string $name): static
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -129,6 +133,7 @@ class GameShop
     public function setLink(string $link): static
     {
         $this->link = $link;
+
         return $this;
     }
 
@@ -137,7 +142,7 @@ class GameShop
         $last = null;
 
         foreach ($this->priceHistory as $entry) {
-            if ($last === null || $entry->getUpdatedAt() > $last->getUpdatedAt()) {
+            if (null === $last || $entry->getUpdatedAt() > $last->getUpdatedAt()) {
                 $last = $entry;
             }
         }
@@ -150,7 +155,7 @@ class GameShop
         $last = null;
 
         foreach ($this->priceHistory as $entry) {
-            if ($last === null || $entry->getUpdatedAt() > $last->getUpdatedAt()) {
+            if (null === $last || $entry->getUpdatedAt() > $last->getUpdatedAt()) {
                 $last = $entry;
             }
         }
@@ -166,6 +171,7 @@ class GameShop
     public function setShouldImportPrice(bool $shouldImportPrice): static
     {
         $this->shouldImportPrice = $shouldImportPrice;
+
         return $this;
     }
 
@@ -177,6 +183,7 @@ class GameShop
     public function setExternalKey(?string $externalKey): static
     {
         $this->externalKey = $externalKey;
+
         return $this;
     }
 
@@ -190,11 +197,13 @@ class GameShop
 
     /**
      * @param array<mixed>|null $extraParams
+     *
      * @return $this
      */
     public function setExtraParams(?array $extraParams): static
     {
         $this->extraParams = $extraParams;
+
         return $this;
     }
 
@@ -218,6 +227,7 @@ class GameShop
     public function setCreatedAt(\DateTimeInterface $createdAt): static
     {
         $this->createdAt = $createdAt;
+
         return $this;
     }
 
@@ -229,6 +239,7 @@ class GameShop
     public function setUpdatedAt(\DateTimeInterface $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
+
         return $this;
     }
 

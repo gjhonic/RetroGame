@@ -23,7 +23,7 @@ final class Version20250630033644 extends AbstractMigration
         $this->addSql(<<<'SQL'
             ALTER TABLE genres ADD name_russia VARCHAR(255) DEFAULT NULL
         SQL);
-        
+
         // Заполняем поле name_russia переводами жанров на русский язык
         $this->addSql(<<<'SQL'
             UPDATE genres SET name_russia = 'Экшен' WHERE name = 'Action'
@@ -106,7 +106,7 @@ final class Version20250630033644 extends AbstractMigration
         $this->addSql(<<<'SQL'
             UPDATE genres SET name_russia = 'Бухгалтерия' WHERE name = 'Accounting'
         SQL);
-        
+
         $this->addSql(<<<'SQL'
             ALTER TABLE genres RENAME INDEX uniq_835033f85e237e06 TO UNIQ_A8EBE5165E237E06
         SQL);

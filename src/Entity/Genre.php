@@ -9,12 +9,13 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * Сущность жанра игры
+ * Сущность жанра игры.
  *
  * Представляет жанр игры (например: Action, RPG, Strategy и т.д.).
  * Связан с играми через связь ManyToMany.
  *
  * @ORM\Entity(repositoryClass=GenreRepository::class)
+ *
  * @ORM\Table(name="genres")
  */
 #[ORM\Entity(repositoryClass: GenreRepository::class)]
@@ -22,10 +23,12 @@ use Doctrine\ORM\Mapping as ORM;
 class Genre
 {
     /**
-     * Уникальный идентификатор жанра
+     * Уникальный идентификатор жанра.
      *
      * @ORM\Id
+     *
      * @ORM\GeneratedValue
+     *
      * @ORM\Column(type="integer")
      */
     #[ORM\Id]
@@ -34,7 +37,7 @@ class Genre
     private ?int $id = null;
 
     /**
-     * Название жанра (уникальное)
+     * Название жанра (уникальное).
      *
      * @ORM\Column(length=255, unique=true)
      */
@@ -42,7 +45,7 @@ class Genre
     private string $name;
 
     /**
-     * Название жанра на русском языке
+     * Название жанра на русском языке.
      *
      * @ORM\Column(length=255, nullable=true)
      */
@@ -50,7 +53,7 @@ class Genre
     private ?string $nameRussia = null;
 
     /**
-     * Описание жанра
+     * Описание жанра.
      *
      * @ORM\Column(type="text", nullable=true)
      */
@@ -58,7 +61,7 @@ class Genre
     private ?string $description = null;
 
     /**
-     * Дата и время создания записи жанра
+     * Дата и время создания записи жанра.
      *
      * Автоматически устанавливается при создании нового жанра
      *
@@ -68,7 +71,7 @@ class Genre
     private ?\DateTimeInterface $createdAt = null;
 
     /**
-     * Дата и время последнего обновления записи жанра
+     * Дата и время последнего обновления записи жанра.
      *
      * Автоматически обновляется при каждом изменении данных жанра
      *
@@ -78,16 +81,17 @@ class Genre
     private ?\DateTimeInterface $updatedAt = null;
 
     /**
-     * Коллекция игр данного жанра
+     * Коллекция игр данного жанра.
      *
      * @var Collection<int, Game>
+     *
      * @ORM\ManyToMany(targetEntity=Game::class, mappedBy="genre")
      */
     #[ORM\ManyToMany(targetEntity: Game::class, mappedBy: 'genre')]
     private Collection $games;
 
     /**
-     * Конструктор сущности
+     * Конструктор сущности.
      *
      * Инициализирует коллекцию игр и поля дат создания и обновления
      */
@@ -99,7 +103,7 @@ class Genre
     }
 
     /**
-     * Получить ID жанра
+     * Получить ID жанра.
      *
      * @return int|null Уникальный идентификатор жанра
      */
@@ -109,7 +113,7 @@ class Genre
     }
 
     /**
-     * Получить название жанра
+     * Получить название жанра.
      *
      * @return string Название жанра
      */
@@ -119,19 +123,19 @@ class Genre
     }
 
     /**
-     * Установить название жанра
+     * Установить название жанра.
      *
      * @param string $name Название жанра
-     * @return self
      */
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
     /**
-     * Получить название жанра на русском языке
+     * Получить название жанра на русском языке.
      *
      * @return string|null Название жанра на русском
      */
@@ -141,19 +145,19 @@ class Genre
     }
 
     /**
-     * Установить название жанра на русском языке
+     * Установить название жанра на русском языке.
      *
      * @param string|null $nameRussia Название жанра на русском
-     * @return self
      */
     public function setNameRussia(?string $nameRussia): self
     {
         $this->nameRussia = $nameRussia;
+
         return $this;
     }
 
     /**
-     * Получить описание жанра
+     * Получить описание жанра.
      *
      * @return string|null Описание жанра
      */
@@ -163,19 +167,19 @@ class Genre
     }
 
     /**
-     * Установить описание жанра
+     * Установить описание жанра.
      *
      * @param string|null $description Описание жанра
-     * @return self
      */
     public function setDescription(?string $description): self
     {
         $this->description = $description;
+
         return $this;
     }
 
     /**
-     * Строковое представление жанра
+     * Строковое представление жанра.
      *
      * @return string Название жанра
      */
@@ -185,7 +189,7 @@ class Genre
     }
 
     /**
-     * Получить коллекцию игр данного жанра
+     * Получить коллекцию игр данного жанра.
      *
      * @return Collection<int, Game> Коллекция игр
      */
@@ -195,10 +199,9 @@ class Genre
     }
 
     /**
-     * Добавить игру к жанру
+     * Добавить игру к жанру.
      *
      * @param Game $game Игра для добавления
-     * @return static
      */
     public function addGame(Game $game): static
     {
@@ -211,10 +214,9 @@ class Genre
     }
 
     /**
-     * Удалить игру из жанра
+     * Удалить игру из жанра.
      *
      * @param Game $game Игра для удаления
-     * @return static
      */
     public function removeGame(Game $game): static
     {
@@ -226,7 +228,7 @@ class Genre
     }
 
     /**
-     * Получить дату создания записи жанра
+     * Получить дату создания записи жанра.
      *
      * @return \DateTimeInterface|null Дата и время создания
      */
@@ -236,19 +238,19 @@ class Genre
     }
 
     /**
-     * Установить дату создания записи жанра
+     * Установить дату создания записи жанра.
      *
      * @param \DateTimeInterface $createdAt Дата и время создания
-     * @return static
      */
     public function setCreatedAt(\DateTimeInterface $createdAt): static
     {
         $this->createdAt = $createdAt;
+
         return $this;
     }
 
     /**
-     * Получить дату последнего обновления записи жанра
+     * Получить дату последнего обновления записи жанра.
      *
      * @return \DateTimeInterface|null Дата и время последнего обновления
      */
@@ -258,19 +260,19 @@ class Genre
     }
 
     /**
-     * Установить дату последнего обновления записи жанра
+     * Установить дату последнего обновления записи жанра.
      *
      * @param \DateTimeInterface $updatedAt Дата и время обновления
-     * @return static
      */
     public function setUpdatedAt(\DateTimeInterface $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
+
         return $this;
     }
 
     /**
-     * Автоматически обновить дату изменения записи
+     * Автоматически обновить дату изменения записи.
      *
      * Вызывается Doctrine перед каждым обновлением записи
      *

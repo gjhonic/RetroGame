@@ -43,6 +43,7 @@ class GameRepository extends ServiceEntityRepository
         }
 
         $paginator = new Paginator($qb, true);
+
         return iterator_to_array($paginator);
     }
 

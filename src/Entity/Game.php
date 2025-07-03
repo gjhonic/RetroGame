@@ -9,12 +9,13 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * Сущность игры
+ * Сущность игры.
  *
  * Представляет игру в системе с информацией о названии, описании, дате релиза,
  * жанрах, магазинах где продается и других характеристиках.
  *
  * @ORM\Entity(repositoryClass=GameRepository::class)
+ *
  * @ORM\Table(name="games")
  */
 #[ORM\Entity(repositoryClass: GameRepository::class)]
@@ -22,10 +23,12 @@ use Doctrine\ORM\Mapping as ORM;
 class Game
 {
     /**
-     * Уникальный идентификатор игры
+     * Уникальный идентификатор игры.
      *
      * @ORM\Id
+     *
      * @ORM\GeneratedValue
+     *
      * @ORM\Column
      */
     #[ORM\Id]
@@ -34,7 +37,7 @@ class Game
     private ?int $id = null;
 
     /**
-     * Название игры
+     * Название игры.
      *
      * @ORM\Column(length=255)
      */
@@ -42,7 +45,7 @@ class Game
     private ?string $name = null;
 
     /**
-     * Описание игры
+     * Описание игры.
      *
      * @ORM\Column(type=Types::TEXT)
      */
@@ -50,7 +53,7 @@ class Game
     private ?string $description = null;
 
     /**
-     * Дата релиза игры
+     * Дата релиза игры.
      *
      * @ORM\Column(type=Types::DATE_MUTABLE)
      */
@@ -58,16 +61,17 @@ class Game
     private ?\DateTimeInterface $releaseDate = null;
 
     /**
-     * Коллекция жанров игры
+     * Коллекция жанров игры.
      *
      * @var Collection<int, Genre>
+     *
      * @ORM\ManyToMany(targetEntity=Genre::class, inversedBy="games")
      */
     #[ORM\ManyToMany(targetEntity: Genre::class, inversedBy: 'games')]
     private Collection $genre;
 
     /**
-     * Дата и время создания записи игры
+     * Дата и время создания записи игры.
      *
      * Автоматически устанавливается при создании новой игры
      *
@@ -77,7 +81,7 @@ class Game
     private ?\DateTimeInterface $createdAt = null;
 
     /**
-     * Дата и время последнего обновления записи игры
+     * Дата и время последнего обновления записи игры.
      *
      * Автоматически обновляется при каждом изменении данных игры
      *
@@ -87,7 +91,7 @@ class Game
     private ?\DateTimeInterface $updatedAt = null;
 
     /**
-     * Популярность игры в Steam (количество владельцев)
+     * Популярность игры в Steam (количество владельцев).
      *
      * @ORM\Column(type="integer", nullable=true)
      */
@@ -95,16 +99,17 @@ class Game
     private ?int $steamPopularity = null;
 
     /**
-     * Коллекция связей игры с магазинами
+     * Коллекция связей игры с магазинами.
      *
      * @var Collection<int, GameShop>
+     *
      * @ORM\OneToMany(mappedBy="game", targetEntity=GameShop::class)
      */
     #[ORM\OneToMany(mappedBy: 'game', targetEntity: GameShop::class)]
     private Collection $shops;
 
     /**
-     * Флаг бесплатности игры
+     * Флаг бесплатности игры.
      *
      * @ORM\Column(type="boolean")
      */
@@ -112,7 +117,7 @@ class Game
     private bool $isFree = false;
 
     /**
-     * Путь к изображению игры
+     * Путь к изображению игры.
      *
      * @ORM\Column(length=255, nullable=true)
      */
@@ -120,7 +125,7 @@ class Game
     private ?string $image = null;
 
     /**
-     * Конструктор сущности
+     * Конструктор сущности.
      *
      * Инициализирует коллекции жанров и магазинов, а также поля дат создания и обновления
      */
@@ -133,7 +138,7 @@ class Game
     }
 
     /**
-     * Получить ID игры
+     * Получить ID игры.
      *
      * @return int|null Уникальный идентификатор игры
      */
@@ -143,7 +148,7 @@ class Game
     }
 
     /**
-     * Получить название игры
+     * Получить название игры.
      *
      * @return string|null Название игры
      */
@@ -153,19 +158,19 @@ class Game
     }
 
     /**
-     * Установить название игры
+     * Установить название игры.
      *
      * @param string $name Название игры
-     * @return static
      */
     public function setName(string $name): static
     {
         $this->name = $name;
+
         return $this;
     }
 
     /**
-     * Получить описание игры
+     * Получить описание игры.
      *
      * @return string|null Описание игры
      */
@@ -175,19 +180,19 @@ class Game
     }
 
     /**
-     * Установить описание игры
+     * Установить описание игры.
      *
      * @param string $description Описание игры
-     * @return static
      */
     public function setDescription(string $description): static
     {
         $this->description = $description;
+
         return $this;
     }
 
     /**
-     * Получить дату релиза игры
+     * Получить дату релиза игры.
      *
      * @return \DateTimeInterface|null Дата релиза
      */
@@ -197,19 +202,19 @@ class Game
     }
 
     /**
-     * Установить дату релиза игры
+     * Установить дату релиза игры.
      *
      * @param \DateTimeInterface $releaseDate Дата релиза
-     * @return static
      */
     public function setReleaseDate(\DateTimeInterface $releaseDate): static
     {
         $this->releaseDate = $releaseDate;
+
         return $this;
     }
 
     /**
-     * Получить коллекцию жанров игры
+     * Получить коллекцию жанров игры.
      *
      * @return Collection<int, Genre> Коллекция жанров
      */
@@ -219,33 +224,33 @@ class Game
     }
 
     /**
-     * Добавить жанр к игре
+     * Добавить жанр к игре.
      *
      * @param Genre $genre Жанр для добавления
-     * @return static
      */
     public function addGenre(Genre $genre): static
     {
         if (!$this->genre->contains($genre)) {
             $this->genre->add($genre);
         }
+
         return $this;
     }
 
     /**
-     * Удалить жанр из игры
+     * Удалить жанр из игры.
      *
      * @param Genre $genre Жанр для удаления
-     * @return static
      */
     public function removeGenre(Genre $genre): static
     {
         $this->genre->removeElement($genre);
+
         return $this;
     }
 
     /**
-     * Получить дату создания записи игры
+     * Получить дату создания записи игры.
      *
      * @return \DateTimeInterface|null Дата и время создания
      */
@@ -255,19 +260,19 @@ class Game
     }
 
     /**
-     * Установить дату создания записи игры
+     * Установить дату создания записи игры.
      *
      * @param \DateTimeInterface $createdAt Дата и время создания
-     * @return static
      */
     public function setCreatedAt(\DateTimeInterface $createdAt): static
     {
         $this->createdAt = $createdAt;
+
         return $this;
     }
 
     /**
-     * Получить дату последнего обновления записи игры
+     * Получить дату последнего обновления записи игры.
      *
      * @return \DateTimeInterface|null Дата и время последнего обновления
      */
@@ -277,19 +282,19 @@ class Game
     }
 
     /**
-     * Установить дату последнего обновления записи игры
+     * Установить дату последнего обновления записи игры.
      *
      * @param \DateTimeInterface $updatedAt Дата и время обновления
-     * @return static
      */
     public function setUpdatedAt(\DateTimeInterface $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
+
         return $this;
     }
 
     /**
-     * Получить популярность игры в Steam
+     * Получить популярность игры в Steam.
      *
      * @return int|null Количество владельцев в Steam
      */
@@ -299,19 +304,19 @@ class Game
     }
 
     /**
-     * Установить популярность игры в Steam
+     * Установить популярность игры в Steam.
      *
      * @param int|null $steamPopularity Количество владельцев в Steam
-     * @return static
      */
     public function setSteamPopularity(?int $steamPopularity): static
     {
         $this->steamPopularity = $steamPopularity;
+
         return $this;
     }
 
     /**
-     * Получить коллекцию связей с магазинами
+     * Получить коллекцию связей с магазинами.
      *
      * @return Collection<int, GameShop> Коллекция связей с магазинами
      */
@@ -324,7 +329,6 @@ class Game
      * Добавить связь с магазином
      *
      * @param GameShop $shop Связь с магазином
-     * @return static
      */
     public function addShop(GameShop $shop): static
     {
@@ -332,6 +336,7 @@ class Game
             $this->shops->add($shop);
             $shop->setGame($this);
         }
+
         return $this;
     }
 
@@ -339,7 +344,6 @@ class Game
      * Удалить связь с магазином
      *
      * @param GameShop $shop Связь с магазином
-     * @return static
      */
     public function removeShop(GameShop $shop): static
     {
@@ -348,11 +352,12 @@ class Game
                 $shop->setGame(null);
             }
         }
+
         return $this;
     }
 
     /**
-     * Проверить, является ли игра бесплатной
+     * Проверить, является ли игра бесплатной.
      *
      * @return bool True если игра бесплатная
      */
@@ -362,19 +367,19 @@ class Game
     }
 
     /**
-     * Установить флаг бесплатности игры
+     * Установить флаг бесплатности игры.
      *
      * @param bool $isFree Флаг бесплатности
-     * @return static
      */
     public function setIsFree(bool $isFree): static
     {
         $this->isFree = $isFree;
+
         return $this;
     }
 
     /**
-     * Получить путь к изображению игры
+     * Получить путь к изображению игры.
      *
      * @return string|null Путь к изображению
      */
@@ -384,19 +389,19 @@ class Game
     }
 
     /**
-     * Установить путь к изображению игры
+     * Установить путь к изображению игры.
      *
      * @param string|null $image Путь к изображению
-     * @return static
      */
     public function setImage(?string $image): static
     {
         $this->image = $image;
+
         return $this;
     }
 
     /**
-     * Автоматически обновить дату изменения записи
+     * Автоматически обновить дату изменения записи.
      *
      * Вызывается Doctrine перед каждым обновлением записи
      *

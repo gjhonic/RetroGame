@@ -20,12 +20,12 @@ final class Version20250630030724 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        
+
         // Переименовываем таблицу genre в genres
         $this->addSql(<<<'SQL'
             RENAME TABLE genre TO genres
         SQL);
-        
+
         // Удаляем старые поля created_by и updated_by
         $this->addSql(<<<'SQL'
             ALTER TABLE genres DROP created_by, DROP updated_by
@@ -55,17 +55,17 @@ final class Version20250630030724 extends AbstractMigration
     public function down(Schema $schema): void
     {
         // this down() migration is auto-generated, please modify it to your needs
-        
+
         // Возвращаем тип полей обратно к datetime_immutable
         $this->addSql(<<<'SQL'
             ALTER TABLE genres MODIFY created_at DATETIME NOT NULL COMMENT '(DC2Type:datetime_immutable)', MODIFY updated_at DATETIME DEFAULT NULL COMMENT '(DC2Type:datetime_immutable)'
         SQL);
-        
+
         // Добавляем обратно поля created_by и updated_by
         $this->addSql(<<<'SQL'
             ALTER TABLE genres ADD created_by VARCHAR(255) NOT NULL, ADD updated_by VARCHAR(255) DEFAULT NULL
         SQL);
-        
+
         // Переименовываем таблицу обратно
         $this->addSql(<<<'SQL'
             RENAME TABLE genres TO genre

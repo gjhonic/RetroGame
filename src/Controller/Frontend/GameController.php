@@ -18,11 +18,11 @@ class GameController extends AbstractController
     {
         $search = $request->query->get('q');
         $genreId = $request->query->get('genre');
-        $page = (int)max(1, (int)$request->query->get('page', '1'));
+        $page = (int) max(1, (int) $request->query->get('page', '1'));
         $limit = 40;
 
-        if ($genreId !== null) {
-            $genreId = (int)$genreId;
+        if (null !== $genreId) {
+            $genreId = (int) $genreId;
         }
 
         $games = $gameRepo->findGamesByFilters($search, $genreId, $page, $limit);
@@ -81,7 +81,7 @@ class GameController extends AbstractController
             // Собираем данные по датам и ценам
             foreach ($history as $entry) {
                 $gameChart['priceDates'][] = $entry->getUpdatedAt()->format('d.m.Y');
-                $gameChart['priceValues'][] = (int)$entry->getPrice();
+                $gameChart['priceValues'][] = (int) $entry->getPrice();
             }
 
             $gameChart['maxPrice'] = max($gameChart['priceValues']);
