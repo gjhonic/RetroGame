@@ -71,7 +71,7 @@ class ShopController extends AbstractController
     #[Route('/{id}', name: 'admin_shop_delete', methods: ['POST'])]
     public function delete(Request $request, Shop $shop, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete' . $shop->getId(), (string)$request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . $shop->getId(), (string) $request->request->get('_token'))) {
             $entityManager->remove($shop);
             $entityManager->flush();
         }

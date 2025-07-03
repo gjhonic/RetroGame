@@ -36,6 +36,7 @@ class SteamkeyUpdatePricesCommand extends Command
         $shop = $this->entityManager->getRepository(\App\Entity\Shop::class)->find(4);
         if (!$shop) {
             $output->writeln('<error>⛔ Магазин SteamKey (id=4) не найден</error>');
+
             return Command::FAILURE;
         }
 
@@ -83,9 +84,9 @@ class SteamkeyUpdatePricesCommand extends Command
 
             if (in_array($gameShop->getId(), $alreadyUpdatedIds)) {
                 $output->writeln(
-                    "🔄 <comment> " .
+                    '🔄 <comment> ' .
                     "[{$gameShop->getLinkGameId()}] {$gameShop->getName()} — Цена уже есть на сегодня, пропускаем." .
-                    "</comment>"
+                    '</comment>'
                 );
                 continue;
             }
@@ -97,11 +98,11 @@ class SteamkeyUpdatePricesCommand extends Command
                 $response = $this->httpClient->request('GET', $url, [
                     'headers' => [
                         'User-Agent' => 'Mozilla/5.0',
-                    ]
+                    ],
                 ]);
                 $duration = round(microtime(true) - $start, 2);
 
-                $checked++;
+                ++$checked;
 
                 $html = $response->getContent();
 
@@ -122,16 +123,16 @@ class SteamkeyUpdatePricesCommand extends Command
                 $gameShop->setExtraParams($extraParams);
 
                 if (
-                    preg_match('/<div class="price_value">(.*?)<\/div>/s', $html, $matches) ||
-                    preg_match('/<div class="price_value big">(.*?)<\/div>/s', $html, $matches)
+                    preg_match('/<div class="price_value">(.*?)<\/div>/s', $html, $matches)
+                    || preg_match('/<div class="price_value big">(.*?)<\/div>/s', $html, $matches)
                 ) {
                     $priceBlock = trim(strip_tags($matches[1]));
                     $priceText = preg_replace('/\s+/', ' ', $priceBlock); // убираем лишние пробелы
 
                     // Удаляем 'руб.' или 'руб' (на всякий случай)
-                    $priceText = preg_replace('/руб\.?/ui', '', (string)$priceText);
-                    $priceText = preg_replace('/₽\.?/ui', '', (string)$priceText);
-                    $priceText = trim((string)$priceText);
+                    $priceText = preg_replace('/руб\.?/ui', '', (string) $priceText);
+                    $priceText = preg_replace('/₽\.?/ui', '', (string) $priceText);
+                    $priceText = trim((string) $priceText);
 
                     if (preg_match('/^\d[\d\s]*$/u', $priceText)) {
                         $priceClean = str_replace(' ', '', $priceText);
@@ -145,24 +146,24 @@ class SteamkeyUpdatePricesCommand extends Command
 
                             $this->entityManager->persist($history);
                             $output->writeln("✅ <info>Цена {$price} ₽ получена за {$duration} сек.</info>");
-                            $updated++;
+                            ++$updated;
                         } else {
-                            $output->writeln("⚠️ <comment>Цена равна 0, не сохраняем.</comment>");
+                            $output->writeln('⚠️ <comment>Цена равна 0, не сохраняем.</comment>');
                         }
                     } else {
-                        $output->writeln("❌ <comment> " .
+                        $output->writeln('❌ <comment> ' .
                             "Неизвестный формат цены: '{$priceText}', отключаем импорт для игры.</comment>");
                         $gameShop->setShouldImportPrice(false);
                         $this->entityManager->persist($gameShop);
                     }
                 } else {
-                    $output->writeln("❌ <comment>Цена не найдена, отключаем импорт для игры.</comment>");
+                    $output->writeln('❌ <comment>Цена не найдена, отключаем импорт для игры.</comment>');
                     $gameShop->setShouldImportPrice(false);
                     $this->entityManager->persist($gameShop);
                 }
             } catch (\Throwable $e) {
-                if ($e->getCode() == 404) {
-                    $output->writeln("❌ <comment>Цена не найдена, отключаем импорт для игры.</comment>");
+                if (404 == $e->getCode()) {
+                    $output->writeln('❌ <comment>Цена не найдена, отключаем импорт для игры.</comment>');
                     $gameShop->setShouldImportPrice(false);
                     $this->entityManager->persist($gameShop);
                 } else {

@@ -6,6 +6,7 @@ use App\Repository\SteambuyAppRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: SteambuyAppRepository::class)]
+#[ORM\Table(name: 'steambuy_apps')]
 class SteambuyApp
 {
     #[ORM\Id]
@@ -23,7 +24,7 @@ class SteambuyApp
     private ?string $rawHtml = null;
 
     #[ORM\Column]
-    private \DateTimeImmutable $checkedAt;
+    private \DateTimeImmutable $createdAt;
 
     public function getId(): ?int
     {
@@ -38,6 +39,7 @@ class SteambuyApp
     public function setSlug(string $slug): static
     {
         $this->slug = $slug;
+
         return $this;
     }
 
@@ -49,6 +51,7 @@ class SteambuyApp
     public function setNotFound(bool $notFound): static
     {
         $this->notFound = $notFound;
+
         return $this;
     }
 
@@ -60,17 +63,19 @@ class SteambuyApp
     public function setRawHtml(?string $rawHtml): static
     {
         $this->rawHtml = $rawHtml;
+
         return $this;
     }
 
-    public function getCheckedAt(): \DateTimeImmutable
+    public function getCreatedAt(): \DateTimeImmutable
     {
-        return $this->checkedAt;
+        return $this->createdAt;
     }
 
-    public function setCheckedAt(\DateTimeImmutable $checkedAt): static
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
-        $this->checkedAt = $checkedAt;
+        $this->createdAt = $createdAt;
+
         return $this;
     }
 }

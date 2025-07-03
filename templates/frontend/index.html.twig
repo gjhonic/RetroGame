@@ -15,7 +15,7 @@
                     <option value="">Все жанры</option>
                     {% for genre in genres %}
                         <option value="{{ genre.id }}" {{ genre.id == selectedGenre ? 'selected' : '' }}>
-                            {{ genre.name }}
+                            {{ genre.getNameRussia() }}
                         </option>
                     {% endfor %}
                 </select>

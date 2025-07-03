@@ -84,7 +84,7 @@ php bin/console doctrine:migrations:migrate
 
 5. **Запустите сервер разработки**
 ```bash
-symfony server:start
+make server-start
 ```
 
 ### Импорт данных

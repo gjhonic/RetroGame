@@ -6,6 +6,7 @@ use App\Repository\SteamkeyAppRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: SteamkeyAppRepository::class)]
+#[ORM\Table(name: 'steamkey_apps')]
 class SteamkeyApp
 {
     #[ORM\Id]
@@ -23,7 +24,7 @@ class SteamkeyApp
     private ?string $rawHtml = null;
 
     #[ORM\Column]
-    private \DateTimeImmutable $checkedAt;
+    private \DateTimeImmutable $createdAt;
 
     public function getId(): ?int
     {
@@ -38,6 +39,7 @@ class SteamkeyApp
     public function setSlug(string $slug): static
     {
         $this->slug = $slug;
+
         return $this;
     }
 
@@ -49,6 +51,7 @@ class SteamkeyApp
     public function setNotFound(bool $notFound): static
     {
         $this->notFound = $notFound;
+
         return $this;
     }
 
@@ -60,17 +63,19 @@ class SteamkeyApp
     public function setRawHtml(?string $rawHtml): static
     {
         $this->rawHtml = $rawHtml;
+
         return $this;
     }
 
-    public function getCheckedAt(): \DateTimeImmutable
+    public function getCreatedAt(): \DateTimeImmutable
     {
-        return $this->checkedAt;
+        return $this->createdAt;
     }
 
-    public function setCheckedAt(\DateTimeImmutable $checkedAt): static
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
-        $this->checkedAt = $checkedAt;
+        $this->createdAt = $createdAt;
+
         return $this;
     }
 }

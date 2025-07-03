@@ -28,7 +28,7 @@ class GameRepository extends ServiceEntityRepository
     public function findGamesByFilters(?string $search, ?int $genreId, int $page = 1, int $limit = 40): array
     {
         $qb = $this->createQueryBuilder('g')
-            ->orderBy('g.ownersCount', 'DESC')
+            ->orderBy('g.steamPopularity', 'DESC')
             ->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit);
 
@@ -43,6 +43,7 @@ class GameRepository extends ServiceEntityRepository
         }
 
         $paginator = new Paginator($qb, true);
+
         return iterator_to_array($paginator);
     }
 

@@ -34,6 +34,7 @@ class SteampayGetGamesCommand extends Command
 
         if (!$shop) {
             $output->writeln('<error>⛔ Магазин с ID 3 не найден</error>');
+
             return Command::FAILURE;
         }
 
@@ -50,7 +51,7 @@ class SteampayGetGamesCommand extends Command
                 break;
             }
 
-            $slug = SlugifyProcessor::process((string)$game->getName());
+            $slug = SlugifyProcessor::process((string) $game->getName());
             $url = "https://steampay.com/game/{$slug}/";
 
             $output->writeln("🎮 <info>Обрабатываем игру: '{$game->getName()}', slug: $slug</info>");
@@ -62,7 +63,7 @@ class SteampayGetGamesCommand extends Command
             ]);
 
             if ($existingShop) {
-                $skippedExistingShop++;
+                ++$skippedExistingShop;
                 continue;
             }
 
@@ -72,8 +73,8 @@ class SteampayGetGamesCommand extends Command
             ]);
 
             if ($SteampayApp && $SteampayApp->isNotFound()) {
-                $output->writeln("⏩ <comment>Ранее отмечено как 404 (не найдено). Пропускаем.</comment>");
-                $skippedNotFound++;
+                $output->writeln('⏩ <comment>Ранее отмечено как 404 (не найдено). Пропускаем.</comment>');
+                ++$skippedNotFound;
                 continue;
             }
 
@@ -87,20 +88,20 @@ class SteampayGetGamesCommand extends Command
                 if (!$SteampayApp) {
                     $SteampayApp = new SteampayApp();
                     $SteampayApp->setSlug($slug);
-                    $output->writeln("🆕 <info>Создана новая запись SteampayApp для slug.</info>");
+                    $output->writeln('🆕 <info>Создана новая запись SteampayApp для slug.</info>');
                 } else {
-                    $output->writeln("🔄 <info>Найдена существующая запись SteampayApp, обновляем.</info>");
+                    $output->writeln('🔄 <info>Найдена существующая запись SteampayApp, обновляем.</info>');
                 }
 
-                $SteampayApp->setCheckedAt(new \DateTimeImmutable());
+                $SteampayApp->setCreatedAt(new \DateTimeImmutable());
 
                 if (
-                    str_contains($content, 'Ошибка! Страница не найдена') ||
-                    preg_match('/<h1[^>]*not-found-error__title[^>]*>Ошибка! Страница не найдена\./', $content)
+                    str_contains($content, 'Ошибка! Страница не найдена')
+                    || preg_match('/<h1[^>]*not-found-error__title[^>]*>Ошибка! Страница не найдена\./', $content)
                 ) {
                     $SteampayApp->setNotFound(true);
                     $SteampayApp->setRawHtml(null);
-                    $output->writeln("❌ <comment>Страница вернула 404. Отмечаем как не найдено.</comment>");
+                    $output->writeln('❌ <comment>Страница вернула 404. Отмечаем как не найдено.</comment>');
                 } else {
                     $SteampayApp->setNotFound(false);
                     $SteampayApp->setRawHtml(null);
@@ -108,7 +109,7 @@ class SteampayGetGamesCommand extends Command
                     $gameShop = new GameShop();
                     $gameShop->setGame($game);
                     $gameShop->setShop($shop);
-                    $gameShop->setName((string)$game->getName());
+                    $gameShop->setName((string) $game->getName());
                     $gameShop->setLink($url);
                     $gameShop->setShouldImportPrice(true);
                     $gameShop->setExternalKey($slug);
@@ -117,20 +118,20 @@ class SteampayGetGamesCommand extends Command
                     $this->entityManager->persist($gameShop);
 
                     $output->writeln("✅ <info>GameShop создан и связан с игрой '{$game->getName()}'.</info>");
-                    $imported++;
+                    ++$imported;
                 }
 
                 $this->entityManager->persist($SteampayApp);
                 $this->entityManager->flush();
             } catch (\Throwable $e) {
-                $errorsCount++;
+                ++$errorsCount;
                 $output->writeln("<error>⛔ Ошибка при запросе $slug: {$e->getMessage()}</error>");
             }
         }
 
         $output->writeln('');
         $output->writeln('📊 <info>Итоги импорта:</info>');
-        $output->writeln(" - Всего игр обработано: " . count($games));
+        $output->writeln(' - Всего игр обработано: ' . count($games));
         $output->writeln(" - Связано/импортировано: $imported");
         $output->writeln(" - Пропущено (уже связано): $skippedExistingShop");
         $output->writeln(" - Пропущено (404 ранее): $skippedNotFound");

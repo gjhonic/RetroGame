@@ -30,11 +30,6 @@ class GenreController extends AbstractController
         $genre = new Genre();
         $form = $this->createForm(GenreType::class, $genre);
         $form->handleRequest($request);
-        if ($this->getUser() != null) {
-            $genre->setCreatedBy($this->getUser()->getUserIdentifier());
-            $genre->setUpdatedBy($this->getUser()->getUserIdentifier());
-        }
-
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($genre);
@@ -62,9 +57,6 @@ class GenreController extends AbstractController
     {
         $form = $this->createForm(GenreType::class, $genre);
         $form->handleRequest($request);
-        if ($this->getUser() != null) {
-            $genre->setUpdatedBy($this->getUser()->getUserIdentifier());
-        }
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
@@ -81,7 +73,7 @@ class GenreController extends AbstractController
     #[Route('/{id}', name: 'admin_genre_delete', methods: ['POST'])]
     public function delete(Request $request, Genre $genre, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete' . $genre->getId(), (string)$request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . $genre->getId(), (string) $request->request->get('_token'))) {
             $entityManager->remove($genre);
             $entityManager->flush();
         }
