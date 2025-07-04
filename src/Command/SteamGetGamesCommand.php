@@ -4,8 +4,8 @@ namespace App\Command;
 
 use App\Entity\Game;
 use App\Entity\GameShop;
-use App\Entity\SteamApp;
 use App\Entity\LogCron;
+use App\Entity\SteamApp;
 use App\Service\SteamGameDataProcessor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;

@@ -2,11 +2,11 @@
 
 namespace App\Controller\Admin;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\HttpFoundation\Request;
 
 #[Route('/admin/log-cron')]
 class LogCronController extends AbstractController
@@ -87,7 +87,7 @@ class LogCronController extends AbstractController
         }
         if ($dateTo) {
             $qb->andWhere('l.datetimeStart <= :dateTo')
-                ->setParameter('dateTo', (new \DateTime($dateTo))->setTime(23,59,59));
+                ->setParameter('dateTo', (new \DateTime($dateTo))->setTime(23, 59, 59));
         }
         $qb->orderBy('l.datetimeStart', 'ASC');
         $logs = $qb->getQuery()->getResult();
@@ -127,42 +127,42 @@ class LogCronController extends AbstractController
         $date = $logCron->getDatetimeStart()->format('Y-m-d');
         $time = $logCron->getDatetimeStart()->format('H-i-s');
         $cronName = $logCron->getCronName();
-        
+
         // Формируем базовое имя файла
         $baseFileName = "get-{$cronName}-{$date}-{$time}.log";
         $logDir = "/var/www/retro-game/var/log/{$date}";
-        
+
         // Ищем файл с возможным смещением в несколько секунд
         $foundFile = null;
         $timeObj = $logCron->getDatetimeStart();
-        
+
         // Проверяем файлы в диапазоне ±30 секунд
         for ($offset = -30; $offset <= 30; $offset++) {
             $checkTime = (new \DateTime())->setTimestamp($timeObj->getTimestamp() + $offset);
             $checkFileName = "get-{$cronName}-{$date}-{$checkTime->format('H-i-s')}.log";
             $checkPath = "{$logDir}/{$checkFileName}";
-            
+
             if (file_exists($checkPath)) {
                 $foundFile = $checkPath;
                 break;
             }
         }
-        
+
         if (!$foundFile) {
             throw $this->createNotFoundException('Лог-файл не найден');
         }
-        
+
         // Читаем содержимое файла
         $content = file_get_contents($foundFile);
         if ($content === false) {
             throw $this->createNotFoundException('Не удалось прочитать лог-файл');
         }
-        
+
         // Возвращаем файл для скачивания
         $response = new Response($content);
         $response->headers->set('Content-Type', 'text/plain');
         $response->headers->set('Content-Disposition', 'attachment; filename="' . basename($foundFile) . '"');
-        
+
         return $response;
     }
 }
