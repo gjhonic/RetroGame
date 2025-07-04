@@ -61,6 +61,14 @@ class Shop
     private ?string $url = null;
 
     /**
+     * Имя файла картинки магазина.
+     *
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $image = null;
+
+    /**
      * Дата и время создания записи магазина.
      *
      * Автоматически устанавливается при создании нового магазина
@@ -175,6 +183,28 @@ class Shop
     {
         $this->url = $url;
 
+        return $this;
+    }
+
+    /**
+     * Получить имя файла картинки магазина.
+     *
+     * @return string|null
+     */
+    public function getImage(): ?string
+    {
+        return $this->image;
+    }
+
+    /**
+     * Установить имя файла картинки магазина.
+     *
+     * @param string|null $image
+     * @return $this
+     */
+    public function setImage(?string $image): static
+    {
+        $this->image = $image;
         return $this;
     }
 

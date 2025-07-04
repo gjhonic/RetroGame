@@ -1,4 +1,30 @@
-{{ form_start(form) }}
-    {{ form_widget(form) }}
-    <button class="btn">{{ button_label|default('Save') }}</button>
+{{ form_start(form, {'attr': {'enctype': 'multipart/form-data'}}) }}
+    {% if shop is defined and shop.image %}
+        <div class="mb-3 text-center">
+            <img src="/uploads/shops/{{ shop.image }}" alt="Логотип магазина" class="img-thumbnail mb-2" style="max-height: 120px;">
+        </div>
+    {% endif %}
+    <div class="mb-3">
+        {{ form_label(form.name, null, {'label_attr': {'class': 'form-label'}}) }}
+        {{ form_widget(form.name, {'attr': {'class': 'form-control'}}) }}
+        {{ form_errors(form.name) }}
+    </div>
+    <div class="mb-3">
+        {{ form_label(form.description, null, {'label_attr': {'class': 'form-label'}}) }}
+        {{ form_widget(form.description, {'attr': {'class': 'form-control', 'rows': 3}}) }}
+        {{ form_errors(form.description) }}
+    </div>
+    <div class="mb-3">
+        {{ form_label(form.url, null, {'label_attr': {'class': 'form-label'}}) }}
+        {{ form_widget(form.url, {'attr': {'class': 'form-control'}}) }}
+        {{ form_errors(form.url) }}
+    </div>
+    <div class="mb-3">
+        {{ form_label(form.image, null, {'label_attr': {'class': 'form-label'}}) }}
+        {{ form_widget(form.image, {'attr': {'class': 'form-control'}}) }}
+        {{ form_errors(form.image) }}
+    </div>
+    <div class="d-grid">
+        <button class="btn btn-primary btn-lg">{{ button_label|default('Сохранить') }}</button>
+    </div>
 {{ form_end(form) }}
