@@ -8,7 +8,12 @@
     <div class="row g-2 align-items-end">
         <div class="col-auto">
             <label for="cronName" class="form-label">Крон</label>
-            <input type="text" name="cronName" id="cronName" value="{{ cronName }}" class="form-control" placeholder="Имя крона">
+            <select name="cronName" id="cronName" class="form-control">
+                <option value="">Все</option>
+                {% for key, label in cronNamesList %}
+                    <option value="{{ key }}" {% if cronName == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
         </div>
         <div class="col-auto">
             <label for="dateStart" class="form-label">С даты</label>

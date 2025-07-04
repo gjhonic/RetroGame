@@ -61,6 +61,17 @@ class LogCronController extends AbstractController
         $total = (int)$countQb->getQuery()->getSingleScalarResult();
         $pages = (int)ceil($total / $limit);
 
+        $cronNames = [
+            'steam-get-games' => 'Steam: Импорт игр',
+            'steam-update-prices' => 'Steam: Обновление цен',
+            'steampay-get-games' => 'Steampay: Импорт игр',
+            'steampay-update-prices' => 'Steampay: Обновление цен',
+            'steambuy-get-games' => 'Steambuy: Импорт игр',
+            'steambuy-update-prices' => 'Steambuy: Обновление цен',
+            'steamkey-get-games' => 'Steamkey: Импорт игр',
+            'steamkey-update-prices' => 'Steamkey: Обновление цен',
+        ];
+
         return $this->render('admin/log_cron/index.html.twig', [
             'logs' => $logs,
             'page' => $page,
@@ -68,6 +79,7 @@ class LogCronController extends AbstractController
             'cronName' => $cronName,
             'dateStart' => $dateStart,
             'total' => $total,
+            'cronNamesList' => $cronNames,
         ]);
     }
 
@@ -129,17 +141,17 @@ class LogCronController extends AbstractController
         $cronName = $logCron->getCronName();
 
         // Формируем базовое имя файла
-        $baseFileName = "get-{$cronName}-{$date}-{$time}.log";
         $logDir = "/var/www/retro-game/var/log/{$date}";
 
         // Ищем файл с возможным смещением в несколько секунд
         $foundFile = null;
         $timeObj = $logCron->getDatetimeStart();
 
-        // Проверяем файлы в диапазоне ±30 секунд
-        for ($offset = -30; $offset <= 30; $offset++) {
+        // Проверяем файлы в диапазоне ±20 секунд
+        for ($offset = -20; $offset <= 20; $offset++) {
             $checkTime = (new \DateTime())->setTimestamp($timeObj->getTimestamp() + $offset);
-            $checkFileName = "get-{$cronName}-{$date}-{$checkTime->format('H-i-s')}.log";
+            $checkFileName = "get-{$cronName}-{$checkTime->format('H-i-s')}.log";
+
             $checkPath = "{$logDir}/{$checkFileName}";
 
             if (file_exists($checkPath)) {

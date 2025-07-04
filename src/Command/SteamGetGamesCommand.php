@@ -15,6 +15,39 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
+/**
+ * Команда импорта игр из Steam.
+ *
+ * Системное имя: app:steam-get-games
+ *
+ * Назначение:
+ *   Импортирует список всех доступных игр из Steam в локальную базу данных.
+ *
+ * Логика работы:
+ *   - Получает список игр через Steam API (GetAppList/v2).
+ *   - Для каждой игры:
+ *       - Проверяет, есть ли она уже в базе.
+ *       - Если нет — добавляет новую запись в SteamApp.
+ *       - Получает подробную информацию через API appdetails.
+ *       - Обрабатывает данные через SteamGameDataProcessor.
+ *   - Ограничивает обработку 300 играми за запуск.
+ *   - Делает паузы между запросами для избежания блокировки.
+ *
+ * Логирование:
+ *   - Фиксирует начало и конец выполнения.
+ *   - Записывает количество импортированных игр.
+ *   - Логирует время работы и пиковое потребление памяти.
+ *   - Логирует ошибки при получении или сохранении данных.
+ *
+ * Использование:
+ *   php bin/console app:steam-get-games
+ *
+ * Особенности:
+ *   - Использует оптимизацию с предзагрузкой существующих данных.
+ *   - Обрабатывает данные пакетно для оптимизации производительности.
+ *   - Делает случайные паузы между запросами (1-2 секунды).
+ *   - Пауза 7-10 секунд каждые 30 обработанных игр.
+ */
 #[AsCommand(
     name: 'app:steam-get-games',
     description: 'Fetches popular Steam games and stores them in the database.',
@@ -98,8 +131,8 @@ class SteamGetGamesCommand extends Command
         $batchSize = 10;
 
         foreach ($apps as $app) {
-            if ($processedCount >= 200) {
-                $output->writeln('⏹️ <comment>Достигнут лимит 200 обработанных игр. Останавливаем импорт.</comment>');
+            if ($processedCount >= 100) {
+                $output->writeln('⏹️ <comment>Достигнут лимит 100 обработанных игр. Останавливаем импорт.</comment>');
                 break;
             }
 
