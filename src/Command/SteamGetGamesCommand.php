@@ -98,8 +98,8 @@ class SteamGetGamesCommand extends Command
         $batchSize = 10;
 
         foreach ($apps as $app) {
-            if ($processedCount >= 300) {
-                $output->writeln('⏹️ <comment>Достигнут лимит 300 обработанных игр. Останавливаем импорт.</comment>');
+            if ($processedCount >= 200) {
+                $output->writeln('⏹️ <comment>Достигнут лимит 200 обработанных игр. Останавливаем импорт.</comment>');
                 break;
             }
 
