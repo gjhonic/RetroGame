@@ -1,0 +1,15 @@
+{# templates/admin/_sidebar.html.twig #}
+{% for group in menuGroups %}
+    <ul class="nav flex-column mb-auto">
+        {% for item in group %}
+            <li class="nav-item">
+                <a class="nav-link d-flex align-items-center gap-2{% if app.request.attributes.get('_route') starts with item.route %} active{% endif %}"
+                   href="{{ path(item.route) }}">
+                    {{ item.icon|raw }}
+                    {{ item.label }}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+    {% if not loop.last %}<hr class="my-3">{% endif %}
+{% endfor %} 

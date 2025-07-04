@@ -5,49 +5,116 @@
 {% block body %}
     <h1>Игры</h1>
 
-    <a class="btn btn-primary mb-3" href="{{ path('admin_game_new') }}">Добавить игру</a>
+    <form method="get" class="row g-2 mb-4 align-items-end">
+        <div class="col-md-4">
+            <label for="search" class="form-label">Название</label>
+            <input type="text" id="search" name="q" value="{{ search|default('') }}" class="form-control" placeholder="Поиск по названию">
+        </div>
+        <div class="col-md-3">
+            <label for="genre" class="form-label">Жанр</label>
+            <select id="genre" name="genre" class="form-select">
+                <option value="">Все жанры</option>
+                {% for genre in genres %}
+                    <option value="{{ genre.id }}" {% if selectedGenre == genre.id %}selected{% endif %}>{{ genre.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100" type="submit">Фильтровать</button>
+        </div>
+    </form>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Name</th>
-                <th>Description</th>
-                <th>ReleaseDate</th>
-                <th>CreatedAt</th>
-                <th>UpdatedAt</th>
-                <th>CreatedBy</th>
-                <th>UpdatedBy</th>
-                <th>actions</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for game in games %}
-            <tr>
-                <td>{{ game.id }}</td>
-                <td>{{ game.name }}</td>
-                <td>{{ game.description }}</td>
-                <td>{{ game.releaseDate ? game.releaseDate|date('Y-m-d') : '' }}</td>
-                <td>{{ game.createdAt ? game.createdAt|date('Y-m-d H:i:s') : '' }}</td>
-                <td>{{ game.updatedAt ? game.updatedAt|date('Y-m-d H:i:s') : '' }}</td>
-                <td>{{ game.createdBy }}</td>
-                <td>{{ game.updatedBy }}</td>
-                <td>
-                    <a href="{{ path('admin_game_show', {'id': game.id}) }}"
-                       class="btn btn-sm btn-success btn-block">
-                        Смотреть
-                    </a>
-                    <a href="{{ path('admin_game_edit', {'id': game.id}) }}"
-                       class="btn btn-sm btn-primary btn-block">
-                        Редактировать
-                    </a>
-                </td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="9">no records found</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Обложка</th>
+                    <th>Название</th>
+                    <th>Жанры</th>
+                    <th>
+                        <a href="?q={{ search }}&genre={{ selectedGenre }}&sort=steamPopularity&direction={{ sort == 'steamPopularity' and direction == 'asc' ? 'desc' : 'asc' }}">
+                            Популярность
+                            {% if sort == 'steamPopularity' %}
+                                <span>{% if direction == 'asc' %}▲{% else %}▼{% endif %}</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="?q={{ search }}&genre={{ selectedGenre }}&sort=createdAt&direction={{ sort == 'createdAt' and direction == 'asc' ? 'desc' : 'asc' }}">
+                            Дата добавления
+                            {% if sort == 'createdAt' %}
+                                <span>{% if direction == 'asc' %}▲{% else %}▼{% endif %}</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for game in games %}
+                <tr>
+                    <td>{{ game.id }}</td>
+                    <td>
+                        {% if game.image %}
+                            <img src="{{ asset(game.image) }}" alt="{{ game.name }}" style="max-height: 48px; max-width: 48px;" class="img-thumbnail">
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ game.name }}</td>
+                    <td>
+                        {% for genre in game.genre %}
+                            <span class="badge bg-secondary">{{ genre.name }}</span>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% if game.steamPopularity is not null %}
+                            <span class="badge bg-info text-dark">{{ game.steamPopularity|number_format(0, '.', ' ') }}</span>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ game.createdAt ? game.createdAt|date('Y-m-d H:i') : '' }}</td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <a href="{{ path('admin_game_show', {'id': game.id}) }}" class="btn btn-sm btn-outline-success">Смотреть</a>
+                            <a href="{{ path('admin_game_edit', {'id': game.id}) }}" class="btn btn-sm btn-outline-primary">Редактировать</a>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="7">Записей не найдено</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if totalPages > 1 %}
+        <nav aria-label="Пагинация">
+            <ul class="pagination justify-content-center">
+                <li class="page-item{% if currentPage == 1 %} disabled{% endif %}">
+                    <a class="page-link" href="?q={{ search }}&genre={{ selectedGenre }}&sort={{ sort }}&direction={{ direction }}&page=1">« Первая</a>
+                </li>
+                <li class="page-item{% if currentPage == 1 %} disabled{% endif %}">
+                    <a class="page-link" href="?q={{ search }}&genre={{ selectedGenre }}&sort={{ sort }}&direction={{ direction }}&page={{ currentPage - 1 }}">‹</a>
+                </li>
+                {% for p in 1..totalPages %}
+                    <li class="page-item{% if p == currentPage %} active{% endif %}">
+                        <a class="page-link" href="?q={{ search }}&genre={{ selectedGenre }}&sort={{ sort }}&direction={{ direction }}&page={{ p }}">{{ p }}</a>
+                    </li>
+                {% endfor %}
+                <li class="page-item{% if currentPage == totalPages %} disabled{% endif %}">
+                    <a class="page-link" href="?q={{ search }}&genre={{ selectedGenre }}&sort={{ sort }}&direction={{ direction }}&page={{ currentPage + 1 }}">›</a>
+                </li>
+                <li class="page-item{% if currentPage == totalPages %} disabled{% endif %}">
+                    <a class="page-link" href="?q={{ search }}&genre={{ selectedGenre }}&sort={{ sort }}&direction={{ direction }}&page={{ totalPages }}">Последняя »</a>
+                </li>
+            </ul>
+        </nav>
+    {% endif %}
 {% endblock %}

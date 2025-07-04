@@ -1,11 +1,11 @@
 {% extends 'admin/admin_base.html.twig' %}
 
-{% block title %}Жанры{% endblock %}
+{% block title %}Добавить торговую площадку{% endblock %}
 
 {% block body %}
-    <h1>Create new Shop</h1>
+    <h1>Добавить торговую площадку</h1>
 
     {{ include('admin/shop/_form.html.twig') }}
 
-    <a href="{{ path('admin_shop_index') }}">back to list</a>
+    <a href="{{ path('admin_shop_index') }}">Назад к списку</a>
 {% endblock %}

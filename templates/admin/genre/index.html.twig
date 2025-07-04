@@ -5,17 +5,13 @@
 {% block body %}
     <h1>Жанры</h1>
 
-    <a class="btn btn-primary mb-3" href="{{ path('admin_genre_new') }}">Добавить жанр</a>
-
     <table class="table table-striped">
         <thead>
         <tr>
             <th>Название</th>
             <th>Описание</th>
             <th>Добавлен</th>
-            <th>Кем</th>
             <th>Изменён</th>
-            <th>Кем</th>
             <th>Действия</th>
         </tr>
         </thead>
@@ -25,16 +21,11 @@
                 <td>{{ genre.name }}</td>
                 <td>{{ genre.description|u.truncate(40) }}</td>
                 <td>{{ genre.createdAt|date('Y-m-d H:i') }}</td>
-                <td>{{ genre.createdBy }}</td>
                 <td>{{ genre.updatedAt ? genre.updatedAt|date('Y-m-d H:i') : '-' }}</td>
-                <td>{{ genre.updatedBy ?? '-' }}</td>
                 <td>
-                    <div>
-                        <a href="{{ path('admin_genre_edit', {'id': genre.id}) }}"
-                           class="btn btn-sm btn-primary btn-block">Изменить</a>
-                        {{ include('admin/genre/_delete_form.html.twig') }}
-                    </div>
-
+                    <a href="{{ path('admin_genre_show', {'id': genre.id}) }}" class="btn btn-sm btn-outline-success">
+                        Смотреть
+                    </a>
                 </td>
             </tr>
         {% else %}

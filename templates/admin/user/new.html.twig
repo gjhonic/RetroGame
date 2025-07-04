@@ -1,0 +1,9 @@
+{% extends 'admin/admin_base.html.twig' %}
+
+{% block title %}Добавить пользователя{% endblock %}
+
+{% block body %}
+    <h1>Добавить пользователя</h1>
+    {{ include('admin/user/_form.html.twig', {'button_label': 'Создать'}) }}
+    <a href="{{ path('admin_user_index') }}" class="btn btn-outline-secondary mt-3">Назад к списку</a>
+{% endblock %} 

@@ -1,0 +1,36 @@
+{% extends 'admin/admin_base.html.twig' %}
+
+{% block title %}Пользователь: {{ user.email }}{% endblock %}
+
+{% block body %}
+    <h1>Пользователь: {{ user.email }}</h1>
+    <div class="d-flex gap-2 mb-3">
+        <a href="{{ path('admin_user_index') }}" class="btn btn-outline-secondary">Назад к списку</a>
+        {% if is_granted('ROLE_ADMIN') %}
+            <a href="{{ path('admin_user_edit', {'id': user.id}) }}" class="btn btn-outline-primary">Редактировать</a>
+            <form method="post" action="{{ path('admin_user_delete', {'id': user.id}) }}" onsubmit="return confirm('Удалить пользователя?');">
+                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
+                <button class="btn btn-outline-danger">Удалить</button>
+            </form>
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        <strong>Email:</strong> {{ user.email }}
+    </div>
+    <div class="mb-3">
+        <strong>Имя:</strong> {{ user.name }}
+    </div>
+    <div class="mb-3">
+        <strong>Роли:</strong>
+        {% for role in user.roles %}
+            <span class="badge bg-secondary">{{ role }}</span>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <strong>Дата создания:</strong> {{ user.createdAt ? user.createdAt|date('Y-m-d H:i') : '' }}
+    </div>
+    <div class="mb-3">
+        <strong>Дата изменения:</strong> {{ user.updatedAt ? user.updatedAt|date('Y-m-d H:i') : '' }}
+    </div>
+{% endblock %} 

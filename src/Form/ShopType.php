@@ -4,6 +4,7 @@ namespace App\Form;
 
 use App\Entity\Shop;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -18,6 +19,11 @@ class ShopType extends AbstractType
             ->add('name')
             ->add('description')
             ->add('url')
+            ->add('image', FileType::class, [
+                'label' => 'Логотип/картинка магазина',
+                'mapped' => false,
+                'required' => false,
+            ])
         ;
     }
 

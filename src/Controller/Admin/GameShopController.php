@@ -2,9 +2,9 @@
 
 namespace App\Controller\Admin;
 
-use App\Entity\GameShop;
-use App\Form\GameShopType;
+use App\Entity\SteamApp;
 use App\Repository\GameShopRepository;
+use App\Repository\ShopRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,68 +14,81 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/admin/game-shop')]
 class GameShopController extends AbstractController
 {
-    #[Route('/', name: 'app_game_shop_index', methods: ['GET'])]
-    public function index(GameShopRepository $gameShopRepository): Response
-    {
-        return $this->render('game_shop/index.html.twig', [
-            'game_shops' => $gameShopRepository->findAll(),
-        ]);
-    }
+    #[Route('/', name: 'admin_game_shop_index', methods: ['GET'])]
+    public function index(
+        Request $request,
+        GameShopRepository $gameShopRepository,
+        ShopRepository $shopRepository
+    ): Response {
+        $shopId = $request->query->get('shop_id');
+        $sort = $request->query->get('sort', 'createdAt');
+        $direction = $request->query->get('direction', 'desc');
+        $page = max(1, (int)$request->query->get('page', '1'));
+        $limit = 15;
+        $offset = ($page - 1) * $limit;
 
-    #[Route('/new', name: 'app_game_shop_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
-    {
-        $gameShop = new GameShop();
-        $form = $this->createForm(GameShopType::class, $gameShop);
-        $form->handleRequest($request);
+        $qb = $gameShopRepository->createQueryBuilder('gs')
+            ->leftJoin('gs.shop', 's')
+            ->addSelect('s')
+            ->leftJoin('gs.game', 'g')
+            ->addSelect('g');
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($gameShop);
-            $entityManager->flush();
-
-            return $this->redirectToRoute('app_game_shop_index', [], Response::HTTP_SEE_OTHER);
+        if ($shopId) {
+            $qb->andWhere('s.id = :shopId')
+                ->setParameter('shopId', $shopId);
         }
 
-        return $this->render('game_shop/new.html.twig', [
-            'game_shop' => $gameShop,
-            'form' => $form,
-        ]);
-    }
-
-    #[Route('/{id}', name: 'app_game_shop_show', methods: ['GET'])]
-    public function show(GameShop $gameShop): Response
-    {
-        return $this->render('game_shop/show.html.twig', [
-            'game_shop' => $gameShop,
-        ]);
-    }
-
-    #[Route('/{id}/edit', name: 'app_game_shop_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, GameShop $gameShop, EntityManagerInterface $entityManager): Response
-    {
-        $form = $this->createForm(GameShopType::class, $gameShop);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->flush();
-
-            return $this->redirectToRoute('app_game_shop_index', [], Response::HTTP_SEE_OTHER);
+        if ($sort === 'createdAt') {
+            $qb->orderBy('gs.createdAt', $direction);
+        } else {
+            $qb->orderBy('gs.id', 'desc');
         }
 
-        return $this->render('game_shop/edit.html.twig', [
-            'game_shop' => $gameShop,
-            'form' => $form,
+        $qbCount = clone $qb;
+        $qb->setFirstResult($offset)->setMaxResults($limit);
+        $gameShops = $qb->getQuery()->getResult();
+        $total = (int)$qbCount->select('COUNT(gs.id)')->getQuery()->getSingleScalarResult();
+        $totalPages = (int)ceil($total / $limit);
+
+        $shops = $shopRepository->findAll();
+
+        return $this->render('admin/game_shop/index.html.twig', [
+            'gameShops' => $gameShops,
+            'shops' => $shops,
+            'shopId' => $shopId,
+            'sort' => $sort,
+            'direction' => $direction,
+            'page' => $page,
+            'totalPages' => $totalPages,
         ]);
     }
 
-    #[Route('/{id}', name: 'app_game_shop_delete', methods: ['POST'])]
-    public function delete(Request $request, GameShop $gameShop, EntityManagerInterface $entityManager): Response
+    #[Route('/{id}', name: 'admin_game_shop_show', requirements: ['id' => '\\d+'], methods: ['GET'])]
+    public function show(int $id, GameShopRepository $gameShopRepository, EntityManagerInterface $em): Response
     {
-        if ($this->isCsrfTokenValid('delete' . $gameShop->getId(), (string) $request->request->get('_token'))) {
-            $entityManager->remove($gameShop);
-            $entityManager->flush();
+        $gameShop = $gameShopRepository->findWithRelations($id);
+        if (!$gameShop) {
+            throw $this->createNotFoundException('GameShop не найден');
         }
 
-        return $this->redirectToRoute('app_game_shop_index', [], Response::HTTP_SEE_OTHER);
+        $dataFromApi = null;
+        if ($gameShop->getShop()?->getId() == 1) {
+            $steamApp = $em->getRepository(SteamApp::class)
+                ->findOneBy(['app_id' => $gameShop->getLinkGameId()]);
+            if ($steamApp) {
+                $raw = $steamApp->getRawData();
+                $decoded = json_decode((string)$raw, true);
+                if ($decoded) {
+                    $dataFromApi = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                } else {
+                    $dataFromApi = $raw;
+                }
+            }
+        }
+
+        return $this->render('admin/game_shop/show.html.twig', [
+            'gameShop' => $gameShop,
+            'dataFromApi' => $dataFromApi,
+        ]);
     }
 }
