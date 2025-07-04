@@ -141,7 +141,7 @@ class LogCronController extends AbstractController
         $cronName = $logCron->getCronName();
 
         // Формируем базовое имя файла
-        $logDir = "/var/www/retro-game/var/log/{$date}";
+        $logDir = __DIR__ . '/../../../var/log/' . $date;
 
         // Ищем файл с возможным смещением в несколько секунд
         $foundFile = null;
