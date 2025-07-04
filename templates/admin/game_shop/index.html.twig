@@ -1,39 +1,94 @@
-<!DOCTYPE html>
+{% extends 'admin/admin_base.html.twig' %}
 
-<title>GameShop index</title>
+{% block title %}Торговые площадки игр{% endblock %}
 
 {% block body %}
-    <h1>GameShop index</h1>
+    <h1>Торговые площадки игр</h1>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Link_game_id</th>
-                <th>Name</th>
-                <th>Link</th>
-                <th>actions</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for game_shop in game_shops %}
-            <tr>
-                <td>{{ game_shop.id }}</td>
-                <td>{{ game_shop.linkGameId }}</td>
-                <td>{{ game_shop.name }}</td>
-                <td>{{ game_shop.link }}</td>
-                <td>
-                    <a href="{{ path('app_game_shop_show', {'id': game_shop.id}) }}">show</a>
-                    <a href="{{ path('app_game_shop_edit', {'id': game_shop.id}) }}">edit</a>
-                </td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="5">no records found</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <form method="get" class="row g-2 mb-4 align-items-end">
+        <div class="col-md-4">
+            <label for="shop_id" class="form-label">Торговая площадка</label>
+            <select id="shop_id" name="shop_id" class="form-select">
+                <option value="">Все торговые площадки</option>
+                {% for shop in shops %}
+                    <option value="{{ shop.id }}" {% if shopId == shop.id %}selected{% endif %}>{{ shop.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100" type="submit">Фильтровать</button>
+        </div>
+    </form>
 
-    <a href="{{ path('app_game_shop_new') }}">Create new</a>
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Игра</th>
+                    <th>Торговая площадка</th>
+                    <th>Ссылка</th>
+                    <th>
+                        <a href="?shop_id={{ shopId }}&sort=createdAt&direction={{ sort == 'createdAt' and direction == 'asc' ? 'desc' : 'asc' }}">
+                            Дата добавления
+                            {% if sort == 'createdAt' %}
+                                <span>{% if direction == 'asc' %}▲{% else %}▼{% endif %}</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for gs in gameShops %}
+                <tr>
+                    <td>{{ gs.id }}</td>
+                    <td>{{ gs.game.name }}</td>
+                    <td>
+                        {% if gs.shop.image %}
+                            <img src="/uploads/shops/{{ gs.shop.image }}" alt="{{ gs.shop.name }}"
+                                 style="max-height: 48px; max-width: 48px;" class="img-thumbnail"
+                                 title="{{ gs.shop.name }}">
+                        {% else %}
+                            <span class="text-muted">{{ gs.shop.name }}</span>
+                        {% endif %}
+                    </td>
+                    <td><a href="{{ gs.link }}" target="_blank">Ссылка</a></td>
+                    <td>{{ gs.createdAt ? gs.createdAt|date('Y-m-d H:i') : '' }}</td>
+                    <td>
+                        <a href="{{ path('admin_game_shop_show', {id: gs.id}) }}" class="btn btn-sm btn-outline-success">Смотреть</a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="7">Записей не найдено</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if totalPages > 1 %}
+        <nav aria-label="Пагинация">
+            <ul class="pagination justify-content-center">
+                <li class="page-item{% if page == 1 %} disabled{% endif %}">
+                    <a class="page-link" href="?shop_id={{ shopId }}&sort={{ sort }}&direction={{ direction }}&page=1">« Первая</a>
+                </li>
+                <li class="page-item{% if page == 1 %} disabled{% endif %}">
+                    <a class="page-link" href="?shop_id={{ shopId }}&sort={{ sort }}&direction={{ direction }}&page={{ page - 1 }}">‹</a>
+                </li>
+                {% for p in 1..totalPages %}
+                    <li class="page-item{% if p == page %} active{% endif %}">
+                        <a class="page-link" href="?shop_id={{ shopId }}&sort={{ sort }}&direction={{ direction }}&page={{ p }}">{{ p }}</a>
+                    </li>
+                {% endfor %}
+                <li class="page-item{% if page == totalPages %} disabled{% endif %}">
+                    <a class="page-link" href="?shop_id={{ shopId }}&sort={{ sort }}&direction={{ direction }}&page={{ page + 1 }}">›</a>
+                </li>
+                <li class="page-item{% if page == totalPages %} disabled{% endif %}">
+                    <a class="page-link" href="?shop_id={{ shopId }}&sort={{ sort }}&direction={{ direction }}&page={{ totalPages }}">Последняя »</a>
+                </li>
+            </ul>
+        </nav>
+    {% endif %}
 {% endblock %}

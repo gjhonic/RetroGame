@@ -20,4 +20,15 @@ class GameShopRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, GameShop::class);
     }
+
+    public function findWithRelations(int $id): ?GameShop
+    {
+        return $this->createQueryBuilder('gs')
+            ->leftJoin('gs.game', 'g')->addSelect('g')
+            ->leftJoin('gs.shop', 's')->addSelect('s')
+            ->where('gs.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }
