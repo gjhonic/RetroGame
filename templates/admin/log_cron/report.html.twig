@@ -1,0 +1,66 @@
+{% extends 'admin/admin_base.html.twig' %}
+
+{% block title %}Отчёт по крон-командам{% endblock %}
+
+{% block body %}
+<h1>Отчёт по крон-командам</h1>
+<form method="get" class="mb-4">
+    <div class="row g-2 align-items-end">
+        <div class="col-auto">
+            <label for="dateFrom" class="form-label">С даты</label>
+            <input type="date" name="dateFrom" id="dateFrom" value="{{ dateFrom }}" class="form-control">
+        </div>
+        <div class="col-auto">
+            <label for="dateTo" class="form-label">По дату</label>
+            <input type="date" name="dateTo" id="dateTo" value="{{ dateTo }}" class="form-control">
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Показать</button>
+        </div>
+    </div>
+</form>
+<link href="https://unpkg.com/vis-timeline@latest/styles/vis-timeline-graph2d.min.css" rel="stylesheet" type="text/css" />
+<script src="https://unpkg.com/vis-timeline@latest/standalone/umd/vis-timeline-graph2d.min.js"></script>
+<div id="timeline" style="height: 500px;"></div>
+<script>
+const chartData = {{ chartData|json_encode|raw }};
+const colors = [
+    '#007bff', '#28a745', '#dc3545', '#ffc107', '#17a2b8', '#6f42c1', '#fd7e14', '#20c997', '#e83e8c', '#343a40'
+];
+const groupColorMap = {};
+const groups = Object.keys(chartData).map((cron, idx) => {
+    groupColorMap[cron] = colors[idx % colors.length];
+    return {
+        id: cron,
+        content: cron
+    };
+});
+const items = [];
+Object.entries(chartData).forEach(([cron, logs]) => {
+    logs.forEach(log => {
+        items.push({
+            id: log.id,
+            content: '',
+            group: cron,
+            start: log.start,
+            end: log.end,
+            style: 'background-color: ' + groupColorMap[cron] + '; border-color: ' + groupColorMap[cron] + ';'
+        });
+    });
+});
+const container = document.getElementById('timeline');
+const timeline = new vis.Timeline(container, items, groups, {
+    stack: false,
+    selectable: true,
+    orientation: 'top',
+    margin: { item: 10, axis: 5 },
+    tooltip: { followMouse: true }
+});
+timeline.on('select', function (props) {
+    if (props.items.length > 0) {
+        const logId = props.items[0];
+        window.location.href = "{{ path('admin_log_cron_show', {'id': 'LOG_ID'}) }}".replace('LOG_ID', logId);
+    }
+});
+</script>
+{% endblock %}

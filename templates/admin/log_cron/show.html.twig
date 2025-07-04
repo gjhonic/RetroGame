@@ -1,0 +1,22 @@
+{% extends 'admin/admin_base.html.twig' %}
+
+{% block title %}Лог крона{% endblock %}
+
+{% block body %}
+<h1>Детали лога крона</h1>
+<table class="table table-bordered">
+    <tr><th>ID</th><td>{{ log.id }}</td></tr>
+    <tr><th>Крон</th><td>{{ log.cronName }}</td></tr>
+    <tr><th>Дата старта</th><td>{{ log.datetimeStart ? log.datetimeStart|date('Y-m-d H:i:s') : '' }}</td></tr>
+    <tr><th>Дата окончания</th><td>{{ log.datetimeEnd ? log.datetimeEnd|date('Y-m-d H:i:s') : '' }}</td></tr>
+    <tr><th>Время работы (сек)</th><td>{{ log.workTime ? log.workTime|number_format(2, '.', ' ') : '' }}</td></tr>
+    <tr><th>Максимальная память (МБ)</th><td>{{ log.maxMemorySize ? log.maxMemorySize|number_format(2, '.', ' ') : '' }}</td></tr>
+    <tr><th>Дата создания записи</th><td>{{ log.createdAt ? log.createdAt|date('Y-m-d H:i:s') : '' }}</td></tr>
+</table>
+<div class="mt-3">
+    <a href="{{ path('admin_log_cron_index') }}" class="btn btn-secondary">Назад к списку</a>
+    {% if log.datetimeStart %}
+        <a href="{{ path('admin_log_cron_download_log', {'id': log.id}) }}" class="btn btn-primary">📥 Скачать лог</a>
+    {% endif %}
+</div>
+{% endblock %}

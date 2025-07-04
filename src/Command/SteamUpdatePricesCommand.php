@@ -4,6 +4,7 @@ namespace App\Command;
 
 use App\Entity\GameShop;
 use App\Entity\GameShopPriceHistory;
+use App\Entity\LogCron;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -30,6 +31,13 @@ class SteamUpdatePricesCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $startTime = microtime(true);
+
+        // --- Логирование старта ---
+        $logsCron = new LogCron();
+        $logsCron->setCronName('steam-update-prices');
+        $logsCron->setDatetimeStart(new \DateTime());
+        $this->entityManager->persist($logsCron);
+        $this->entityManager->flush();
 
         $now = new \DateTime();
         $output->writeln('🚀 <info>Начинаем обновление цен Steam...</info>');
@@ -67,9 +75,9 @@ class SteamUpdatePricesCommand extends Command
         // Преобразуем в простой массив ID
         $alreadyUpdatedIds = array_column($existingGameShops, 'gameShopId');
 
-        foreach ($steamGames as $index => $gameShop) {
-            if ($checked >= 1000) {
-                $output->writeln('⏹️ <comment>Достигнут лимит в 1000 игр. Завершаем.</comment>');
+        foreach ($steamGames as $gameShop) {
+            if ($checked >= 1500) {
+                $output->writeln('⏹️ <comment>Достигнут лимит в 1500 игр. Завершаем.</comment>');
                 break;
             }
 
@@ -166,6 +174,13 @@ class SteamUpdatePricesCommand extends Command
         $endTime = microtime(true);
         $duration = $endTime - $startTime;
         $output->writeln(sprintf('⏱️ <info>Время выполнения: %.2f секунд</info>', $duration));
+
+        // --- Логирование окончания ---
+        $logsCron->setDatetimeEnd(new \DateTime());
+        $logsCron->setWorkTime($duration);
+        $logsCron->setMaxMemorySize(round(memory_get_peak_usage(true) / 1024 / 1024, 2));
+        $this->entityManager->persist($logsCron);
+        $this->entityManager->flush();
 
         return Command::SUCCESS;
     }

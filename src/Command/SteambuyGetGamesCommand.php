@@ -6,6 +6,7 @@ use App\Entity\Game;
 use App\Entity\GameShop;
 use App\Entity\Shop;
 use App\Entity\SteambuyApp;
+use App\Entity\LogCron;
 use App\Service\SlugifyProcessor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -29,6 +30,15 @@ class SteambuyGetGamesCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $startTime = microtime(true);
+
+        // --- Логирование старта ---
+        $logsCron = new LogCron();
+        $logsCron->setCronName('steambuy-get-games');
+        $logsCron->setDatetimeStart(new \DateTime());
+        $this->entityManager->persist($logsCron);
+        $this->entityManager->flush();
+
         $games = $this->entityManager->getRepository(Game::class)->findAll();
         $shop = $this->entityManager->getRepository(Shop::class)->findOneBy(['id' => 2]);
 
@@ -136,6 +146,15 @@ class SteambuyGetGamesCommand extends Command
         $output->writeln(" - Пропущено (уже связано): $skippedExistingShop");
         $output->writeln(" - Пропущено (404 ранее): $skippedNotFound");
         $output->writeln(" - Ошибок: $errorsCount");
+
+        // --- Логирование окончания ---
+        $endTime = microtime(true);
+        $duration = $endTime - $startTime;
+        $logsCron->setDatetimeEnd(new \DateTime());
+        $logsCron->setWorkTime($duration);
+        $logsCron->setMaxMemorySize(round(memory_get_peak_usage(true) / 1024 / 1024, 2));
+        $this->entityManager->persist($logsCron);
+        $this->entityManager->flush();
 
         return Command::SUCCESS;
     }

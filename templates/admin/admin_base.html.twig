@@ -5,6 +5,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/x-icon" href="/uploads/logo/retrogame_logo.png">
     <title>{% block title %}Admin Dashboard{% endblock %}</title>
 
     <link href="{{ asset('admin/assets/dist/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -296,41 +297,31 @@
                                 </svg>
                                     Главная
                             </a></li>
-                        <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center gap-2" href="{{ path('admin_genre_index') }}">
-                                <svg
-                                        class="bi" aria-hidden="true">
-                                    <use xlink:href="#file-earmark"></use>
-                                </svg>
-                                Жанры
-                            </a>
-                        </li>
-                        <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2" href="{{ path('admin_game_index') }}">
-                                <svg
-                                        class="bi" aria-hidden="true">
-                                    <use xlink:href="#cart"></use>
-                                </svg>
-                                Игры
-                            </a></li>
-                        <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2" href="{{ path('admin_shop_index') }}">
-                                <svg
-                                        class="bi" aria-hidden="true">
-                                    <use xlink:href="#people"></use>
-                                </svg>
-                                Магазины
-                            </a></li>
                     </ul>
 
                     <hr class="my-3">
                     <ul class="nav flex-column mb-auto">
-                        <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2" href="#">
-                                <svg
-                                        class="bi" aria-hidden="true">
-                                    <use xlink:href="#gear-wide-connected"></use>
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center gap-2" href="{{ path('admin_log_cron_index') }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-text-fill" viewBox="0 0 16 16">
+                                    <path d="M12 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2M5 4h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1m-.5 2.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5M5 8h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1m0 2h3a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1"/>
                                 </svg>
-                                Настройки
-                            </a></li>
-                        <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2" href="#">
+                                Логи кронов
+                            </a>
+                        </li>
+                        <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2" href="{{ path('admin_log_cron_report') }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar-range" viewBox="0 0 16 16">
+                                    <path d="M9 7a1 1 0 0 1 1-1h5v2h-5a1 1 0 0 1-1-1M1 9h4a1 1 0 0 1 0 2H1z"/>
+                                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z"/>
+                                </svg>
+                                Отчеты кронов
+                            </a>
+                        </li>
+                    </ul>
+
+                    <hr class="my-3">
+                    <ul class="nav flex-column mb-auto">
+                        <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2" href="{{ path('admin_logout') }}">
                                 <svg
                                         class="bi" aria-hidden="true">
                                     <use xlink:href="#door-closed"></use>

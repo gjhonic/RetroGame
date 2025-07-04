@@ -4,6 +4,7 @@ namespace App\Command;
 
 use App\Entity\GameShop;
 use App\Entity\GameShopPriceHistory;
+use App\Entity\LogCron;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -29,9 +30,18 @@ class SteampayUpdatePricesCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $startTime = microtime(true);
+
         $now = new \DateTime();
         $output->writeln('🚀 <info>Начинаем обновление цен SteamBuy...</info>');
         $output->writeln('📅 <info>' . $now->format('Y-m-d H:i:s') . '</info>');
+
+        // --- Логирование старта ---
+        $logsCron = new LogCron();
+        $logsCron->setCronName('steampay-update-prices');
+        $logsCron->setDatetimeStart(new \DateTime());
+        $this->entityManager->persist($logsCron);
+        $this->entityManager->flush();
 
         $shop = $this->entityManager->getRepository(\App\Entity\Shop::class)->find(3);
         if (!$shop) {
@@ -186,6 +196,15 @@ class SteampayUpdatePricesCommand extends Command
         }
 
         $output->writeln("🎉 <info>Цены обновлены для {$updated} игр из {$checked} проверенных.</info>");
+
+        // --- Логирование окончания ---
+        $endTime = microtime(true);
+        $duration = $endTime - $startTime;
+        $logsCron->setDatetimeEnd(new \DateTime());
+        $logsCron->setWorkTime($duration);
+        $logsCron->setMaxMemorySize(round(memory_get_peak_usage(true) / 1024 / 1024, 2));
+        $this->entityManager->persist($logsCron);
+        $this->entityManager->flush();
 
         return Command::SUCCESS;
     }
