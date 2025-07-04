@@ -12,6 +12,7 @@
             <thead>
                 <tr>
                     <th>ID</th>
+                    <th>Имя</th>
                     <th>Email</th>
                     <th>Роли</th>
                     <th>Дата создания</th>
@@ -23,6 +24,7 @@
             {% for user in users %}
                 <tr>
                     <td>{{ user.id }}</td>
+                    <td>{{ user.name }}</td>
                     <td>{{ user.email }}</td>
                     <td>
                         {% for role in user.roles %}

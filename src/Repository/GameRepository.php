@@ -33,8 +33,7 @@ class GameRepository extends ServiceEntityRepository
         ?bool $isFree = null,
         string $sort = 'steamPopularity',
         string $direction = 'desc'
-    ): array
-    {
+    ): array {
         $qb = $this->createQueryBuilder('g')
             ->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit);

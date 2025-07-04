@@ -412,4 +412,23 @@ class Game
     {
         $this->updatedAt = new \DateTime();
     }
+
+    /**
+     * Метод считает среднюю популярность
+     * @return int|null
+     */
+    public function getSteamPopularityYear(): ?int
+    {
+        $nowYear = (int)(new \DateTime())->format('Y');
+        $dateReleased = (int)$this->releaseDate->format('Y');
+
+        $year = $nowYear - $dateReleased + 1;
+
+        if ($this->steamPopularity != null) {
+            return (int)($this->steamPopularity / $year);
+        }
+
+        return null;
+
+    }
 }

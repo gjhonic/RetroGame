@@ -88,6 +88,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?\DateTimeInterface $updatedAt = null;
 
     /**
+     * Имя пользователя.
+     *
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $name = null;
+
+    /**
      * Конструктор сущности.
      *
      * Инициализирует поля дат создания и обновления текущим временем
@@ -270,5 +278,27 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setUpdatedAtValue(): void
     {
         $this->updatedAt = new \DateTime();
+    }
+
+    /**
+     * Получить имя пользователя.
+     *
+     * @return string|null Имя пользователя
+     */
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    /**
+     * Установить имя пользователя.
+     *
+     * @param string|null $name Имя пользователя
+     * @return $this
+     */
+    public function setName(?string $name): self
+    {
+        $this->name = $name;
+        return $this;
     }
 }

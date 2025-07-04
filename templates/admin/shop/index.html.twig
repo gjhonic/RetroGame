@@ -5,13 +5,15 @@
 {% block body %}
     <h1>Торговые площадки</h1>
 
-    <a class="btn btn-primary mb-3" href="{{ path('admin_shop_new') }}">
-        Добавить торговую площадку
-    </a>
+    {% if is_granted('ROLE_ADMIN') %}
+        <a class="btn btn-primary mb-3" href="{{ path('admin_shop_new') }}">
+            Добавить торговую площадку
+        </a>
+    {% endif %}
 
     <div class="row g-4">
         {% for shop in shops %}
-            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-4">
                 <div class="card h-100 shadow-sm">
                     <div class="card-img-top text-center p-3" style="height: 180px;">
                         {% if shop.image %}
@@ -23,13 +25,12 @@
                         {% endif %}
                     </div>
                     <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">{{ shop.name }}</h5>
-                        <div class="mb-2">
-                            <a href="{{ shop.url }}" target="_blank" class="card-link">Перейти на сайт</a>
-                        </div>
+                        <h4 class="card-title">{{ shop.name }}</h4>
+
                         <div class="mt-auto d-flex gap-2">
                             <a href="{{ path('admin_shop_show', {'id': shop.id}) }}" class="btn btn-sm btn-outline-success w-100">Смотреть</a>
                             <a href="{{ path('admin_shop_edit', {'id': shop.id}) }}" class="btn btn-sm btn-outline-primary w-100">Редактировать</a>
+                            <a href="{{ shop.url }}" target="_blank" class="btn btn-sm btn-outline-secondary w-100">Перейти на сайт</a>
                         </div>
                     </div>
                 </div>

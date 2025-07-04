@@ -7,10 +7,10 @@ use App\Form\ShopType;
 use App\Repository\ShopRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
 #[Route('/admin/shop')]
@@ -37,14 +37,14 @@ class ShopController extends AbstractController
             if ($imageFile) {
                 $originalFilename = pathinfo($imageFile->getClientOriginalName(), PATHINFO_FILENAME);
                 $safeFilename = $slugger->slug($originalFilename);
-                $newFilename = $safeFilename.'-'.uniqid().'.'.$imageFile->guessExtension();
+                $newFilename = $safeFilename . '-' . uniqid() . '.' . $imageFile->guessExtension();
                 try {
                     $imageFile->move(
-                        $this->getParameter('kernel.project_dir').'/public/uploads/shops',
+                        $this->getParameter('kernel.project_dir') . '/public/uploads/shops',
                         $newFilename
                     );
                 } catch (\Exception $e) {
-                    $this->addFlash('danger', 'Ошибка загрузки файла: '.$e->getMessage());
+                    $this->addFlash('danger', 'Ошибка загрузки файла: ' . $e->getMessage());
                 }
                 $shop->setImage($newFilename);
             }
@@ -81,14 +81,14 @@ class ShopController extends AbstractController
             if ($imageFile) {
                 $originalFilename = pathinfo($imageFile->getClientOriginalName(), PATHINFO_FILENAME);
                 $safeFilename = $slugger->slug($originalFilename);
-                $newFilename = $safeFilename.'-'.uniqid().'.'.$imageFile->guessExtension();
+                $newFilename = $safeFilename . '-' . uniqid() . '.' . $imageFile->guessExtension();
                 try {
                     $imageFile->move(
-                        $this->getParameter('kernel.project_dir').'/public/uploads/shops',
+                        $this->getParameter('kernel.project_dir') . '/public/uploads/shops',
                         $newFilename
                     );
                 } catch (\Exception $e) {
-                    $this->addFlash('danger', 'Ошибка загрузки файла: '.$e->getMessage());
+                    $this->addFlash('danger', 'Ошибка загрузки файла: ' . $e->getMessage());
                 }
                 $shop->setImage($newFilename);
             } else {

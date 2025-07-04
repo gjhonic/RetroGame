@@ -43,7 +43,12 @@
     <div class="mb-3">
         <strong>Популярность в Steam:</strong>
         {% if game.steamPopularity is not null %}
-            <span class="badge bg-info text-dark">{{ game.steamPopularity|number_format(0, '.', ' ') }}</span>
+            <span class="badge bg-info text-dark" title="За все время">
+                {{ game.steamPopularity|number_format(0, '.', ' ') }}
+            </span>
+            <span class="badge bg-success text-dark" title="Средняя">
+                {{ game.getSteamPopularityYear()|number_format(0, '.', ' ') }}
+            </span>
         {% else %}
             <span class="text-muted">—</span>
         {% endif %}

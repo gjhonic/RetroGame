@@ -52,6 +52,7 @@ class GameController extends AbstractController
     {
         return $this->render('admin/game/show.html.twig', [
             'game' => $game,
+            '$steamPopularityYear' => $game->getSteamPopularityYear()
         ]);
     }
 
