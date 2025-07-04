@@ -23,7 +23,7 @@ class LogCronController extends AbstractController
     {
         $cronName = $request->query->get('cronName');
         $dateStart = $request->query->get('dateStart');
-        $page = max(1, (int)$request->query->get('page', 1));
+        $page = max(1, (int)$request->query->get('page', '1'));
         $limit = 25;
         $offset = ($page - 1) * $limit;
 
@@ -58,7 +58,7 @@ class LogCronController extends AbstractController
             $countQb->andWhere('l.datetimeStart >= :dateStart')
                 ->setParameter('dateStart', new \DateTime($dateStart));
         }
-        $total = $countQb->getQuery()->getSingleScalarResult();
+        $total = (int)$countQb->getQuery()->getSingleScalarResult();
         $pages = (int)ceil($total / $limit);
 
         return $this->render('admin/log_cron/index.html.twig', [

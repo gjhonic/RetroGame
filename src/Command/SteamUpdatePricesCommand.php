@@ -163,7 +163,6 @@ class SteamUpdatePricesCommand extends Command
                 // Сохраняем пачкой
                 if (count($batch) >= $batchSize) {
                     $this->entityManager->flush();
-                    $this->entityManager->clear(GameShopPriceHistory::class);
                     $batch = [];
                     $output->writeln("💾 <info>Сохранена пачка из {$batchSize} записей</info>");
                 }
