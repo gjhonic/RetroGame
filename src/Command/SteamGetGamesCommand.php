@@ -4,6 +4,7 @@ namespace App\Command;
 
 use App\Entity\Game;
 use App\Entity\GameShop;
+use App\Entity\LogCron;
 use App\Entity\SteamApp;
 use App\Service\SteamGameDataProcessor;
 use Doctrine\ORM\EntityManagerInterface;
@@ -30,7 +31,16 @@ class SteamGetGamesCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $startTime = microtime(true);
+
         $output->writeln('🚀 <info>Начинаем загрузку списка приложений Steam...</info>');
+
+        // --- Логирование старта ---
+        $logsCron = new LogCron();
+        $logsCron->setCronName('steam-get-games');
+        $logsCron->setDatetimeStart(new \DateTime());
+        $this->entityManager->persist($logsCron);
+        $this->entityManager->flush();
 
         try {
             $response = $this->httpClient->request('GET', 'https://api.steampowered.com/ISteamApps/GetAppList/v2/');
@@ -88,8 +98,8 @@ class SteamGetGamesCommand extends Command
         $batchSize = 10;
 
         foreach ($apps as $app) {
-            if ($processedCount >= 300) {
-                $output->writeln('⏹️ <comment>Достигнут лимит 300 обработанных игр. Останавливаем импорт.</comment>');
+            if ($processedCount >= 200) {
+                $output->writeln('⏹️ <comment>Достигнут лимит 200 обработанных игр. Останавливаем импорт.</comment>');
                 break;
             }
 
@@ -162,6 +172,15 @@ class SteamGetGamesCommand extends Command
 
         $this->entityManager->flush();
         $output->writeln("🎉 <info>Импорт завершён! Всего игр импортировано: {$imported}</info>");
+
+        // --- Логирование окончания ---
+        $endTime = microtime(true);
+        $duration = $endTime - $startTime;
+        $logsCron->setDatetimeEnd(new \DateTime());
+        $logsCron->setWorkTime($duration);
+        $logsCron->setMaxMemorySize(round(memory_get_peak_usage(true) / 1024 / 1024, 2));
+        $this->entityManager->persist($logsCron);
+        $this->entityManager->flush();
 
         return Command::SUCCESS;
     }
