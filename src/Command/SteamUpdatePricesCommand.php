@@ -46,8 +46,10 @@ class SteamUpdatePricesCommand extends Command
         $steamGames = $this->entityManager
             ->getRepository(GameShop::class)
             ->createQueryBuilder('gs')
+            ->join('gs.game', 'g')
             ->where('gs.shop = :shop')
             ->andWhere('gs.shouldImportPrice = true')
+            ->andWhere('g.isFree = false')
             ->setParameter('shop', 1)
             ->getQuery()
             ->getResult();
@@ -57,6 +59,8 @@ class SteamUpdatePricesCommand extends Command
 
         $updated = 0;
         $checked = 0;
+        $batchSize = 50; // Размер пачки для сохранения
+        $batch = [];
 
         $startOfDay = (new \DateTime())->setTime(0, 0, 0);
         $endOfDay = (new \DateTime())->setTime(23, 59, 59);
@@ -83,14 +87,6 @@ class SteamUpdatePricesCommand extends Command
 
             $game = $gameShop->getGame();
 
-            if ($game && $game->isFree()) {
-                $output->writeln(
-                    '⏩ <comment>' .
-                     "[{$gameShop->getLinkGameId()}] {$gameShop->getName()} — Бесплатная игра, пропускаем.</comment>"
-                );
-                continue;
-            }
-
             if (in_array($gameShop->getId(), $alreadyUpdatedIds)) {
                 $output->writeln(
                     '🔄 <comment>' .
@@ -100,7 +96,7 @@ class SteamUpdatePricesCommand extends Command
                 continue;
             }
 
-            usleep(random_int(1000000, 2000000));
+            usleep(random_int(1000000, 1500000));
 
             $appid = $gameShop->getLinkGameId();
             $url = "https://store.steampowered.com/app/{$appid}/?cc=ru";
@@ -157,18 +153,31 @@ class SteamUpdatePricesCommand extends Command
                     $history->setUpdatedAt(new \DateTime());
 
                     $this->entityManager->persist($history);
+                    $batch[] = $history;
                     $output->writeln("✅ <info>[{$appid}] {$gameShop->getName()} — {$price} ₽</info>");
                     ++$updated;
                 } else {
                     $output->writeln("⚠️ <comment>[{$appid}] Цена равна 0, не сохраняем.</comment>");
                 }
+
+                // Сохраняем пачкой
+                if (count($batch) >= $batchSize) {
+                    $this->entityManager->flush();
+                    $this->entityManager->clear(GameShopPriceHistory::class);
+                    $batch = [];
+                    $output->writeln("💾 <info>Сохранена пачка из {$batchSize} записей</info>");
+                }
             } catch (\Throwable $e) {
                 $output->writeln("<error>⛔ [{$appid}] Ошибка при запросе: {$e->getMessage()}</error>");
             }
-            $this->entityManager->flush();
         }
 
-        $this->entityManager->flush();
+        // Сохраняем оставшиеся записи
+        if (!empty($batch)) {
+            $this->entityManager->flush();
+            $output->writeln("💾 <info>Сохранена финальная пачка из " . count($batch) . " записей</info>");
+        }
+
         $output->writeln("🎉 <info>Цены обновлены для {$updated} игр из {$checked} проверенных.</info>");
 
         $endTime = microtime(true);
