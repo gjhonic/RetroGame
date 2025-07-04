@@ -14,6 +14,37 @@
     <script src="{{ asset('admin/assets/js/color-modes.js') }}"></script>
 
     <style>
+        body {
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+            background: linear-gradient(135deg, #232526 0%, #414345 100%);
+        }
+        .login-bg-svg {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .login-bg-svg .wave {
+            animation: waveMove 12s linear infinite alternate;
+        }
+        .login-bg-svg .circle {
+            opacity: 0.15;
+            animation: float 8s ease-in-out infinite alternate;
+        }
+        @keyframes waveMove {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-40px); }
+        }
+        @keyframes float {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(30px); }
+        }
+        .login-card {
+            position: relative;
+            z-index: 1;
+        }
         .bd-placeholder-img {
             font-size: 1.125rem;
             text-anchor: middle;
