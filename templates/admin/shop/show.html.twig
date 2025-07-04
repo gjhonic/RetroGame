@@ -13,7 +13,10 @@
             <a href="{{ path('admin_shop_edit', {'id': shop.id}) }}" class="btn btn-outline-primary">
                 Редактировать
             </a>
-            {{ include('admin/shop/_delete_form.html.twig') }}
+            {% if is_granted('ROLE_ADMIN') %}
+                {{ include('admin/shop/_delete_form.html.twig') }}
+            {% endif %}
+
         </div>
     </div>
 

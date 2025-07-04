@@ -78,9 +78,11 @@
                         {% endif %}
                     </td>
                     <td>{{ game.createdAt ? game.createdAt|date('Y-m-d H:i') : '' }}</td>
-                    <td class="d-flex gap-2">
-                        <a href="{{ path('admin_game_show', {'id': game.id}) }}" class="btn btn-sm btn-outline-success">Смотреть</a>
-                        <a href="{{ path('admin_game_edit', {'id': game.id}) }}" class="btn btn-sm btn-outline-primary">Редактировать</a>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <a href="{{ path('admin_game_show', {'id': game.id}) }}" class="btn btn-sm btn-outline-success">Смотреть</a>
+                            <a href="{{ path('admin_game_edit', {'id': game.id}) }}" class="btn btn-sm btn-outline-primary">Редактировать</a>
+                        </div>
                     </td>
                 </tr>
             {% else %}
