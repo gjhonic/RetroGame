@@ -150,7 +150,7 @@ class LogCronController extends AbstractController
         // Проверяем файлы в диапазоне ±20 секунд
         for ($offset = -20; $offset <= 20; $offset++) {
             $checkTime = (new \DateTime())->setTimestamp($timeObj->getTimestamp() + $offset);
-            $checkFileName = "get-{$cronName}-{$checkTime->format('H-i-s')}.log";
+            $checkFileName = "{$cronName}-{$checkTime->format('H-i-s')}.log";
 
             $checkPath = "{$logDir}/{$checkFileName}";
 
