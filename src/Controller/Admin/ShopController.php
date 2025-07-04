@@ -39,14 +39,13 @@ class ShopController extends AbstractController
                 $safeFilename = $slugger->slug($originalFilename);
                 $newFilename = $safeFilename . '-' . uniqid() . '.' . $imageFile->guessExtension();
                 try {
-                    $projectDir = $this->getParameter('kernel.project_dir');
-                    if (!is_string($projectDir) || !$projectDir) {
-                        throw new \RuntimeException('Не удалось получить параметр kernel.project_dir');
+                    $uploadDir = __DIR__ . '/../../../public/uploads/shops';
+                    if (!is_dir($uploadDir)) {
+                        if (!mkdir($uploadDir, 0777, true) && !is_dir($uploadDir)) {
+                            throw new \RuntimeException('Не удалось создать директорию загрузки: ' . $uploadDir);
+                        }
                     }
-                    $imageFile->move(
-                        $projectDir . '/public/uploads/shops',
-                        $newFilename
-                    );
+                    $imageFile->move($uploadDir, $newFilename);
                 } catch (\Exception $e) {
                     $this->addFlash('danger', 'Ошибка загрузки файла: ' . $e->getMessage());
                 }
@@ -91,14 +90,13 @@ class ShopController extends AbstractController
                 $safeFilename = $slugger->slug($originalFilename);
                 $newFilename = $safeFilename . '-' . uniqid() . '.' . $imageFile->guessExtension();
                 try {
-                    $projectDir = $this->getParameter('kernel.project_dir');
-                    if (!is_string($projectDir) || !$projectDir) {
-                        throw new \RuntimeException('Не удалось получить параметр kernel.project_dir');
+                    $uploadDir = __DIR__ . '/../../../public/uploads/shops';
+                    if (!is_dir($uploadDir)) {
+                        if (!mkdir($uploadDir, 0777, true) && !is_dir($uploadDir)) {
+                            throw new \RuntimeException('Не удалось создать директорию загрузки: ' . $uploadDir);
+                        }
                     }
-                    $imageFile->move(
-                        $projectDir . '/public/uploads/shops',
-                        $newFilename
-                    );
+                    $imageFile->move($uploadDir, $newFilename);
                 } catch (\Exception $e) {
                     $this->addFlash('danger', 'Ошибка загрузки файла: ' . $e->getMessage());
                 }
