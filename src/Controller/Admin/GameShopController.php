@@ -2,9 +2,7 @@
 
 namespace App\Controller\Admin;
 
-use App\Entity\GameShop;
 use App\Entity\SteamApp;
-use App\Form\GameShopType;
 use App\Repository\GameShopRepository;
 use App\Repository\ShopRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -17,12 +15,15 @@ use Symfony\Component\Routing\Annotation\Route;
 class GameShopController extends AbstractController
 {
     #[Route('/', name: 'admin_game_shop_index', methods: ['GET'])]
-    public function index(Request $request, GameShopRepository $gameShopRepository, ShopRepository $shopRepository): Response
-    {
+    public function index(
+        Request $request,
+        GameShopRepository $gameShopRepository,
+        ShopRepository $shopRepository
+    ): Response {
         $shopId = $request->query->get('shop_id');
         $sort = $request->query->get('sort', 'createdAt');
         $direction = $request->query->get('direction', 'desc');
-        $page = max(1, (int)$request->query->get('page', 1));
+        $page = max(1, (int)$request->query->get('page', '1'));
         $limit = 15;
         $offset = ($page - 1) * $limit;
 
@@ -71,12 +72,12 @@ class GameShopController extends AbstractController
         }
 
         $dataFromApi = null;
-        if ($gameShop->getShop()->getId() == 1) {
+        if ($gameShop->getShop()?->getId() == 1) {
             $steamApp = $em->getRepository(SteamApp::class)
                 ->findOneBy(['app_id' => $gameShop->getLinkGameId()]);
             if ($steamApp) {
                 $raw = $steamApp->getRawData();
-                $decoded = json_decode($raw, true);
+                $decoded = json_decode((string)$raw, true);
                 if ($decoded) {
                     $dataFromApi = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
                 } else {

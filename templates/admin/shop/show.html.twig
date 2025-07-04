@@ -13,6 +13,7 @@
             <a href="{{ path('admin_shop_edit', {'id': shop.id}) }}" class="btn btn-outline-primary">
                 Редактировать
             </a>
+            <a href="{{ path('admin_game_shop_index', {shop_id: shop.id}) }}" class="btn btn-outline-success">Смотреть игры</a>
             {% if is_granted('ROLE_ADMIN') %}
                 {{ include('admin/shop/_delete_form.html.twig') }}
             {% endif %}

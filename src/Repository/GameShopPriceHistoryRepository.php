@@ -23,7 +23,7 @@ class GameShopPriceHistoryRepository extends ServiceEntityRepository
 
     /**
      * Возвращает статистику по количеству импортированных цен по дням.
-     * @return array [ ['date' => '2024-07-07', 'count' => 123], ... ]
+     * @return list<array<string, mixed>> [ ['date' => '2024-07-07', 'count' => 123], ... ]
      */
     public function getImportStatsByDay(?\DateTimeInterface $dateFrom = null, ?\DateTimeInterface $dateTo = null): array
     {

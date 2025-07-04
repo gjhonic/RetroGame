@@ -33,15 +33,17 @@
                     </td>
                     <td>{{ user.createdAt ? user.createdAt|date('Y-m-d H:i') : '' }}</td>
                     <td>{{ user.updatedAt ? user.updatedAt|date('Y-m-d H:i') : '' }}</td>
-                    <td class="d-flex gap-2">
-                        <a href="{{ path('admin_user_show', {'id': user.id}) }}" class="btn btn-sm btn-outline-success">Смотреть</a>
-                        {% if is_granted('ROLE_ADMIN') %}
-                            <a href="{{ path('admin_user_edit', {'id': user.id}) }}" class="btn btn-sm btn-outline-primary">Редактировать</a>
-                            <form method="post" action="{{ path('admin_user_delete', {'id': user.id}) }}" onsubmit="return confirm('Удалить пользователя?');">
-                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
-                                <button class="btn btn-sm btn-outline-danger">Удалить</button>
-                            </form>
-                        {% endif %}
+                    <td>
+                        <div class="d-flex gap-2">
+                            <a href="{{ path('admin_user_show', {'id': user.id}) }}" class="btn btn-sm btn-outline-success">Смотреть</a>
+                            {% if is_granted('ROLE_ADMIN') %}
+                                <a href="{{ path('admin_user_edit', {'id': user.id}) }}" class="btn btn-sm btn-outline-primary">Редактировать</a>
+                                <form method="post" action="{{ path('admin_user_delete', {'id': user.id}) }}" onsubmit="return confirm('Удалить пользователя?');">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
+                                    <button class="btn btn-sm btn-outline-danger">Удалить</button>
+                                </form>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
             {% else %}

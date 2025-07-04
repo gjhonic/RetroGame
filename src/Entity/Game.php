@@ -420,6 +420,10 @@ class Game
     public function getSteamPopularityYear(): ?int
     {
         $nowYear = (int)(new \DateTime())->format('Y');
+        if ($this->releaseDate == null) {
+            return null;
+        }
+
         $dateReleased = (int)$this->releaseDate->format('Y');
 
         $year = $nowYear - $dateReleased + 1;
@@ -429,6 +433,5 @@ class Game
         }
 
         return null;
-
     }
 }

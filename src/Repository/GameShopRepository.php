@@ -5,7 +5,6 @@ namespace App\Repository;
 use App\Entity\GameShop;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-use Doctrine\DBAL\Connection;
 
 /**
  * @extends ServiceEntityRepository<GameShop>
@@ -35,10 +34,12 @@ class GameShopRepository extends ServiceEntityRepository
 
     /**
      * Возвращает статистику импорта игр по дням и площадкам.
-     * @return array [ ['date' => '2024-07-07', 'shop' => 'Steam', 'shop_id' => 1, 'count' => 123], ... ]
+     * @return list<array<string, mixed>>
      */
-    public function getImportStatsByDayAndShop(?\DateTimeInterface $dateFrom = null, ?\DateTimeInterface $dateTo = null): array
-    {
+    public function getImportStatsByDayAndShop(
+        ?\DateTimeInterface $dateFrom = null,
+        ?\DateTimeInterface $dateTo = null
+    ): array {
         $conn = $this->getEntityManager()->getConnection();
         $params = [];
         $where = [];

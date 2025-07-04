@@ -39,8 +39,12 @@ class ShopController extends AbstractController
                 $safeFilename = $slugger->slug($originalFilename);
                 $newFilename = $safeFilename . '-' . uniqid() . '.' . $imageFile->guessExtension();
                 try {
+                    $projectDir = $this->getParameter('kernel.project_dir');
+                    if (!is_string($projectDir) || !$projectDir) {
+                        throw new \RuntimeException('Не удалось получить параметр kernel.project_dir');
+                    }
                     $imageFile->move(
-                        $this->getParameter('kernel.project_dir') . '/public/uploads/shops',
+                        $projectDir . '/public/uploads/shops',
                         $newFilename
                     );
                 } catch (\Exception $e) {
@@ -69,8 +73,12 @@ class ShopController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'admin_shop_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Shop $shop, EntityManagerInterface $entityManager, SluggerInterface $slugger): Response
-    {
+    public function edit(
+        Request $request,
+        Shop $shop,
+        EntityManagerInterface $entityManager,
+        SluggerInterface $slugger
+    ): Response {
         $form = $this->createForm(ShopType::class, $shop);
         $form->handleRequest($request);
         $oldImage = $shop->getImage();
@@ -83,8 +91,12 @@ class ShopController extends AbstractController
                 $safeFilename = $slugger->slug($originalFilename);
                 $newFilename = $safeFilename . '-' . uniqid() . '.' . $imageFile->guessExtension();
                 try {
+                    $projectDir = $this->getParameter('kernel.project_dir');
+                    if (!is_string($projectDir) || !$projectDir) {
+                        throw new \RuntimeException('Не удалось получить параметр kernel.project_dir');
+                    }
                     $imageFile->move(
-                        $this->getParameter('kernel.project_dir') . '/public/uploads/shops',
+                        $projectDir . '/public/uploads/shops',
                         $newFilename
                     );
                 } catch (\Exception $e) {

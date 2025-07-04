@@ -61,8 +61,12 @@ class UserController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'admin_user_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, User $user, EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher): Response
-    {
+    public function edit(
+        Request $request,
+        User $user,
+        EntityManagerInterface $entityManager,
+        UserPasswordHasherInterface $passwordHasher
+    ): Response {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
         $form = $this->createForm(UserType::class, $user, ['is_create' => false]);
         $form->handleRequest($request);
