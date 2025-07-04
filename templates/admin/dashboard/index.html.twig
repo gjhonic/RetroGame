@@ -1,8 +1,124 @@
 {% extends 'admin/admin_base.html.twig' %}
 
-{% block title %}Админика{% endblock %}
+{% block title %}Админка{% endblock %}
 
 {% block body %}
-    <h1>Дашборд</h1>
-    {# Таблица с играми и т.д. #}
+    <h1 class="mb-4">Дашборд</h1>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-end mb-3">
+                <div class="col-auto">
+                    <input type="date" id="dateFrom" name="dateFrom" class="form-control" value="{{ dateFrom }}">
+                </div>
+                <div class="col-auto">
+                    <input type="date" id="dateTo" name="dateTo" class="form-control" value="{{ dateTo }}">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">Показать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Импортировано игр по площадкам</h5>
+
+            <canvas id="importChart" height="80"></canvas>
+        </div>
+    </div>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Импортировано цен по дням</h5>
+            <canvas id="importPriceChart" height="80"></canvas>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Готовим данные для графика
+        const rawStats = {{ importStats|json_encode|raw }};
+        // Собираем уникальные даты и площадки
+        const dates = [...new Set(rawStats.map(r => r.date))].sort();
+        const shops = [...new Set(rawStats.map(r => r.shop))];
+        // Цвета для площадок
+        const palette = [
+            'rgba(199, 101, 101, 0.85)',
+            'rgba(70, 156, 206, 0.85)',
+            'rgba(198, 199, 198, 0.85)',
+            'rgba(40, 167, 69, 0.85)',
+            'rgba(255, 159, 64, 0.85)',
+            'rgba(255, 206, 86, 0.85)',
+            'rgba(75, 192, 192, 0.85)',
+            'rgba(231, 233, 237, 0.85)'
+        ];
+        // Формируем данные для каждой площадки
+        const datasets = shops.map((shop, idx) => {
+            return {
+                label: shop,
+                data: dates.map(date => {
+                    const found = rawStats.find(r => r.date === date && r.shop === shop);
+                    return found ? found.count : 0;
+                }),
+                backgroundColor: palette[idx % palette.length],
+                borderColor: palette[idx % palette.length],
+                borderWidth: 1
+            };
+        });
+        const ctx = document.getElementById('importChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: dates,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Импортировано игр' } },
+                    x: { title: { display: true, text: 'Дата' }, stacked: true },
+                    y: { ...this.y, stacked: true }
+                }
+            }
+        });
+
+        // График по импортированным ценам
+        const priceStats = {{ importPriceStats|json_encode|raw }};
+        const priceDates = priceStats.map(r => r.date).sort();
+        const priceCounts = priceDates.map(date => {
+            const found = priceStats.find(r => r.date === date);
+            return found ? found.count : 0;
+        });
+        const ctxPrice = document.getElementById('importPriceChart').getContext('2d');
+        new Chart(ctxPrice, {
+            type: 'bar',
+            data: {
+                labels: priceDates,
+                datasets: [{
+                    label: 'Импортировано цен',
+                    data: priceCounts,
+                    backgroundColor: 'rgba(70, 156, 206, 0.85)',
+                    borderColor: 'rgba(70, 156, 206, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    title: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Импортировано цен' } },
+                    x: { title: { display: true, text: 'Дата' } }
+                }
+            }
+        });
+    </script>
 {% endblock %}
