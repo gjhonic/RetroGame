@@ -72,23 +72,36 @@
     {% if totalPages > 1 %}
         <nav aria-label="Пагинация">
             <ul class="pagination justify-content-center">
-                <li class="page-item{% if page == 1 %} disabled{% endif %}">
-                    <a class="page-link" href="?shop_id={{ shopId }}&sort={{ sort }}&direction={{ direction }}&page=1">« Первая</a>
+                {% set range = 2 %}
+
+                {# Первая страница #}
+                <li class="page-item{% if page == 1 %} active{% endif %}">
+                    <a class="page-link" href="?shop_id={{ shopId }}&sort={{ sort }}&direction={{ direction }}&page=1">1</a>
                 </li>
-                <li class="page-item{% if page == 1 %} disabled{% endif %}">
-                    <a class="page-link" href="?shop_id={{ shopId }}&sort={{ sort }}&direction={{ direction }}&page={{ page - 1 }}">‹</a>
-                </li>
-                {% for p in 1..totalPages %}
-                    <li class="page-item{% if p == page %} active{% endif %}">
-                        <a class="page-link" href="?shop_id={{ shopId }}&sort={{ sort }}&direction={{ direction }}&page={{ p }}">{{ p }}</a>
-                    </li>
+
+                {% if page - range > 2 %}
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% endif %}
+
+                {# Средние страницы #}
+                {% for p in (page - range)..(page + range) %}
+                    {% if p > 1 and p < totalPages %}
+                        <li class="page-item{% if page == p %} active{% endif %}">
+                            <a class="page-link" href="?shop_id={{ shopId }}&sort={{ sort }}&direction={{ direction }}&page={{ p }}">{{ p }}</a>
+                        </li>
+                    {% endif %}
                 {% endfor %}
-                <li class="page-item{% if page == totalPages %} disabled{% endif %}">
-                    <a class="page-link" href="?shop_id={{ shopId }}&sort={{ sort }}&direction={{ direction }}&page={{ page + 1 }}">›</a>
-                </li>
-                <li class="page-item{% if page == totalPages %} disabled{% endif %}">
-                    <a class="page-link" href="?shop_id={{ shopId }}&sort={{ sort }}&direction={{ direction }}&page={{ totalPages }}">Последняя »</a>
-                </li>
+
+                {% if page + range < totalPages - 1 %}
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% endif %}
+
+                {# Последняя страница #}
+                {% if totalPages > 1 %}
+                    <li class="page-item{% if page == totalPages %} active{% endif %}">
+                        <a class="page-link" href="?shop_id={{ shopId }}&sort={{ sort }}&direction={{ direction }}&page={{ totalPages }}">{{ totalPages }}</a>
+                    </li>
+                {% endif %}
             </ul>
         </nav>
     {% endif %}
