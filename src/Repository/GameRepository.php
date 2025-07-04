@@ -25,12 +25,24 @@ class GameRepository extends ServiceEntityRepository
     /**
      * @return array<string, mixed>
      */
-    public function findGamesByFilters(?string $search, ?int $genreId, int $page = 1, int $limit = 40): array
+    public function findGamesByFilters(
+        ?string $search,
+        ?int $genreId,
+        int $page = 1,
+        int $limit = 40,
+        ?bool $isFree = null,
+        string $sort = 'steamPopularity',
+        string $direction = 'desc'
+    ): array
     {
         $qb = $this->createQueryBuilder('g')
-            ->orderBy('g.steamPopularity', 'DESC')
             ->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit);
+
+        $allowedSorts = ['steamPopularity', 'createdAt'];
+        $sort = in_array($sort, $allowedSorts, true) ? $sort : 'steamPopularity';
+        $direction = strtolower($direction) === 'asc' ? 'ASC' : 'DESC';
+        $qb->orderBy('g.' . $sort, $direction);
 
         if ($search) {
             $qb->andWhere('g.name LIKE :search')
@@ -42,12 +54,17 @@ class GameRepository extends ServiceEntityRepository
                 ->setParameter('genreId', $genreId);
         }
 
+        if ($isFree !== null) {
+            $qb->andWhere('g.isFree = :isFree')
+                ->setParameter('isFree', $isFree);
+        }
+
         $paginator = new Paginator($qb, true);
 
         return iterator_to_array($paginator);
     }
 
-    public function countByFilters(?string $search, ?int $genreId): int
+    public function countByFilters(?string $search, ?int $genreId, ?bool $isFree = null): int
     {
         $qb = $this->createQueryBuilder('g')
             ->select('COUNT(g.id)');
@@ -60,6 +77,11 @@ class GameRepository extends ServiceEntityRepository
         if ($genreId) {
             $qb->andWhere(':genreId MEMBER OF g.genre')
                 ->setParameter('genreId', $genreId);
+        }
+
+        if ($isFree !== null) {
+            $qb->andWhere('g.isFree = :isFree')
+                ->setParameter('isFree', $isFree);
         }
 
         return (int) $qb->getQuery()->getSingleScalarResult();

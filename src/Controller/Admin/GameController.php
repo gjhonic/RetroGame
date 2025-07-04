@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\Game;
 use App\Form\GameType;
 use App\Repository\GameRepository;
+use App\Repository\GenreRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,30 +16,34 @@ use Symfony\Component\Routing\Annotation\Route;
 class GameController extends AbstractController
 {
     #[Route('/', name: 'admin_game_index', methods: ['GET'])]
-    public function index(GameRepository $gameRepository): Response
+    public function index(GameRepository $gameRepository, GenreRepository $genreRepository, Request $request): Response
     {
-        return $this->render('admin/game/index.html.twig', [
-            'games' => $gameRepository->findAll(),
-        ]);
-    }
+        $search = $request->query->get('q');
+        $genreId = $request->query->get('genre');
+        $page = (int) max(1, (int) $request->query->get('page', '1'));
+        $limit = 20;
 
-    #[Route('/new', name: 'admin_game_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
-    {
-        $game = new Game();
-        $form = $this->createForm(GameType::class, $game);
-        $form->handleRequest($request);
+        $sort = $request->query->get('sort', 'steamPopularity');
+        $direction = strtolower($request->query->get('direction', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($game);
-            $entityManager->flush();
-
-            return $this->redirectToRoute('admin_game_index', [], Response::HTTP_SEE_OTHER);
+        if (null !== $genreId) {
+            $genreId = (int) $genreId;
         }
 
-        return $this->render('admin/game/new.html.twig', [
-            'game' => $game,
-            'form' => $form,
+        $games = $gameRepository->findGamesByFilters($search, $genreId, $page, $limit, null, $sort, $direction);
+        $total = $gameRepository->countByFilters($search, $genreId, null);
+        $totalPages = (int) ceil($total / $limit);
+        $genres = $genreRepository->findAll();
+
+        return $this->render('admin/game/index.html.twig', [
+            'games' => $games,
+            'genres' => $genres,
+            'search' => $search,
+            'selectedGenre' => $genreId,
+            'sort' => $sort,
+            'direction' => $direction,
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
         ]);
     }
 

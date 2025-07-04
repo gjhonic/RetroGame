@@ -1,0 +1,9 @@
+{% extends 'admin/admin_base.html.twig' %}
+
+{% block title %}Редактировать пользователя{% endblock %}
+
+{% block body %}
+    <h1>Редактировать пользователя</h1>
+    {{ include('admin/user/_form.html.twig', {'button_label': 'Сохранить изменения'}) }}
+    <a href="{{ path('admin_user_index') }}" class="btn btn-outline-secondary mt-3">Назад к списку</a>
+{% endblock %} 

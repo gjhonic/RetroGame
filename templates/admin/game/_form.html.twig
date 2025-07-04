@@ -1,4 +1,15 @@
 {{ form_start(form) }}
-    {{ form_widget(form) }}
-    <button class="btn">{{ button_label|default('Save') }}</button>
+    <div class="mb-3">
+        {{ form_label(form.description, null, {'label_attr': {'class': 'form-label'}}) }}
+        {{ form_widget(form.description, {'attr': {'class': 'form-control', 'rows': 5}}) }}
+        {{ form_errors(form.description) }}
+    </div>
+    <div class="mb-3">
+        {{ form_label(form.steamPopularity, null, {'label_attr': {'class': 'form-label'}}) }}
+        {{ form_widget(form.steamPopularity, {'attr': {'class': 'form-control', 'min': 0}}) }}
+        {{ form_errors(form.steamPopularity) }}
+    </div>
+    <div class="d-grid">
+        <button class="btn btn-primary btn-lg">{{ button_label|default('Сохранить') }}</button>
+    </div>
 {{ form_end(form) }}

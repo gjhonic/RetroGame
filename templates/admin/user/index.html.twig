@@ -1,0 +1,53 @@
+{% extends 'admin/admin_base.html.twig' %}
+
+{% block title %}Пользователи{% endblock %}
+
+{% block body %}
+    <h1>Пользователи</h1>
+    {% if is_granted('ROLE_ADMIN') %}
+        <a href="{{ path('admin_user_new') }}" class="btn btn-primary mb-3">Добавить пользователя</a>
+    {% endif %}
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Email</th>
+                    <th>Роли</th>
+                    <th>Дата создания</th>
+                    <th>Дата изменения</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>
+                        {% for role in user.roles %}
+                            <span class="badge bg-secondary">{{ role }}</span>
+                        {% endfor %}
+                    </td>
+                    <td>{{ user.createdAt ? user.createdAt|date('Y-m-d H:i') : '' }}</td>
+                    <td>{{ user.updatedAt ? user.updatedAt|date('Y-m-d H:i') : '' }}</td>
+                    <td class="d-flex gap-2">
+                        <a href="{{ path('admin_user_show', {'id': user.id}) }}" class="btn btn-sm btn-outline-success">Смотреть</a>
+                        {% if is_granted('ROLE_ADMIN') %}
+                            <a href="{{ path('admin_user_edit', {'id': user.id}) }}" class="btn btn-sm btn-outline-primary">Редактировать</a>
+                            <form method="post" action="{{ path('admin_user_delete', {'id': user.id}) }}" onsubmit="return confirm('Удалить пользователя?');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
+                                <button class="btn btn-sm btn-outline-danger">Удалить</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="6">Пользователей не найдено</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %} 

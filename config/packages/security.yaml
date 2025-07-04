@@ -29,4 +29,4 @@ security:
         - { path: ^/admin/login, roles: PUBLIC_ACCESS }
 
         # Закрыть всё остальное под /admin только для авторизованных
-        - { path: ^/admin, roles: ROLE_ADMIN }
+        - { path: ^/admin, roles: [ROLE_ADMIN, ROLE_MODERATOR] }

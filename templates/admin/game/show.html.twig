@@ -1,59 +1,84 @@
 {% extends 'admin/admin_base.html.twig' %}
 
-{% block title %}Игра{% endblock %}
+{% block title %}{{ game.name }}{% endblock %}
 
 {% block body %}
-    <h1>{{ game.name }}</h1>
+    <h1 class="mb-3">{{ game.name }}</h1>
 
-    {% if game.image %}
-        <img src="{{ asset(game.image) }}" alt="{{ game.name }}">
-    {% endif %}
+    <div class="d-flex flex-column flex-md-row gap-2 mb-4">
+        <a href="{{ path('admin_game_index') }}" class="btn btn-outline-secondary">Назад к списку</a>
+        <a href="{{ path('admin_game_edit', {'id': game.id}) }}" class="btn btn-outline-primary">Редактировать</a>
+        {{ include('admin/game/_delete_form.html.twig') }}
+    </div>
 
-    <table class="table">
-        <tbody>
-            <tr>
-                <th>Id</th>
-                <td>{{ game.id }}</td>
-            </tr>
-            <tr>
-                <th>Title</th>
-                <td>{{ game.name }}</td>
-            </tr>
-            <tr>
-                <th>Description</th>
-                <td>{{ game.description }}</td>
-            </tr>
-            <tr>
-                <th>ReleaseDate</th>
-                <td>{{ game.releaseDate ? game.releaseDate|date('Y-m-d') : '' }}</td>
-            </tr>
-            <tr>
-                <th>CreatedAt</th>
-                <td>{{ game.createdAt ? game.createdAt|date('Y-m-d H:i:s') : '' }}</td>
-            </tr>
-            <tr>
-                <th>UpdatedAt</th>
-                <td>{{ game.updatedAt ? game.updatedAt|date('Y-m-d H:i:s') : '' }}</td>
-            </tr>
-            <tr>
-                <th>CreatedBy</th>
-                <td>{{ game.createdBy }}</td>
-            </tr>
-            <tr>
-                <th>UpdatedBy</th>
-                <td>{{ game.updatedBy }}</td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="d-flex flex-column flex-md-row gap-2 mb-4">
+        {% if game.image %}
+            <img src="{{ asset(game.image) }}" alt="{{ game.name }}" class="img-thumbnail d-block" style="max-height: 220px;">
+        {% else %}
+            <div class="bg-light d-flex align-items-center justify-content-center img-thumbnail" style="width: 220px; height: 220px;">
+                <span class="text-muted">Нет обложки</span>
+            </div>
+        {% endif %}
+    </div>
 
-
-    <a href="{{ path('admin_game_index') }}" class="btn btn-secondary">
-        Назад
-    </a>
-
-    <a href="{{ path('admin_game_edit', {'id': game.id}) }}" class="btn btn-primary">
-        Редактировать
-    </a>
-
-    {{ include('admin/game/_delete_form.html.twig') }}
+    <div class="mb-3">
+        <strong>Жанры:</strong>
+        {% for genre in game.genre %}
+            <span class="badge bg-secondary">{{ genre.name }}</span>
+        {% else %}
+            <span class="text-muted">—</span>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <strong>Дата релиза:</strong> {{ game.releaseDate ? game.releaseDate|date('Y-m-d') : '—' }}
+    </div>
+    <div class="mb-3">
+        <strong>Бесплатная:</strong>
+        {% if game.isFree %}
+            <span class="badge bg-success">Да</span>
+        {% else %}
+            <span class="badge bg-danger">Нет</span>
+        {% endif %}
+    </div>
+    <div class="mb-3">
+        <strong>Популярность в Steam:</strong>
+        {% if game.steamPopularity is not null %}
+            <span class="badge bg-info text-dark">{{ game.steamPopularity|number_format(0, '.', ' ') }}</span>
+        {% else %}
+            <span class="text-muted">—</span>
+        {% endif %}
+    </div>
+    <div class="mb-3">
+        <strong>Дата добавления:</strong> {{ game.createdAt ? game.createdAt|date('Y-m-d H:i') : '—' }}
+    </div>
+    <div class="mb-3">
+        <strong>Дата редактирования:</strong> {{ game.updatedAt ? game.updatedAt|date('Y-m-d H:i') : '—' }}
+    </div>
+    <div class="mb-3">
+        <strong>Описание:</strong>
+        <div class="border rounded p-3">{{ game.description|raw }}</div>
+    </div>
+    <div class="mb-3">
+        <strong>Торговые площадки:</strong>
+        <div class="d-flex flex-wrap gap-3 mt-2">
+            {% for gameShop in game.shops %}
+                {% set shop = gameShop.shop %}
+                <div class="card shadow-sm text-center p-2" style="width: 120px; min-height: 140px;">
+                    {% if shop.image %}
+                        <img src="/uploads/shops/{{ shop.image }}" alt="{{ shop.name }}" class="img-fluid mb-2" style="max-height: 60px; object-fit: contain;">
+                    {% else %}
+                        <div class="bg-light d-flex align-items-center justify-content-center mb-2" style="height: 60px;">
+                            <span class="text-muted small">Нет логотипа</span>
+                        </div>
+                    {% endif %}
+                    <div class="fw-bold small">{{ shop.name }}</div>
+                    {% if shop.url %}
+                        <a href="{{ shop.url }}" target="_blank" class="small">На сайт</a>
+                    {% endif %}
+                </div>
+            {% else %}
+                <span class="text-muted">—</span>
+            {% endfor %}
+        </div>
+    </div>
 {% endblock %}
