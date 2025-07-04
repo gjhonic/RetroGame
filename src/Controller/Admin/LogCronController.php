@@ -129,17 +129,17 @@ class LogCronController extends AbstractController
         $cronName = $logCron->getCronName();
 
         // Формируем базовое имя файла
-        $baseFileName = "get-{$cronName}-{$date}-{$time}.log";
         $logDir = "/var/www/retro-game/var/log/{$date}";
 
         // Ищем файл с возможным смещением в несколько секунд
         $foundFile = null;
         $timeObj = $logCron->getDatetimeStart();
 
-        // Проверяем файлы в диапазоне ±30 секунд
-        for ($offset = -30; $offset <= 30; $offset++) {
+        // Проверяем файлы в диапазоне ±20 секунд
+        for ($offset = -20; $offset <= 20; $offset++) {
             $checkTime = (new \DateTime())->setTimestamp($timeObj->getTimestamp() + $offset);
-            $checkFileName = "get-{$cronName}-{$date}-{$checkTime->format('H-i-s')}.log";
+            $checkFileName = "get-{$cronName}-{$checkTime->format('H-i-s')}.log";
+
             $checkPath = "{$logDir}/{$checkFileName}";
 
             if (file_exists($checkPath)) {
