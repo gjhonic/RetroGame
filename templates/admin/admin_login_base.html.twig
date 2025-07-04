@@ -131,10 +131,16 @@
 </head>
 
 <body>
+    <svg class="login-bg-svg" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path class="wave" d="M0 800 Q600 900 1200 700 T1920 800 V1080 H0 Z" fill="#0d6efd" fill-opacity="0.12"/>
+        <path class="wave" d="M0 900 Q800 1100 1600 800 T1920 900 V1080 H0 Z" fill="#6f42c1" fill-opacity="0.10"/>
+        <circle class="circle" cx="300" cy="200" r="120" fill="#0d6efd"/>
+        <circle class="circle" cx="1700" cy="300" r="90" fill="#6f42c1"/>
+        <circle class="circle" cx="1200" cy="900" r="60" fill="#ffc107"/>
+    </svg>
     {% block body %}
 
     {% endblock %}
-
 
 <script src="{{ asset('admin/assets/dist/js/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ asset('admin/assets/js/dashboard.js') }}"></script>
