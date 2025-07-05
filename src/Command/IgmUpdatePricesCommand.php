@@ -151,8 +151,15 @@ class IgmUpdatePricesCommand extends Command
                 $html = $response->getContent();
 
                 // Извлекаем цену из блока Price_price__price-text__MpdHL
-                if (preg_match('/<p[^>]*class="[^"]*Price_price__price-text__MpdHL[^"]*"[^>]*>(.*?)<\/p>/s', $html, $matches)) {
+                if (
+                    preg_match(
+                        '/<p[^>]*class="[^"]*Price_price__price-text__MpdHL[^"]*"[^>]*>(.*?)<\/p>/s',
+                        $html,
+                        $matches
+                    )
+                ) {
                     $priceBlock = trim(strip_tags($matches[1]));
+
                     $priceText = preg_replace('/\s+/', ' ', $priceBlock); // убираем лишние пробелы
 
                     // Удаляем '₽' и другие символы валюты
@@ -217,6 +224,4 @@ class IgmUpdatePricesCommand extends Command
 
         return Command::SUCCESS;
     }
-
-
 }

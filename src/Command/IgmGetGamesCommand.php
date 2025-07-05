@@ -90,7 +90,7 @@ class IgmGetGamesCommand extends Command
 
         foreach ($games as $game) {
             if ($imported >= 200) {
-                $output->writeln('⏹️ <comment>Достигнут лимит 500 импортированных игр. Останавливаем.</comment>');
+                $output->writeln('⏹️ <comment>Достигнут лимит 200 импортированных игр. Останавливаем.</comment>');
                 break;
             }
 
@@ -143,11 +143,14 @@ class IgmGetGamesCommand extends Command
                     $title = trim($titleMatches[1]);
 
                     // Проверяем, является ли это страницей 404 (общий title магазина)
-                    if (str_contains($title, 'IGM.GG - Магазин видеоигр для ПК') || str_contains($title, 'Купить ключи Steam')) {
+                    if (
+                        str_contains($title, 'IGM.GG - Магазин видеоигр для ПК')
+                        || str_contains($title, 'Купить ключи Steam')
+                    ) {
                         $isNotFound = true;
                     } else {
                         // Проверяем, содержит ли title название игры
-                        $gameName = $game->getName();
+                        $gameName = (string)$game->getName();
                         if (str_contains($title, $gameName)) {
                             $isNotFound = false;
                         } else {
