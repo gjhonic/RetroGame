@@ -24,15 +24,27 @@
     <div class="card mb-4 shadow-sm">
         <div class="card-body">
             <h5 class="card-title mb-3">Импортировано игр по площадкам</h5>
-
-            <canvas id="importChart" height="80"></canvas>
+            <div class="chart-container" style="position: relative; height: 300px;">
+                <canvas id="importChart"></canvas>
+            </div>
         </div>
     </div>
 
     <div class="card mb-4 shadow-sm">
         <div class="card-body">
             <h5 class="card-title mb-3">Импортировано цен по дням</h5>
-            <canvas id="importPriceChart" height="80"></canvas>
+            <div class="chart-container" style="position: relative; height: 300px;">
+                <canvas id="importPriceChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Всего игр по торговым площадкам</h5>
+            <div style="height: 300px; position: relative;">
+                <canvas id="totalGamesChart"></canvas>
+            </div>
         </div>
     </div>
 
@@ -76,13 +88,36 @@
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'top' },
+                    legend: { 
+                        position: 'top',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 8
+                        }
+                    },
                     title: { display: false }
                 },
                 scales: {
-                    y: { beginAtZero: true, title: { display: true, text: 'Импортировано игр' } },
-                    x: { title: { display: true, text: 'Дата' }, stacked: true },
+                    y: { 
+                        beginAtZero: true, 
+                        title: { display: true, text: 'Импортировано игр' },
+                        ticks: {
+                            font: {
+                                size: window.innerWidth < 768 ? 10 : 12
+                            }
+                        }
+                    },
+                    x: { 
+                        title: { display: true, text: 'Дата' }, 
+                        stacked: true,
+                        ticks: {
+                            font: {
+                                size: window.innerWidth < 768 ? 10 : 12
+                            }
+                        }
+                    },
                     y: { ...this.y, stacked: true }
                 }
             }
@@ -110,13 +145,89 @@
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
                     title: { display: false }
                 },
                 scales: {
-                    y: { beginAtZero: true, title: { display: true, text: 'Импортировано цен' } },
-                    x: { title: { display: true, text: 'Дата' } }
+                    y: { 
+                        beginAtZero: true, 
+                        title: { display: true, text: 'Импортировано цен' },
+                        ticks: {
+                            font: {
+                                size: window.innerWidth < 768 ? 10 : 12
+                            }
+                        }
+                    },
+                    x: { 
+                        title: { display: true, text: 'Дата' },
+                        ticks: {
+                            font: {
+                                size: window.innerWidth < 768 ? 10 : 12
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // График общего количества игр по площадкам
+        const totalGamesStats = {{ totalGamesByShop|json_encode|raw }};
+        const shopNames = totalGamesStats.map(r => r.shop);
+        const shopCounts = totalGamesStats.map(r => parseInt(r.count));
+        
+        const ctxTotalGames = document.getElementById('totalGamesChart').getContext('2d');
+        new Chart(ctxTotalGames, {
+            type: 'doughnut',
+            data: {
+                labels: shopNames,
+                datasets: [{
+                    data: shopCounts,
+                    backgroundColor: [
+                        'rgba(199, 101, 101, 0.85)',
+                        'rgba(70, 156, 206, 0.85)',
+                        'rgba(198, 199, 198, 0.85)',
+                        'rgba(40, 167, 69, 0.85)',
+                        'rgba(255, 159, 64, 0.85)',
+                        'rgba(255, 206, 86, 0.85)',
+                        'rgba(75, 192, 192, 0.85)',
+                        'rgba(231, 233, 237, 0.85)'
+                    ],
+                    borderColor: [
+                        'rgba(199, 101, 101, 1)',
+                        'rgba(70, 156, 206, 1)',
+                        'rgba(198, 199, 198, 1)',
+                        'rgba(40, 167, 69, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(231, 233, 237, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: false,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { 
+                        position: 'right',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 8
+                        }
+                    },
+                    title: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return `${context.label}: ${context.parsed} (${percentage}%)`;
+                            }
+                        }
+                    }
                 }
             }
         });

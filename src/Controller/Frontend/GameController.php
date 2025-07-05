@@ -52,6 +52,8 @@ class GameController extends AbstractController
 
         $shopsWithPrices = [];
         $gameCharts = [];
+        $minPrice = null;
+        $minPriceShopId = null;
 
         foreach ($game->getShops() as $gameShop) {
             $shop = $gameShop->getShop();
@@ -95,12 +97,21 @@ class GameController extends AbstractController
 
             // Добавляем в список только магазины с данными
             $shopsWithPrices[] = $gameShop;
+
+            // Находим минимальную цену среди всех магазинов
+            $latestPrice = $gameShop->getLatestPrice();
+            if ($latestPrice !== null && ($minPrice === null || $latestPrice < $minPrice)) {
+                $minPrice = $latestPrice;
+                $minPriceShopId = $shopId;
+            }
         }
 
         return $this->render('frontend/game/show.html.twig', [
             'game' => $game,
             'shopsWithPrices' => $shopsWithPrices, // Только магазины с данными
             'gameCharts' => $gameCharts,
+            'minPrice' => $minPrice,
+            'minPriceShopId' => $minPriceShopId,
         ]);
     }
 }

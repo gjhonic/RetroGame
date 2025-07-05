@@ -62,4 +62,21 @@ class GameShopRepository extends ServiceEntityRepository
         ";
         return $conn->executeQuery($sql, $params)->fetchAllAssociative();
     }
+
+    /**
+     * Возвращает общее количество игр по торговым площадкам.
+     * @return list<array<string, mixed>>
+     */
+    public function getTotalGamesByShop(): array
+    {
+        $conn = $this->getEntityManager()->getConnection();
+        $sql = "
+            SELECT s.name as shop, s.id as shop_id, COUNT(gs.id) as count
+            FROM game_shop gs
+            INNER JOIN shops s ON gs.shop_id = s.id
+            GROUP BY shop, shop_id
+            ORDER BY count DESC, shop
+        ";
+        return $conn->executeQuery($sql)->fetchAllAssociative();
+    }
 }
