@@ -42,12 +42,17 @@
                             {% set shopLink = gameShop.link %}
                             {% set shopName = gameShop.shop.getName() %}
                             {% set priceParam = gameShop.getParamPrice() %}
+                            {% set shopId = gameShop.shop.id %}
+                            {% set isMinPrice = minPriceShopId == shopId and latestPrice == minPrice %}
 
-
-
-                            <li class="list-group-item d-flex justify-content-between align-items-center flex-column flex-md-row">
+                            <li class="list-group-item d-flex justify-content-between align-items-center flex-column flex-md-row {% if isMinPrice %}border-warning border-2{% endif %}">
                                 <div>
                                     <strong>{{ shopName ?? 'Steam' }}</strong>
+                                    {% if isMinPrice %}
+                                        <span class="badge bg-warning text-dark ms-2">
+                                            <i class="bi bi-star-fill"></i> Лучшая цена
+                                        </span>
+                                    {% endif %}
                                     {% if priceParam %}
                                         <span class="badge text-bg-{{ priceParam['type'] }}"> {{ priceParam['value']|lower  }} </span>
                                     {% endif %}
@@ -55,14 +60,11 @@
                                         <a href="{{ shopLink }}?cc=ru" target="_blank" class="ms-2 text-decoration-none">
                                             <i class="bi bi-box-arrow-up-right"></i> Перейти
                                         </a>
-
                                     {% endif %}
                                 </div>
                                 <div>
                                     {% if latestPrice is not null %}
-
-                                        <strong>{{ latestPrice }} ₽</strong>
-
+                                        <strong class="{% if isMinPrice %}text-warning{% endif %}">{{ latestPrice }} ₽</strong>
                                         {% if latestUpdate %}
                                             <small class="text-muted ms-2">(обновлено {{ latestUpdate|date('d.m.Y') }})</small>
                                         {% endif %}
