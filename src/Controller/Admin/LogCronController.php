@@ -70,6 +70,8 @@ class LogCronController extends AbstractController
             'steambuy-update-prices' => 'Steambuy: Обновление цен',
             'steamkey-get-games' => 'Steamkey: Импорт игр',
             'steamkey-update-prices' => 'Steamkey: Обновление цен',
+            'igm-get-games' => 'IGM: Импорт игр',
+            'igm-update-prices' => 'IGM: Обновление цен',
         ];
 
         return $this->render('admin/log_cron/index.html.twig', [
