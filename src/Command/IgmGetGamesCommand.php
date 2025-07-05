@@ -89,8 +89,8 @@ class IgmGetGamesCommand extends Command
         $errorsCount = 0;
 
         foreach ($games as $game) {
-            if ($imported >= 200) {
-                $output->writeln('⏹️ <comment>Достигнут лимит 200 импортированных игр. Останавливаем.</comment>');
+            if ($imported >= 100) {
+                $output->writeln('⏹️ <comment>Достигнут лимит 100 импортированных игр. Останавливаем.</comment>');
                 break;
             }
 
