@@ -4,9 +4,9 @@ namespace App\Command;
 
 use App\Entity\Game;
 use App\Entity\GameShop;
+use App\Entity\IgmApp;
 use App\Entity\LogCron;
 use App\Entity\Shop;
-use App\Entity\IgmApp;
 use App\Service\SlugifyProcessor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -137,11 +137,11 @@ class IgmGetGamesCommand extends Command
                 }
 
                 $igmApp->setCreatedAt(new \DateTimeImmutable());
-                
+
                 // Проверяем title страницы для определения наличия игры
                 if (preg_match('/<title>(.*?)<\/title>/i', $content, $titleMatches)) {
                     $title = trim($titleMatches[1]);
-                    
+
                     // Проверяем, является ли это страницей 404 (общий title магазина)
                     if (str_contains($title, 'IGM.GG - Магазин видеоигр для ПК') || str_contains($title, 'Купить ключи Steam')) {
                         $isNotFound = true;
@@ -157,7 +157,7 @@ class IgmGetGamesCommand extends Command
                 } else {
                     $isNotFound = true;
                 }
-                
+
                 if ($isNotFound) {
                     $igmApp->setNotFound(true);
                     $igmApp->setRawHtml(null);
