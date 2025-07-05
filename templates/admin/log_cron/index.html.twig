@@ -57,14 +57,39 @@
     </tbody>
 </table>
 {% if pages > 1 %}
-<nav>
-    <ul class="pagination">
-        {% for p in 1..pages %}
-            <li class="page-item{% if p == page %} active{% endif %}">
-                <a class="page-link" href="?cronName={{ cronName }}&dateStart={{ dateStart }}&page={{ p }}">{{ p }}</a>
+    <nav aria-label="Пагинация">
+        <ul class="pagination justify-content-center">
+            {% set range = 2 %}
+
+            {# Первая страница #}
+            <li class="page-item{% if page == 1 %} active{% endif %}">
+                <a class="page-link" href="?cronName={{ cronName }}&dateStart={{ dateStart }}&page=1">1</a>
             </li>
-        {% endfor %}
-    </ul>
-</nav>
+
+            {% if page - range > 2 %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+
+            {# Средние страницы #}
+            {% for p in (page - range)..(page + range) %}
+                {% if p > 1 and p < pages %}
+                    <li class="page-item{% if page == p %} active{% endif %}">
+                        <a class="page-link" href="?cronName={{ cronName }}&dateStart={{ dateStart }}&page={{ p }}">{{ p }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page + range < pages - 1 %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+
+            {# Последняя страница #}
+            {% if pages > 1 %}
+                <li class="page-item{% if page == pages %} active{% endif %}">
+                    <a class="page-link" href="?cronName={{ cronName }}&dateStart={{ dateStart }}&page={{ pages }}">{{ pages }}</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
 {% endif %}
 {% endblock %}
