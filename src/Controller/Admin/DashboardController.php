@@ -40,10 +40,12 @@ class DashboardController extends AbstractController
 
         $importStats = $gameShopRepository->getImportStatsByDayAndShop($dateFromObj, $dateToObj);
         $importPriceStats = $priceHistoryRepository->getImportStatsByDay($dateFromObj, $dateToObj);
+        $totalGamesByShop = $gameShopRepository->getTotalGamesByShop();
 
         return $this->render('admin/dashboard/index.html.twig', [
             'importStats' => $importStats,
             'importPriceStats' => $importPriceStats,
+            'totalGamesByShop' => $totalGamesByShop,
             'dateFrom' => $dateFromObj->format('Y-m-d'),
             'dateTo' => $dateToObj->format('Y-m-d'),
         ]);
