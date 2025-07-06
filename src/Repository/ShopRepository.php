@@ -21,6 +21,25 @@ class ShopRepository extends ServiceEntityRepository
         parent::__construct($registry, Shop::class);
     }
 
+    /**
+     * Возвращает все магазины с количеством игр в каждом.
+     *
+     * @return list<array<string, mixed>>
+     * @throws \Doctrine\DBAL\Exception
+     */
+    public function getShopsWithGameCount(): array
+    {
+        $conn = $this->getEntityManager()->getConnection();
+        $sql = "
+            SELECT s.id, s.name, s.image, COUNT(gs.id) as game_count
+            FROM shops s
+            LEFT JOIN game_shop gs ON s.id = gs.shop_id
+            GROUP BY s.id, s.name, s.image
+            ORDER BY game_count DESC, s.name
+        ";
+        return $conn->executeQuery($sql)->fetchAllAssociative();
+    }
+
     //    /**
     //     * @return Shop[] Returns an array of Shop objects
     //     */

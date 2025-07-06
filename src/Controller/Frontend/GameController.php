@@ -100,9 +100,20 @@ class GameController extends AbstractController
 
             // Находим минимальную цену среди всех магазинов
             $latestPrice = $gameShop->getLatestPrice();
-            if ($latestPrice !== null && ($minPrice === null || $latestPrice < $minPrice)) {
-                $minPrice = $latestPrice;
-                $minPriceShopId = $shopId;
+            $params = $gameShop->getExtraParams();
+
+            if (isset($params['paramPrice'])) {
+                if ($params['paramPrice']['type'] != 'danger') {
+                    if ($latestPrice !== null && ($minPrice === null || $latestPrice < $minPrice)) {
+                        $minPrice = $latestPrice;
+                        $minPriceShopId = $shopId;
+                    }
+                }
+            } else {
+                if ($latestPrice !== null && ($minPrice === null || $latestPrice < $minPrice)) {
+                    $minPrice = $latestPrice;
+                    $minPriceShopId = $shopId;
+                }
             }
         }
 

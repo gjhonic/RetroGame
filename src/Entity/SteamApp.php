@@ -41,6 +41,14 @@ class SteamApp
     private ?int $app_id = null;
 
     /**
+     * Название приложения.
+     *
+     * @ORM\Column(length=255, nullable=true)
+     */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $name = null;
+
+    /**
      * Тип приложения (например, "game", "dlc").
      *
      * @ORM\Column(length=50)
@@ -102,6 +110,28 @@ class SteamApp
     public function setAppId(int $app_id): static
     {
         $this->app_id = $app_id;
+
+        return $this;
+    }
+
+    /**
+     * Получить название приложения.
+     *
+     * @return string|null Название приложения
+     */
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    /**
+     * Установить название приложения.
+     *
+     * @param string|null $name Название приложения
+     */
+    public function setName(?string $name): static
+    {
+        $this->name = $name;
 
         return $this;
     }

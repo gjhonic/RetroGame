@@ -90,8 +90,8 @@ class IgmGetGamesCommand extends Command
         $errorsCount = 0;
 
         foreach ($games as $game) {
-            if ($processedCount >= 100) {
-                $output->writeln('⏹️ <comment>Достигнут лимит 100 обработанных игр. Останавливаем.</comment>');
+            if ($processedCount >= 300) {
+                $output->writeln('⏹️ <comment>Достигнут лимит 300 обработанных игр. Останавливаем.</comment>');
                 break;
             }
 

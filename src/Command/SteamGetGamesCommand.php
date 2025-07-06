@@ -128,11 +128,10 @@ class SteamGetGamesCommand extends Command
         $imported = 0;
         $processedCount = 0;
         $checked = 0;
-        $batchSize = 10;
 
         foreach ($apps as $app) {
-            if ($processedCount >= 100) {
-                $output->writeln('⏹️ <comment>Достигнут лимит 100 обработанных игр. Останавливаем импорт.</comment>');
+            if ($processedCount >= 200) {
+                $output->writeln('⏹️ <comment>Достигнут лимит 200 обработанных игр. Останавливаем импорт.</comment>');
                 break;
             }
 
@@ -181,6 +180,7 @@ class SteamGetGamesCommand extends Command
 
             $steamApp = new SteamApp();
             $steamApp->setAppId($appid);
+            $steamApp->setName($gameName);
             $steamApp->setType($detailsData[$appid]['data']['type'] ?? 'empty');
             $steamApp->setRawData((string) json_encode($detailsData, JSON_UNESCAPED_UNICODE));
             $this->entityManager->persist($steamApp);
@@ -196,10 +196,6 @@ class SteamGetGamesCommand extends Command
 
             if ($processed) {
                 ++$imported;
-                if (0 === $imported % $batchSize) {
-                    $this->entityManager->flush();
-                    $output->writeln("📦 <info>Импортировано {$imported} игр на данный момент...</info>");
-                }
             }
         }
 

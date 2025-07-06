@@ -124,6 +124,9 @@ class SteamGameDataProcessor
         // Создаем GameShop
         $this->createGameShop($game, $shop, $appId, $gameName, $output);
 
+        // Сохраняем все изменения в базе данных
+        $this->entityManager->flush();
+
         return true;
     }
 
@@ -343,8 +346,7 @@ class SteamGameDataProcessor
     {
         return ($gameData['type'] ?? '') === 'game'
                && !empty($gameData['short_description'])
-               && !empty($gameData['genres'])
-               && !empty($gameData['price_overview']);
+               && !empty($gameData['genres']);
     }
 
     /**

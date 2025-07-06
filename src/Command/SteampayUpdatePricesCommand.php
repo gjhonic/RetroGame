@@ -102,14 +102,17 @@ class SteampayUpdatePricesCommand extends Command
         $startOfDay = (new \DateTime())->setTime(0, 0, 0);
         $endOfDay = (new \DateTime())->setTime(23, 59, 59);
 
+        // Оптимизированный запрос для проверки уже обновленных игр
         $existingGameShops = $this->entityManager
             ->getRepository(GameShopPriceHistory::class)
             ->createQueryBuilder('h')
             ->select('IDENTITY(h.gameShop) AS gameShopId')
             ->where('h.updatedAt BETWEEN :start AND :end')
+            ->andWhere('h.gameShop 
+            IN (SELECT gs.id FROM App\Entity\GameShop gs WHERE gs.shop = :shop AND gs.shouldImportPrice = true)')
             ->setParameter('start', $startOfDay)
             ->setParameter('end', $endOfDay)
-            ->groupBy('h.gameShop')
+            ->setParameter('shop', $shop)
             ->getQuery()
             ->getArrayResult();
 
@@ -178,7 +181,14 @@ class SteampayUpdatePricesCommand extends Command
 
                 if (preg_match('/<div class="product__current-price">(.*?)<\/div>/s', $html, $matches)) {
                     $priceBlock = trim(strip_tags($matches[1]));
-                    $priceText = preg_replace('/\s+/', ' ', $priceBlock); // убираем лишние пробелы
+
+                    // Декодируем HTML-сущности (например, &nbsp;)
+                    $priceBlock = html_entity_decode($priceBlock, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+                    // Заменяем все виды пробелов на обычные пробелы
+                    $priceBlock = preg_replace('/[\s\x{00A0}\x{2009}\x{202F}]+/u', ' ', $priceBlock);
+
+                    $priceText = preg_replace('/\s+/', ' ', (string)$priceBlock); // убираем лишние пробелы
 
                     // Удаляем 'руб.' или 'руб' (на всякий случай)
                     $priceText = preg_replace('/руб\.?/ui', '', (string) $priceText);
@@ -189,7 +199,7 @@ class SteampayUpdatePricesCommand extends Command
                             'ℹ️ <comment> ' .
                             'Товар временно отсутствует (Скоро), пропускаем, импорт оставлен включённым.</comment>'
                         );
-                    } elseif (preg_match('/^\d[\d\s]*$/u', $priceText)) {
+                    } elseif (preg_match('/^[\d\s]+$/u', $priceText)) {
                         $priceClean = str_replace(' ', '', $priceText);
                         $price = floatval($priceClean);
 
@@ -226,8 +236,14 @@ class SteampayUpdatePricesCommand extends Command
                 }
             }
 
-            $this->entityManager->flush();
+            // Группируем flush для оптимизации производительности
+            if ($checked % 10 === 0) {
+                $this->entityManager->flush();
+            }
         }
+
+        // Финальный flush для оставшихся изменений
+        $this->entityManager->flush();
 
         $output->writeln("🎉 <info>Цены обновлены для {$updated} игр из {$checked} проверенных.</info>");
 
