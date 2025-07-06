@@ -38,13 +38,13 @@ class SteamAppRepository extends ServiceEntityRepository
             ->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit);
 
-        $allowedSorts = ['appId', 'type', 'createdAt'];
+        $allowedSorts = ['app_id', 'type', 'createdAt'];
         $sort = in_array($sort, $allowedSorts, true) ? $sort : 'createdAt';
         $direction = strtolower($direction) === 'asc' ? 'ASC' : 'DESC';
         $qb->orderBy('s.' . $sort, $direction);
 
         if ($search) {
-            $qb->andWhere('s.appId = :search')
+            $qb->andWhere('s.app_id = :search')
                 ->setParameter('search', (int) $search);
         }
 
@@ -69,7 +69,7 @@ class SteamAppRepository extends ServiceEntityRepository
             ->select('COUNT(s.id)');
 
         if ($search) {
-            $qb->andWhere('s.appId = :search')
+            $qb->andWhere('s.app_id = :search')
                 ->setParameter('search', (int) $search);
         }
 
