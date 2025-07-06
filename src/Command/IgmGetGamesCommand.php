@@ -84,13 +84,14 @@ class IgmGetGamesCommand extends Command
         $output->writeln(sprintf('🚀 <info>Начинаем импорт для %d игр...</info>', count($games)));
 
         $imported = 0;
+        $processedCount = 0;
         $skippedExistingShop = 0;
         $skippedNotFound = 0;
         $errorsCount = 0;
 
         foreach ($games as $game) {
-            if ($imported >= 100) {
-                $output->writeln('⏹️ <comment>Достигнут лимит 100 импортированных игр. Останавливаем.</comment>');
+            if ($processedCount >= 100) {
+                $output->writeln('⏹️ <comment>Достигнут лимит 100 обработанных игр. Останавливаем.</comment>');
                 break;
             }
 
@@ -127,6 +128,8 @@ class IgmGetGamesCommand extends Command
                 $output->writeln("🌐 <info>Запрашиваем URL: $url</info>");
                 $response = $this->httpClient->request('GET', $url);
                 $content = $response->getContent(false);
+
+                ++$processedCount;
 
                 if (!$igmApp) {
                     $igmApp = new IgmApp();
