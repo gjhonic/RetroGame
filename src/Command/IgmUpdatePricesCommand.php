@@ -160,6 +160,12 @@ class IgmUpdatePricesCommand extends Command
                 ) {
                     $priceBlock = trim(strip_tags($matches[1]));
 
+                    // Декодируем HTML-сущности (например, &nbsp;)
+                    $priceBlock = html_entity_decode($priceBlock, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    
+                    // Заменяем все виды пробелов на обычные пробелы
+                    $priceBlock = preg_replace('/[\s\x{00A0}\x{2009}\x{202F}]+/u', ' ', $priceBlock);
+                    
                     $priceText = preg_replace('/\s+/', ' ', $priceBlock); // убираем лишние пробелы
 
                     // Удаляем '₽' и другие символы валюты
@@ -171,7 +177,7 @@ class IgmUpdatePricesCommand extends Command
                             'ℹ️ <comment> ' .
                             'Товар временно отсутствует (Скоро), пропускаем, импорт оставлен включённым.</comment>'
                         );
-                    } elseif (preg_match('/^\d[\d\s]*$/u', $priceText)) {
+                    } elseif (preg_match('/^[\d\s]+$/u', $priceText)) {
                         $priceClean = str_replace(' ', '', $priceText);
                         $price = floatval($priceClean);
 

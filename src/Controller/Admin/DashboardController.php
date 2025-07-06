@@ -6,6 +6,8 @@ namespace App\Controller\Admin;
 
 use App\Repository\GameShopPriceHistoryRepository;
 use App\Repository\GameShopRepository;
+use App\Repository\GameRepository;
+use App\Repository\ShopRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,7 +19,9 @@ class DashboardController extends AbstractController
     public function index(
         Request $request,
         GameShopRepository $gameShopRepository,
-        GameShopPriceHistoryRepository $priceHistoryRepository
+        GameShopPriceHistoryRepository $priceHistoryRepository,
+        GameRepository $gameRepository,
+        ShopRepository $shopRepository
     ): Response {
         $dateFrom = $request->query->get('dateFrom');
         $dateTo = $request->query->get('dateTo');
@@ -42,10 +46,18 @@ class DashboardController extends AbstractController
         $importPriceStats = $priceHistoryRepository->getImportStatsByDay($dateFromObj, $dateToObj);
         $totalGamesByShop = $gameShopRepository->getTotalGamesByShop();
 
+        // Статистическая информация
+        $totalGames = $gameRepository->getTotalGamesCount();
+        $totalPrices = $priceHistoryRepository->getTotalPricesCount();
+        $shopsWithGameCount = $shopRepository->getShopsWithGameCount();
+
         return $this->render('admin/dashboard/index.html.twig', [
             'importStats' => $importStats,
             'importPriceStats' => $importPriceStats,
             'totalGamesByShop' => $totalGamesByShop,
+            'totalGames' => $totalGames,
+            'totalPrices' => $totalPrices,
+            'shopsWithGameCount' => $shopsWithGameCount,
             'dateFrom' => $dateFromObj->format('Y-m-d'),
             'dateTo' => $dateToObj->format('Y-m-d'),
         ]);

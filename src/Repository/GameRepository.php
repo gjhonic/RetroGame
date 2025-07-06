@@ -23,6 +23,14 @@ class GameRepository extends ServiceEntityRepository
     }
 
     /**
+     * Возвращает общее количество игр в базе данных.
+     */
+    public function getTotalGamesCount(): int
+    {
+        return $this->count([]);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function findGamesByFilters(

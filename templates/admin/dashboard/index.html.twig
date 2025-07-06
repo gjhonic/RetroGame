@@ -5,6 +5,67 @@
 {% block body %}
     <h2 class="mb-4">Привет, {{ app.user ? app.user.name() : 'Гость' }}, твой дашборд</h2>
 
+    <!-- Статистика -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card bg-primary text-white shadow-sm stats-card">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <i class="fas fa-gamepad fa-2x me-3 stats-icon"></i>
+                        <div>
+                            <h3 class="mb-0">{{ totalGames|number_format(0, ',', ' ') }}</h3>
+                            <small>Всего игр</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card bg-success text-white shadow-sm stats-card">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <i class="fas fa-tags fa-2x me-3 stats-icon"></i>
+                        <div>
+                            <h3 class="mb-0">{{ totalPrices|number_format(0, ',', ' ') }}</h3>
+                            <small>Всего цен</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-info text-white shadow-sm stats-card">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">
+                        <i class="fas fa-store me-2 stats-icon"></i>Игры по магазинам
+                    </h5>
+                    <div class="row">
+                        {% for shop in shopsWithGameCount %}
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <div class="d-flex align-items-center">
+                                    {% if shop.image %}
+                                        <img src="{{ asset('uploads/shops/' ~ shop.image) }}" 
+                                             alt="{{ shop.name }}" 
+                                             class="me-3 shop-image-large">
+                                    {% else %}
+                                        <div class="me-3 shop-placeholder-large"></div>
+                                    {% endif %}
+                                    <div class="flex-grow-1">
+                                        <div class="shop-name">{{ shop.name }}</div>
+                                        <div class="shop-count">{{ shop.game_count|number_format(0, ',', ' ') }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card mb-4 shadow-sm">
         <div class="card-body">
             <form method="get" class="row g-2 align-items-end mb-3">
@@ -47,6 +108,57 @@
             </div>
         </div>
     </div>
+
+    <style>
+        .stats-card {
+            transition: transform 0.2s ease-in-out;
+        }
+        .stats-card:hover {
+            transform: translateY(-2px);
+        }
+        .stats-icon {
+            opacity: 0.9;
+        }
+        .shop-image {
+            width: 24px;
+            height: 24px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .shop-placeholder {
+            width: 24px;
+            height: 24px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .shop-image-large {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .shop-placeholder-large {
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .shop-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 2px;
+            opacity: 0.9;
+        }
+        .shop-count {
+            font-size: 1.4rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+    </style>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>

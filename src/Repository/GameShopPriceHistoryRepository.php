@@ -48,4 +48,12 @@ class GameShopPriceHistoryRepository extends ServiceEntityRepository
         ";
         return $conn->executeQuery($sql, $params)->fetchAllAssociative();
     }
+
+    /**
+     * Возвращает общее количество записей цен в базе данных.
+     */
+    public function getTotalPricesCount(): int
+    {
+        return $this->count([]);
+    }
 }
