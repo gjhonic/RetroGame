@@ -32,7 +32,15 @@ class SteamAppController extends AbstractController
         $sort = $request->query->get('sort', 'createdAt');
         $direction = strtolower($request->query->get('direction', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-        $steamApps = $steamAppRepository->findSteamAppsByFilters($search, $name, $type, $page, $limit, $sort, $direction);
+        $steamApps = $steamAppRepository->findSteamAppsByFilters(
+            $search,
+            $name,
+            $type,
+            $page,
+            $limit,
+            $sort,
+            $direction
+        );
         $total = $steamAppRepository->countByFilters($search, $name, $type);
         $totalPages = (int) ceil($total / $limit);
 
@@ -108,7 +116,11 @@ class SteamAppController extends AbstractController
         }
 
         // Проверяем, что данные получены успешно
-        if (!isset($detailsData[$appId]) || !isset($detailsData[$appId]['success']) || !$detailsData[$appId]['success']) {
+        if (
+            !isset($detailsData[$appId])
+            || !isset($detailsData[$appId]['success'])
+            || !$detailsData[$appId]['success']
+        ) {
             return $this->json([
                 'success' => false,
                 'message' => 'Приложение не найдено или недоступно в Steam API',
@@ -198,9 +210,17 @@ class SteamAppController extends AbstractController
     }
 
     #[Route('/{id}/reimport', name: 'admin_steam_app_reimport', methods: ['POST'])]
-    public function reimport(SteamApp $steamApp, SteamAppReimportService $reimportService, Request $request): JsonResponse
-    {
-        if (!$this->isCsrfTokenValid('reimport' . $steamApp->getId(), (string) $request->request->get('_token'))) {
+    public function reimport(
+        SteamApp $steamApp,
+        SteamAppReimportService $reimportService,
+        Request $request
+    ): JsonResponse {
+        if (
+            !$this->isCsrfTokenValid(
+                'reimport' . $steamApp->getId(),
+                (string) $request->request->get('_token')
+            )
+        ) {
             return $this->json([
                 'success' => false,
                 'message' => 'Недействительный CSRF токен',

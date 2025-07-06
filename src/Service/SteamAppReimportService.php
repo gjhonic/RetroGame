@@ -46,7 +46,11 @@ class SteamAppReimportService
         }
 
         // Проверяем, что данные получены успешно
-        if (!isset($detailsData[$appId]) || !isset($detailsData[$appId]['success']) || !$detailsData[$appId]['success']) {
+        if (
+            !isset($detailsData[$appId])
+            || !isset($detailsData[$appId]['success'])
+            || !$detailsData[$appId]['success']
+        ) {
             return [
                 'success' => false,
                 'message' => 'Приложение не найдено или недоступно в Steam API',
@@ -88,7 +92,7 @@ class SteamAppReimportService
 
         $message = $gameProcessed
             ? "Приложение успешно переимпортировано. Игра также добавлена в базу данных."
-            : "Приложение переимпортировано, но игра не была добавлена в базу данных (возможно, это не игра или уже существует).";
+            : "Приложение переимпортировано, но игра не была добавлена (возможно, это не игра или уже существует).";
 
         return [
             'success' => true,

@@ -108,7 +108,8 @@ class SteampayUpdatePricesCommand extends Command
             ->createQueryBuilder('h')
             ->select('IDENTITY(h.gameShop) AS gameShopId')
             ->where('h.updatedAt BETWEEN :start AND :end')
-            ->andWhere('h.gameShop IN (SELECT gs.id FROM App\Entity\GameShop gs WHERE gs.shop = :shop AND gs.shouldImportPrice = true)')
+            ->andWhere('h.gameShop 
+            IN (SELECT gs.id FROM App\Entity\GameShop gs WHERE gs.shop = :shop AND gs.shouldImportPrice = true)')
             ->setParameter('start', $startOfDay)
             ->setParameter('end', $endOfDay)
             ->setParameter('shop', $shop)
