@@ -1,0 +1,162 @@
+{% extends 'admin/admin_base.html.twig' %}
+
+{% block title %}Импорт игры из Steam{% endblock %}
+
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Импорт игры из Steam</h1>
+        <a href="{{ path('admin_steam_app_index') }}" class="btn btn-outline-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left me-1" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+            </svg>
+            Назад к списку
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Введите ID приложения Steam</h5>
+                </div>
+                <div class="card-body">
+                    <form id="importForm">
+                        <div class="mb-3">
+                            <label for="app_id" class="form-label">ID приложения Steam</label>
+                            <input type="number" class="form-control" id="app_id" name="app_id" required min="1" placeholder="Например: 730 (CS:GO)">
+                            <div class="form-text">
+                                ID приложения можно найти в URL страницы игры в Steam Store.<br>
+                                Пример: <code>https://store.steampowered.com/app/730/</code> → ID = 730
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                Импортировать игру
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <div class="alert alert-info">
+                    <h6>Как найти ID приложения:</h6>
+                    <ol class="mb-0">
+                        <li>Откройте страницу игры в Steam Store</li>
+                        <li>Посмотрите на URL в адресной строке</li>
+                        <li>Найдите число после <code>/app/</code></li>
+                        <li>Это и есть ID приложения</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+document.getElementById('importForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const submitBtn = document.getElementById('submitBtn');
+    const spinner = submitBtn.querySelector('.spinner-border');
+    const originalText = submitBtn.innerHTML;
+    
+    // Показываем спиннер и блокируем кнопку
+    spinner.classList.remove('d-none');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Импортируем...';
+    
+    const appId = document.getElementById('app_id').value;
+    
+    // Создаем форму для отправки
+    const formData = new FormData();
+    formData.append('app_id', appId);
+    formData.append('_token', '{{ csrf_token('import_steam_app') }}');
+    
+    // Отправляем запрос
+    fetch('{{ path('admin_steam_app_import_process') }}', {
+        method: 'POST',
+        body: new URLSearchParams(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Показываем уведомление
+        showNotification(data.success ? 'success' : 'danger', data.message);
+        
+        // Если успешно, очищаем форму и показываем ссылку на созданную запись
+        if (data.success) {
+            document.getElementById('app_id').value = '';
+            
+            // Показываем отладочную информацию
+            if (data.data && data.data.debug) {
+                const debugDiv = document.createElement('div');
+                debugDiv.className = 'alert alert-info mt-3';
+                debugDiv.innerHTML = `
+                    <strong>Отладочная информация:</strong><br>
+                    <small>
+                        App ID: ${data.data.debug.app_id}<br>
+                        Название: ${data.data.debug.name}<br>
+                        Тип: ${data.data.debug.type}<br>
+                        Это игра: ${data.data.debug.is_game ? 'Да' : 'Нет'}<br>
+                        Есть описание: ${data.data.debug.has_description ? 'Да' : 'Нет'}<br>
+                        Есть жанры: ${data.data.debug.has_genres ? 'Да' : 'Нет'}<br>
+                        Есть цена: ${data.data.debug.has_price ? 'Да' : 'Нет'}<br>
+                        Игра обработана: ${data.data.debug.game_processed ? 'Да' : 'Нет'}<br>
+                        Game ID: ${data.data.debug.game_created || 'Не создана'}<br>
+                        GameShop ID: ${data.data.debug.game_shop_created || 'Не создан'}
+                    </small>
+                `;
+                document.querySelector('.card-body').appendChild(debugDiv);
+            }
+            
+            // Добавляем ссылку на созданную запись
+            if (data.data && data.data.steam_app_id) {
+                const linkDiv = document.createElement('div');
+                linkDiv.className = 'alert alert-success mt-3';
+                linkDiv.innerHTML = `
+                    <strong>Импорт завершен!</strong><br>
+                    <a href="{{ path('admin_steam_app_show', {'id': 'PLACEHOLDER'}) }}" class="btn btn-sm btn-success mt-2">
+                        Просмотреть импортированную запись
+                    </a>
+                `.replace('PLACEHOLDER', data.data.steam_app_id);
+                
+                document.querySelector('.card-body').appendChild(linkDiv);
+            }
+        }
+    })
+    .catch(error => {
+        showNotification('danger', 'Произошла ошибка при выполнении запроса: ' + error.message);
+    })
+    .finally(() => {
+        // Восстанавливаем кнопку
+        spinner.classList.add('d-none');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+});
+
+function showNotification(type, message) {
+    // Создаем уведомление
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    // Добавляем на страницу
+    document.body.appendChild(alertDiv);
+    
+    // Автоматически скрываем через 5 секунд
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %} 

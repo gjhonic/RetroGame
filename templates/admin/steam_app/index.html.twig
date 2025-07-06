@@ -1,0 +1,145 @@
+{% extends 'admin/admin_base.html.twig' %}
+
+{% block title %}Steam приложения{% endblock %}
+
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Steam приложения</h1>
+        <a href="{{ path('admin_steam_app_import') }}" class="btn btn-success">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle me-1" viewBox="0 0 16 16">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+            </svg>
+            Импортировать игру
+        </a>
+    </div>
+
+    <form method="get" class="row g-2 mb-4 align-items-end">
+        <div class="col-md-3">
+            <label for="search" class="form-label">ID приложения</label>
+            <input type="number" id="search" name="q" value="{{ search|default('') }}" class="form-control" placeholder="Поиск по ID приложения">
+        </div>
+        <div class="col-md-3">
+            <label for="name" class="form-label">Название</label>
+            <input type="text" id="name" name="name" value="{{ name|default('') }}" class="form-control" placeholder="Поиск по названию">
+        </div>
+        <div class="col-md-2">
+            <label for="type" class="form-label">Тип</label>
+            <select id="type" name="type" class="form-select">
+                <option value="">Все типы</option>
+                <option value="game" {% if selectedType == 'game' %}selected{% endif %}>Игра</option>
+                <option value="dlc" {% if selectedType == 'dlc' %}selected{% endif %}>DLC</option>
+                <option value="demo" {% if selectedType == 'demo' %}selected{% endif %}>Демо</option>
+                <option value="other" {% if selectedType == 'other' %}selected{% endif %}>Другое</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100" type="submit">Фильтровать</button>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>
+                        <a href="?q={{ search }}&name={{ name }}&type={{ selectedType }}&sort=appId&direction={{ sort == 'appId' and direction == 'asc' ? 'desc' : 'asc' }}">
+                            ID приложения Steam
+                            {% if sort == 'appId' %}
+                                <span>{% if direction == 'asc' %}▲{% else %}▼{% endif %}</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>Название</th>
+                    <th>
+                        <a href="?q={{ search }}&name={{ name }}&type={{ selectedType }}&sort=type&direction={{ sort == 'type' and direction == 'asc' ? 'desc' : 'asc' }}">
+                            Тип
+                            {% if sort == 'type' %}
+                                <span>{% if direction == 'asc' %}▲{% else %}▼{% endif %}</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="?q={{ search }}&name={{ name }}&type={{ selectedType }}&sort=createdAt&direction={{ sort == 'createdAt' and direction == 'asc' ? 'desc' : 'asc' }}">
+                            Дата добавления
+                            {% if sort == 'createdAt' %}
+                                <span>{% if direction == 'asc' %}▲{% else %}▼{% endif %}</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for steam_app in steam_apps %}
+                <tr>
+                    <td>{{ steam_app.id }}</td>
+                    <td>
+                        <a href="https://store.steampowered.com/app/{{ steam_app.appId }}" target="_blank">
+                            {{ steam_app.appId }}
+                        </a>
+                    </td>
+                    <td>{{ steam_app.name ?: '—' }}</td>
+                    <td>
+                        {% set typeLabels = {
+                            'game': 'Игра',
+                            'dlc': 'DLC',
+                            'demo': 'Демо',
+                            'other': 'Другое'
+                        } %}
+                        <span class="badge bg-primary">{{ typeLabels[steam_app.type]|default(steam_app.type) }}</span>
+                    </td>
+                    <td>{{ steam_app.createdAt ? steam_app.createdAt|date('Y-m-d H:i') : '' }}</td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <a href="{{ path('admin_steam_app_show', {'id': steam_app.id}) }}" class="btn btn-sm btn-outline-success">Смотреть</a>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="6">Записей не найдено</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if totalPages > 1 %}
+        <nav aria-label="Пагинация">
+            <ul class="pagination justify-content-center">
+                {% set range = 2 %}
+
+                {# Первая страница #}
+                <li class="page-item{% if currentPage == 1 %} active{% endif %}">
+                    <a class="page-link" href="?q={{ search }}&name={{ name }}&type={{ selectedType }}&sort={{ sort }}&direction={{ direction }}&page=1">1</a>
+                </li>
+
+                {% if currentPage - range > 2 %}
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% endif %}
+
+                {# Средние страницы #}
+                {% for p in (currentPage - range)..(currentPage + range) %}
+                    {% if p > 1 and p < totalPages %}
+                        <li class="page-item{% if currentPage == p %} active{% endif %}">
+                            <a class="page-link" href="?q={{ search }}&name={{ name }}&type={{ selectedType }}&sort={{ sort }}&direction={{ direction }}&page={{ p }}">{{ p }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if currentPage + range < totalPages - 1 %}
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% endif %}
+
+                {# Последняя страница #}
+                {% if totalPages > 1 %}
+                    <li class="page-item{% if currentPage == totalPages %} active{% endif %}">
+                        <a class="page-link" href="?q={{ search }}&name={{ name }}&type={{ selectedType }}&sort={{ sort }}&direction={{ direction }}&page={{ totalPages }}">{{ totalPages }}</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+{% endblock %} 

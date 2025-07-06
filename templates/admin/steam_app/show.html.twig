@@ -1,0 +1,141 @@
+{% extends 'admin/admin_base.html.twig' %}
+
+{% block title %}Steam приложение #{{ steam_app.appId }}{% endblock %}
+
+{% block body %}
+    <h1 class="mb-3">Steam приложение #{{ steam_app.appId }}</h1>
+
+    <div class="d-flex flex-column flex-md-row gap-2 mb-4">
+        <a href="{{ path('admin_steam_app_index') }}" class="btn btn-outline-secondary">Назад к списку</a>
+        <a href="https://store.steampowered.com/app/{{ steam_app.appId }}" target="_blank" class="btn btn-outline-success">Открыть в Steam</a>
+        <button type="button" class="btn btn-outline-warning" onclick="reimportSteamApp({{ steam_app.id }})">
+            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+            Импортировать заново
+        </button>
+    </div>
+
+    <div class="col-md-12">
+        <dl class="row">
+            <dt class="col-sm-4">ID</dt>
+            <dd class="col-sm-8">{{ steam_app.id }}</dd>
+
+            <dt class="col-sm-4">ID приложения Steam</dt>
+            <dd class="col-sm-8">
+                <a href="https://store.steampowered.com/app/{{ steam_app.appId }}" target="_blank">
+                    {{ steam_app.appId }}
+                </a>
+            </dd>
+
+            <dt class="col-sm-4">Название</dt>
+            <dd class="col-sm-8">{{ steam_app.name ?: '—' }}</dd>
+
+            <dt class="col-sm-4">Тип приложения</dt>
+            <dd class="col-sm-8">
+                {% set typeLabels = {
+                    'game': 'Игра',
+                    'dlc': 'DLC',
+                    'demo': 'Демо',
+                    'other': 'Другое'
+                } %}
+                <span class="badge bg-primary">{{ typeLabels[steam_app.type]|default(steam_app.type) }}</span>
+            </dd>
+
+            <dt class="col-sm-4">Дата добавления</dt>
+            <dd class="col-sm-8">{{ steam_app.createdAt ? steam_app.createdAt|date('Y-m-d H:i') : '—' }}</dd>
+        </dl>
+    </div>
+
+    {% if steam_app.rawData %}
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Сырые данные Steam API</span>
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#steamApiJson" aria-expanded="false" aria-controls="steamApiJson">
+                    Показать / Скрыть
+                </button>
+            </div>
+            <div class="collapse" id="steamApiJson">
+                <div class="card-body">
+                    <pre class="mb-0" style="font-size: 0.95em;">{{ steam_app.rawData|raw }}</pre>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block javascripts %}
+<script>
+function reimportSteamApp(steamAppId) {
+    const button = event.target;
+    const spinner = button.querySelector('.spinner-border');
+    const originalText = button.innerHTML;
+    
+    // Показываем спиннер и блокируем кнопку
+    spinner.classList.remove('d-none');
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Импортируем...';
+    
+    // Создаем форму для отправки
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ path('admin_steam_app_reimport', {'id': steam_app.id}) }}';
+    
+    // Добавляем CSRF токен
+    const tokenInput = document.createElement('input');
+    tokenInput.type = 'hidden';
+    tokenInput.name = '_token';
+    tokenInput.value = '{{ csrf_token('reimport' ~ steam_app.id) }}';
+    form.appendChild(tokenInput);
+    
+    // Отправляем запрос
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams(new FormData(form))
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Показываем уведомление
+        showNotification(data.success ? 'success' : 'danger', data.message);
+        
+        // Если успешно, перезагружаем страницу для отображения обновленных данных
+        if (data.success) {
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        }
+    })
+    .catch(error => {
+        showNotification('danger', 'Произошла ошибка при выполнении запроса: ' + error.message);
+    })
+    .finally(() => {
+        // Восстанавливаем кнопку
+        spinner.classList.add('d-none');
+        button.disabled = false;
+        button.innerHTML = originalText;
+    });
+}
+
+function showNotification(type, message) {
+    // Создаем уведомление
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    // Добавляем на страницу
+    document.body.appendChild(alertDiv);
+    
+    // Автоматически скрываем через 5 секунд
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %} 
