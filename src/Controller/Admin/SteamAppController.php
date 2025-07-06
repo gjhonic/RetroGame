@@ -2,6 +2,8 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\Game;
+use App\Entity\GameShop;
 use App\Entity\SteamApp;
 use App\Repository\SteamAppRepository;
 use App\Service\SteamAppReimportService;
@@ -14,8 +16,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
-use App\Entity\Game;
-use App\Entity\GameShop;
 
 #[Route('/admin/steam-app')]
 class SteamAppController extends AbstractController
@@ -69,7 +69,7 @@ class SteamAppController extends AbstractController
         }
 
         $appId = (int) $request->request->get('app_id');
-        
+
         if ($appId <= 0) {
             return $this->json([
                 'success' => false,
@@ -132,7 +132,7 @@ class SteamAppController extends AbstractController
         // Используем SteamGameDataProcessor для обработки данных игры
         $existingGameNames = [];
         $existingGameShopIds = [];
-        
+
         $gameProcessed = $gameDataProcessor->processGameData(
             $detailsData,
             null, // output не нужен для веб-интерфейса
@@ -143,11 +143,11 @@ class SteamAppController extends AbstractController
         // Проверяем, создались ли записи в базе данных
         $gameCreated = null;
         $gameShopCreated = null;
-        
+
         if ($gameProcessed) {
             // Ищем созданную игру
             $gameCreated = $entityManager->getRepository(Game::class)->findOneBy(['name' => $gameName]);
-            
+
             // Ищем созданный GameShop
             if ($gameCreated) {
                 $gameShopCreated = $entityManager->getRepository(GameShop::class)->findOneBy([
@@ -171,7 +171,7 @@ class SteamAppController extends AbstractController
             'game_shop_created' => $gameShopCreated ? $gameShopCreated->getId() : null,
         ];
 
-        $message = $gameProcessed 
+        $message = $gameProcessed
             ? "Приложение успешно импортировано. Игра также добавлена в базу данных."
             : "Приложение импортировано, но игра не была добавлена в базу данных (возможно, это не игра).";
 

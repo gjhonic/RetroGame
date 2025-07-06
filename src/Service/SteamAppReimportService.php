@@ -3,7 +3,6 @@
 namespace App\Service;
 
 use App\Entity\SteamApp;
-use App\Service\SteamGameDataProcessor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -60,7 +59,7 @@ class SteamAppReimportService
 
         // Находим существующую запись SteamApp
         $steamApp = $this->entityManager->getRepository(SteamApp::class)->findOneBy(['app_id' => $appId]);
-        
+
         if (!$steamApp) {
             return [
                 'success' => false,
@@ -79,7 +78,7 @@ class SteamAppReimportService
         // Используем существующий SteamGameDataProcessor для обработки данных игры
         $existingGameNames = [];
         $existingGameShopIds = [];
-        
+
         $gameProcessed = $this->gameDataProcessor->processGameData(
             $detailsData,
             null, // output не нужен для веб-интерфейса
@@ -87,7 +86,7 @@ class SteamAppReimportService
             $existingGameShopIds
         );
 
-        $message = $gameProcessed 
+        $message = $gameProcessed
             ? "Приложение успешно переимпортировано. Игра также добавлена в базу данных."
             : "Приложение переимпортировано, но игра не была добавлена в базу данных (возможно, это не игра или уже существует).";
 
@@ -101,4 +100,4 @@ class SteamAppReimportService
             ],
         ];
     }
-} 
+}

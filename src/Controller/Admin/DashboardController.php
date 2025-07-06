@@ -4,9 +4,9 @@
 
 namespace App\Controller\Admin;
 
+use App\Repository\GameRepository;
 use App\Repository\GameShopPriceHistoryRepository;
 use App\Repository\GameShopRepository;
-use App\Repository\GameRepository;
 use App\Repository\ShopRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
