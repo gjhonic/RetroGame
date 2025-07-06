@@ -20,7 +20,7 @@ class SteamAppReimportService
      * Повторно импортирует Steam приложение по app_id.
      *
      * @param int $appId ID приложения Steam
-     * @return array{success: bool, message: string, data?: array}
+     * @return array<string, mixed>
      */
     public function reimportSteamApp(int $appId): array
     {

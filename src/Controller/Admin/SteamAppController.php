@@ -207,7 +207,7 @@ class SteamAppController extends AbstractController
             ], Response::HTTP_BAD_REQUEST);
         }
 
-        $result = $reimportService->reimportSteamApp($steamApp->getAppId());
+        $result = $reimportService->reimportSteamApp((int)$steamApp->getAppId());
 
         return $this->json($result, $result['success'] ? Response::HTTP_OK : Response::HTTP_BAD_REQUEST);
     }

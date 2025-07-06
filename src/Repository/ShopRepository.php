@@ -23,6 +23,9 @@ class ShopRepository extends ServiceEntityRepository
 
     /**
      * Возвращает все магазины с количеством игр в каждом.
+     *
+     * @return list<array<string, mixed>>
+     * @throws \Doctrine\DBAL\Exception
      */
     public function getShopsWithGameCount(): array
     {

@@ -187,7 +187,7 @@ class SteampayUpdatePricesCommand extends Command
                     // Заменяем все виды пробелов на обычные пробелы
                     $priceBlock = preg_replace('/[\s\x{00A0}\x{2009}\x{202F}]+/u', ' ', $priceBlock);
 
-                    $priceText = preg_replace('/\s+/', ' ', $priceBlock); // убираем лишние пробелы
+                    $priceText = preg_replace('/\s+/', ' ', (string)$priceBlock); // убираем лишние пробелы
 
                     // Удаляем 'руб.' или 'руб' (на всякий случай)
                     $priceText = preg_replace('/руб\.?/ui', '', (string) $priceText);
