@@ -14,9 +14,11 @@
                 <select name="genre" class="form-select">
                     <option value="">Все жанры</option>
                     {% for genre in genres %}
+                        {% if genre.getName() != 'Сексуальный контент' %}
                         <option value="{{ genre.id }}" {{ genre.id == selectedGenre ? 'selected' : '' }}>
                             {{ genre.getNameRussia() }}
                         </option>
+                        {% endif %}
                     {% endfor %}
                 </select>
             </div>
