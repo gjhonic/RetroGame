@@ -51,6 +51,16 @@ class GameRepository extends ServiceEntityRepository
         $direction = strtolower($direction) === 'asc' ? 'ASC' : 'DESC';
         $qb->orderBy('g.' . $sort, $direction);
 
+        // Исключаем игры с жанром "Sexual Content" или "Сексуальный контент" через подзапрос
+        $subQb = $this->_em->createQueryBuilder()
+            ->select('1')
+            ->from('App\\Entity\\Game', 'g2')
+            ->join('g2.genre', 'genre2')
+            ->where('g2.id = g.id')
+            ->andWhere('genre2.name IN (:excludedNames)');
+        $qb->andWhere($qb->expr()->not($qb->expr()->exists($subQb->getDQL())))
+            ->setParameter('excludedNames', ['Sexual Content', 'Сексуальный контент']);
+
         if ($search) {
             $qb->andWhere('g.name LIKE :search')
                 ->setParameter('search', '%' . $search . '%');
@@ -80,6 +90,16 @@ class GameRepository extends ServiceEntityRepository
             $qb->andWhere('g.name LIKE :search')
                 ->setParameter('search', '%' . $search . '%');
         }
+
+        // Исключаем игры с жанром "Sexual Content" или "Сексуальный контент" через подзапрос
+        $subQb = $this->_em->createQueryBuilder()
+            ->select('1')
+            ->from('App\\Entity\\Game', 'g2')
+            ->join('g2.genre', 'genre2')
+            ->where('g2.id = g.id')
+            ->andWhere('genre2.name IN (:excludedNames)');
+        $qb->andWhere($qb->expr()->not($qb->expr()->exists($subQb->getDQL())))
+            ->setParameter('excludedNames', ['Sexual Content', 'Сексуальный контент']);
 
         if ($genreId) {
             $qb->andWhere(':genreId MEMBER OF g.genre')
