@@ -76,6 +76,9 @@
         "symfony/polyfill-php84": "*"
     },
     "scripts": {
+        "phpstan": "phpstan analyse -c phpstan.dist.neon",
+        "phpcs": "phpcs",
+        "phpcbf": "phpcbf",
         "auto-scripts": {
             "cache:clear": "symfony-cmd",
             "assets:install %PUBLIC_DIR%": "symfony-cmd",
@@ -98,7 +101,9 @@
         }
     },
     "require-dev": {
+        "phpstan/phpstan": "^2.2",
         "phpunit/phpunit": "^13.3",
+        "squizlabs/php_codesniffer": "^4.0",
         "symfony/browser-kit": "8.1.*",
         "symfony/css-selector": "8.1.*",
         "symfony/debug-bundle": "8.1.*",
