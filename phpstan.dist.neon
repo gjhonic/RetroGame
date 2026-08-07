@@ -1,0 +1,11 @@
+parameters:
+    level: 8
+    paths:
+        - src
+        - tests
+    excludePaths:
+        - tests/bootstrap.php
+    ignoreErrors:
+        -
+            message: '#Method App\\Kernel::getAllowedEnvs\(\) is unused#'
+            path: src/Kernel.php
