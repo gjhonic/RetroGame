@@ -42,6 +42,7 @@ RetroGame — веб-приложение на Symfony (PHP 8.4).
 
 - [`.claude/rules/modules.md`](.claude/rules/modules.md) — как писать модули/классы
 - [`.claude/rules/tests.md`](.claude/rules/tests.md) — как писать тесты
+- [`.claude/rules/git.md`](.claude/rules/git.md) — именование веток, правила PR
 
 Локальные правила разработчика (не коммитятся) — `.claude/rules/local/`.
 

@@ -43,5 +43,14 @@ jobs:
       - name: PHP CodeSniffer
         run: make test-phpcs
 
+      - name: Composer Audit
+        run: make test-audit
+
+      - name: Lint YAML
+        run: make test-lint-yaml
+
+      - name: Lint Container
+        run: make test-lint-container
+
       # - name: Unit tests
       #   run: make test-unit
