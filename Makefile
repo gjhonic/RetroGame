@@ -1,6 +1,8 @@
 # Makefile
 
-.PHONY: help server-start server-stop test test-phpstan test-phpcs test-audit test-lint-yaml test-lint-container fix-cs ci
+.PHONY: help server-start server-stop test test-phpstan test-phpcs test-unit test-audit test-lint-yaml test-lint-container fix-cs ci
+
+.DEFAULT_GOAL := help
 
 #### Predefined global variables/functions
 # Colors for SH scripts. See https://www.shellhacks.com/bash-colors/
@@ -21,7 +23,7 @@ server-stop: ## 🛑 Остановка Symfony сервера
 
 ## ✅ Тесты
 
-test: test-phpstan test-phpcs test-audit test-lint-yaml test-lint-container ## 🧪 Запуск всех локальных проверок
+test: test-phpstan test-phpcs test-unit test-audit test-lint-yaml test-lint-container ## 🧪 Запуск всех локальных проверок
 	@printf "$(C_GREEN)✅ Все проверки пройдены, всё отлично!$(CE)\n"
 
 test-phpstan: ## 📦 PHPStan — статический анализ (DIR=путь для конкретной папки/файла)
@@ -29,6 +31,9 @@ test-phpstan: ## 📦 PHPStan — статический анализ (DIR=пу�
 
 test-phpcs: ## 🔍 Code Sniffer — проверка стиля (DIR=путь для конкретной папки/файла)
 	vendor/bin/phpcs $(DIR)
+
+test-unit: ## 🧪 PHPUnit — юнит-тесты
+	bin/phpunit
 
 test-audit: ## 🛡️ Composer Audit — проверка зависимостей на уязвимости
 	composer audit
