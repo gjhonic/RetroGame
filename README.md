@@ -39,6 +39,7 @@ make server-start
 | `make test`               | Запуск всех локальных проверок                      |
 | `make test-phpstan`       | Статический анализ (PHPStan)                        |
 | `make test-phpcs`         | Проверка стиля кода (PHP_CodeSniffer)               |
+| `make test-unit`          | Юнит-тесты (PHPUnit)                                |
 | `make test-audit`         | Проверка зависимостей на уязвимости (Composer Audit) |
 | `make test-lint-yaml`     | Проверка синтаксиса YAML-конфигов                   |
 | `make test-lint-container`| Проверка DI-контейнера                              |
