@@ -6,12 +6,13 @@
         <title>{% block title %}RetroGame{% endblock %}</title>
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%22110%22 font-size=%22110%22>🎮</text></svg>">
         {% block stylesheets %}
-            <link rel="stylesheet" href="{{ asset('styles/common.css') }}">
-            <link rel="stylesheet" href="{{ asset('styles/public/base.css') }}">
+            {{ reprise_entry_link_tags('app') }}
+            <link rel="stylesheet" href="{{ asset('build/styles/common.css') }}">
+            <link rel="stylesheet" href="{{ asset('build/styles/public/base.css') }}">
         {% endblock %}
 
         {% block javascripts %}
-            {% block importmap %}{{ importmap('app') }}{% endblock %}
+            {{ reprise_entry_script_tags('app') }}
         {% endblock %}
 
         {% set frankenphp_hot_reload = app.request.server.get('FRANKENPHP_HOT_RELOAD') %}
@@ -29,9 +30,9 @@
                     <a href="{{ path('app_game_index') }}" class="site-nav__link site-nav__link--active">Каталог</a>
                     {% if is_granted('ROLE_MODERATOR') %}
                         <a href="{{ path('admin_dashboard') }}" class="site-nav__link">Админка</a>
-                        <a href="{{ path('admin_logout') }}" class="site-nav__link">Выйти</a>
+                        <a href="{{ path('logout') }}" class="site-nav__link">Выйти</a>
                     {% else %}
-                        <a href="{{ path('admin_login') }}" class="site-nav__link">Войти</a>
+                        <a href="{{ path('login') }}" class="site-nav__link">Войти</a>
                     {% endif %}
                 </nav>
             </div>

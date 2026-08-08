@@ -6,12 +6,13 @@
         <title>{% block title %}Админка — RetroGame{% endblock %}</title>
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%22110%22 font-size=%22110%22>🎮</text></svg>">
         {% block stylesheets %}
-            <link rel="stylesheet" href="{{ asset('styles/common.css') }}">
-            <link rel="stylesheet" href="{{ asset('styles/admin/base.css') }}">
+            {{ reprise_entry_link_tags('app') }}
+            <link rel="stylesheet" href="{{ asset('build/styles/common.css') }}">
+            <link rel="stylesheet" href="{{ asset('build/styles/admin/base.css') }}">
         {% endblock %}
 
         {% block javascripts %}
-            {% block importmap %}{{ importmap('app') }}{% endblock %}
+            {{ reprise_entry_script_tags('app') }}
         {% endblock %}
     </head>
     <body>
@@ -34,7 +35,7 @@
                     <div class="admin-header__user">
                         <span>{{ app.user.email }}</span>
                         <a href="{{ path('app_game_index') }}">На сайт</a>
-                        <a href="{{ path('admin_logout') }}">Выйти</a>
+                        <a href="{{ path('logout') }}">Выйти</a>
                     </div>
                 </header>
 

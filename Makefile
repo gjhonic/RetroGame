@@ -1,6 +1,6 @@
 # Makefile
 
-.PHONY: help server-start server-stop db-start db-stop test test-phpstan test-phpcs test-unit test-audit test-lint-yaml test-lint-container fix-cs ci
+.PHONY: help server-start server-stop db-start db-stop assets-install assets-build test test-phpstan test-phpcs test-unit test-audit test-lint-yaml test-lint-container fix-cs ci
 
 .DEFAULT_GOAL := help
 
@@ -15,11 +15,19 @@ DIR ?= src tests
 
 ## 🖥️  Symfony Server
 
-server-start: ## 🚀 Запуск Symfony сервера на http://127.0.0.1:8000
+server-start: assets-build ## 🚀 Запуск Symfony сервера на http://127.0.0.1:8000
 	symfony server:start
 
 server-stop: ## 🛑 Остановка Symfony сервера
 	symfony server:stop
+
+## 🎨 Frontend (Vite/Reprise)
+
+assets-install: ## 📥 Установка npm-зависимостей фронтенда
+	npm install
+
+assets-build: ## 🏗️ Сборка фронтенд-ассетов (Vite) в public/build
+	npm run build
 
 ## 🗄️  PostgreSQL в WSL
 

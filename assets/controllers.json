@@ -3,13 +3,16 @@
         "@symfony/ux-turbo": {
             "turbo-core": {
                 "enabled": true,
-                "fetch": "eager",
-                "autoimport": {
-                    "@symfony/ux-turbo/dist/mercure_stream_source_element.js": true
-                }
+                "fetch": "eager"
             },
             "mercure-turbo-stream": {
                 "enabled": false,
+                "fetch": "eager"
+            }
+        },
+        "@symfony/ux-vue": {
+            "vue": {
+                "enabled": true,
                 "fetch": "eager"
             }
         }
