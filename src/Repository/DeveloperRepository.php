@@ -11,9 +11,16 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class DeveloperRepository extends ServiceEntityRepository
 {
+    use AdminNamedEntityListTrait;
+
     /** Регистрирует репозиторий для сущности Developer. */
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Developer::class);
+    }
+
+    protected function gameAssociationName(): string
+    {
+        return 'developers';
     }
 }

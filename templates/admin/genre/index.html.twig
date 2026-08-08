@@ -1,0 +1,8 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Жанры — Админка — RetroGame{% endblock %}
+{% block admin_title %}Жанры{% endblock %}
+
+{% block body %}
+    <div {{ vue_component('Admin/GenreList') }}></div>
+{% endblock %}

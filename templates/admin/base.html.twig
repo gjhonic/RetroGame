@@ -56,6 +56,30 @@
                                     🎮 Игры
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a
+                                    class="nav-link {{ app.request.attributes.get('_route') starts with 'admin_genre_' ? 'active' : '' }}"
+                                    href="{{ path('admin_genre_index') }}"
+                                >
+                                    🏷️ Жанры
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a
+                                    class="nav-link {{ app.request.attributes.get('_route') starts with 'admin_developer_' ? 'active' : '' }}"
+                                    href="{{ path('admin_developer_index') }}"
+                                >
+                                    🧑‍💻 Разработчики
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a
+                                    class="nav-link {{ app.request.attributes.get('_route') starts with 'admin_publisher_' ? 'active' : '' }}"
+                                    href="{{ path('admin_publisher_index') }}"
+                                >
+                                    🏢 Издатели
+                                </a>
+                            </li>
                         </ul>
 
                         <ul class="nav flex-column mt-auto">

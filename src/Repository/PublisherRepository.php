@@ -11,9 +11,16 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class PublisherRepository extends ServiceEntityRepository
 {
+    use AdminNamedEntityListTrait;
+
     /** Регистрирует репозиторий для сущности Publisher. */
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Publisher::class);
+    }
+
+    protected function gameAssociationName(): string
+    {
+        return 'publishers';
     }
 }

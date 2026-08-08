@@ -11,9 +11,16 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class GenreRepository extends ServiceEntityRepository
 {
+    use AdminNamedEntityListTrait;
+
     /** Регистрирует репозиторий для сущности Genre. */
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Genre::class);
+    }
+
+    protected function gameAssociationName(): string
+    {
+        return 'genres';
     }
 }
