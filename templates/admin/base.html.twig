@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}Админка — RetroGame{% endblock %}</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%22110%22 font-size=%22110%22>🎮</text></svg>">
+        {% block stylesheets %}
+            <link rel="stylesheet" href="{{ asset('styles/common.css') }}">
+            <link rel="stylesheet" href="{{ asset('styles/admin/base.css') }}">
+        {% endblock %}
+
+        {% block javascripts %}
+            {% block importmap %}{{ importmap('app') }}{% endblock %}
+        {% endblock %}
+    </head>
+    <body>
+        <div class="admin-shell">
+            <aside class="admin-sidebar">
+                <a href="{{ path('admin_dashboard') }}" class="admin-sidebar__logo">🎮 RetroGame</a>
+                <nav class="admin-nav">
+                    <a
+                        href="{{ path('admin_dashboard') }}"
+                        class="admin-nav__link {{ app.request.attributes.get('_route') == 'admin_dashboard' ? 'admin-nav__link--active' : '' }}"
+                    >
+                        📊 Дашборд
+                    </a>
+                </nav>
+            </aside>
+
+            <div class="admin-main">
+                <header class="admin-header">
+                    <span class="admin-header__title">{% block admin_title %}{% endblock %}</span>
+                    <div class="admin-header__user">
+                        <span>{{ app.user.email }}</span>
+                        <a href="{{ path('app_game_index') }}">На сайт</a>
+                        <a href="{{ path('admin_logout') }}">Выйти</a>
+                    </div>
+                </header>
+
+                <main class="admin-content">
+                    {% block body %}{% endblock %}
+                </main>
+            </div>
+        </div>
+    </body>
+</html>

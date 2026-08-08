@@ -27,6 +27,12 @@
                 <a href="{{ path('app_game_index') }}" class="site-logo">🎮 RetroGame</a>
                 <nav class="site-nav">
                     <a href="{{ path('app_game_index') }}" class="site-nav__link site-nav__link--active">Каталог</a>
+                    {% if is_granted('ROLE_MODERATOR') %}
+                        <a href="{{ path('admin_dashboard') }}" class="site-nav__link">Админка</a>
+                        <a href="{{ path('admin_logout') }}" class="site-nav__link">Выйти</a>
+                    {% else %}
+                        <a href="{{ path('admin_login') }}" class="site-nav__link">Войти</a>
+                    {% endif %}
                 </nav>
             </div>
         </header>

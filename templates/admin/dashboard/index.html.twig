@@ -1,11 +1,8 @@
-{% extends 'base.html.twig' %}
+{% extends 'admin/base.html.twig' %}
 
-{% block title %}Админка — RetroGame{% endblock %}
+{% block title %}Дашборд — Админка — RetroGame{% endblock %}
+{% block admin_title %}Дашборд{% endblock %}
 
 {% block body %}
-    <div class="container">
-        <h1>Админка</h1>
-        <p>Вы вошли как {{ user.email }} ({{ user.role.value }}).</p>
-        <p><a href="{{ path('admin_logout') }}">Выйти</a></p>
-    </div>
+    <p>Вы вошли как {{ user.email }} ({{ user.role.value }}).</p>
 {% endblock %}

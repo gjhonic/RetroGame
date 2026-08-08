@@ -16,7 +16,7 @@ DIR ?= src tests
 ## 🖥️  Symfony Server
 
 server-start: ## 🚀 Запуск Symfony сервера на http://127.0.0.1:8000
-	symfony server:start --allow-http --port=8000
+	symfony server:start
 
 server-stop: ## 🛑 Остановка Symfony сервера
 	symfony server:stop

@@ -1,0 +1,57 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Вход — RetroGame{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/public/security.css') }}">
+{% endblock %}
+
+{% block body %}
+    {% if coverImageRows %}
+        <div class="auth-bg" aria-hidden="true">
+            {% for row in coverImageRows %}
+                <div class="auth-bg__row">
+                    {% for path in row|merge(row) %}
+                        <img src="{{ '/' ~ path }}" alt="" loading="lazy">
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="container auth-page">
+        <div class="auth-card">
+            <h1 class="auth-card__title">Вход в админку</h1>
+            <p class="auth-card__subtitle">Доступ для модераторов и администраторов</p>
+
+            {% if error %}
+                <p class="alert alert--error">{{ error.messageKey|trans(error.messageData, 'security') }}</p>
+            {% endif %}
+
+            <form method="post" class="auth-form">
+                <div class="form-field">
+                    <label for="email">Email</label>
+                    <input
+                        type="email"
+                        value="{{ last_username }}"
+                        name="email"
+                        id="email"
+                        autocomplete="email"
+                        required
+                        autofocus
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="password">Пароль</label>
+                    <input type="password" name="password" id="password" autocomplete="current-password" required>
+                </div>
+
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                <button type="submit" class="btn btn--primary">Войти</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}
