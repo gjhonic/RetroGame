@@ -4,7 +4,7 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    <link rel="stylesheet" href="{{ asset('styles/public/security.css') }}">
+    <link rel="stylesheet" href="{{ asset('build/styles/public/login.css') }}">
 {% endblock %}
 
 {% block body %}
@@ -22,8 +22,7 @@
 
     <div class="container auth-page">
         <div class="auth-card">
-            <h1 class="auth-card__title">Вход в админку</h1>
-            <p class="auth-card__subtitle">Доступ для модераторов и администраторов</p>
+            <h1 class="auth-card__title">Вход</h1>
 
             {% if error %}
                 <p class="alert alert--error">{{ error.messageKey|trans(error.messageData, 'security') }}</p>

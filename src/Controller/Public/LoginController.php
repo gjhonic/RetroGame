@@ -9,14 +9,14 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 
-/** Вход/выход из админки. */
-class SecurityController extends AbstractController
+/** Вход/выход. */
+class LoginController extends AbstractController
 {
     private const int BACKGROUND_ROWS = 6;
     private const int BACKGROUND_COVERS_PER_ROW = 18;
 
     /** Форма логина. Если пользователь уже вошёл — сразу в админку. */
-    #[Route('/admin/login', name: 'admin_login', methods: ['GET', 'POST'])]
+    #[Route('/login', name: 'login', methods: ['GET', 'POST'])]
     public function login(
         AuthenticationUtils $authenticationUtils,
         GameRepository $gameRepository,
@@ -31,7 +31,7 @@ class SecurityController extends AbstractController
             self::BACKGROUND_ROWS * self::BACKGROUND_COVERS_PER_ROW,
         );
 
-        return $this->render('public/security/login.html.twig', [
+        return $this->render('public/login/login.html.twig', [
             'last_username' => $authenticationUtils->getLastUsername(),
             'error' => $authenticationUtils->getLastAuthenticationError(),
             'coverImageRows' => array_chunk($coverImagePaths, self::BACKGROUND_COVERS_PER_ROW),
@@ -39,7 +39,7 @@ class SecurityController extends AbstractController
     }
 
     /** Пустой обработчик — выход перехватывается файрволом (см. security.yaml). */
-    #[Route('/admin/logout', name: 'admin_logout', methods: ['GET'])]
+    #[Route('/logout', name: 'logout', methods: ['GET'])]
     public function logout(): never
     {
         throw new \LogicException('Перехватывается файрволом до вызова контроллера.');

@@ -24,6 +24,7 @@
 .auth-bg__row {
     display: flex;
     flex: 1;
+    min-height: 0;
     gap: 8px;
     width: max-content;
     animation: auth-bg-scroll 240s linear infinite;
