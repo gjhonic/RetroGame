@@ -1,0 +1,25 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Вход в админку — RetroGame{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <h1>Вход в админку</h1>
+
+        {% if error %}
+            <p class="alert alert--error">{{ error.messageKey|trans(error.messageData, 'security') }}</p>
+        {% endif %}
+
+        <form method="post">
+            <label for="email">Email</label>
+            <input type="email" value="{{ last_username }}" name="email" id="email" autocomplete="email" required autofocus>
+
+            <label for="password">Пароль</label>
+            <input type="password" name="password" id="password" autocomplete="current-password" required>
+
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+            <button type="submit">Войти</button>
+        </form>
+    </div>
+{% endblock %}

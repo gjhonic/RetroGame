@@ -1,6 +1,6 @@
 # Makefile
 
-.PHONY: help server-start server-stop test test-phpstan test-phpcs test-unit test-audit test-lint-yaml test-lint-container fix-cs ci
+.PHONY: help server-start server-stop db-start db-stop test test-phpstan test-phpcs test-unit test-audit test-lint-yaml test-lint-container fix-cs ci
 
 .DEFAULT_GOAL := help
 
@@ -20,6 +20,14 @@ server-start: ## 🚀 Запуск Symfony сервера на http://127.0.0.1:
 
 server-stop: ## 🛑 Остановка Symfony сервера
 	symfony server:stop
+
+## 🗄️  PostgreSQL в WSL
+
+db-start: ## ▶️ Запуск PostgreSQL-сервера в WSL
+	sudo service postgresql start
+
+db-stop: ## ⏹️ Остановка PostgreSQL-сервера в WSL
+	sudo service postgresql stop
 
 ## ✅ Тесты
 
@@ -62,10 +70,9 @@ ci: ## 🤖 Локальная симуляция CI-пайплайна (без 
 help: ## ❓ Показать доступные команды
 	@echo ""
 	@echo "  ╔═══════════════════════════╗"
-	@echo "  ║       RETRO GAME 🎮        ║"
+	@echo "  ║       RETRO GAME 🎮       ║"
 	@echo "  ╚═══════════════════════════╝"
-	@echo ""
-	@printf "🧰 \033[1mКоманды:\033[0m\n"
-	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | \
-		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-21s\033[0m %s\n", $$1, $$2}'
+	@awk 'BEGIN {FS = ":.*?## "} \
+		/^## / {printf "\n$(C_YELLOW)%s$(CE)\n", substr($$0, 4)} \
+		/^[a-zA-Z0-9_-]+:.*?## / {printf "  \033[36m%-21s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""

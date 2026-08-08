@@ -1,0 +1,81 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Каталог игр — RetroGame{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/public/game-index.css') }}">
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        {% set mod10 = total % 10 %}
+        {% set mod100 = total % 100 %}
+        {% set gamesWord = (mod10 == 1 and mod100 != 11) ? 'игра' : ((mod10 in 2..4 and mod100 not in 12..14) ? 'игры' : 'игр') %}
+
+        <div class="page-header">
+            <h1>Каталог игр</h1>
+            <p>{{ total }} {{ gamesWord }} в базе</p>
+        </div>
+
+        {% if games is empty %}
+            <div class="empty-state">
+                <div class="empty-state__icon">🕹️</div>
+                <p>Пока здесь пусто — база наполняется импортом из Steam.</p>
+            </div>
+        {% else %}
+            <div class="game-grid">
+                {% for game in games %}
+                    <a href="{{ path('app_game_show', {slug: game.slug}) }}" class="game-card">
+                        {% if game.coverImagePath %}
+                            <img
+                                class="game-card__cover"
+                                src="{{ '/' ~ game.coverImagePath }}"
+                                alt="{{ game.name }}"
+                                loading="lazy"
+                            >
+                        {% else %}
+                            <div class="game-card__cover game-card__cover--placeholder">🎮</div>
+                        {% endif %}
+
+                        <div class="game-card__body">
+                            <h2 class="game-card__title">{{ game.name }}</h2>
+
+                            {% if game.description %}
+                                <p class="game-card__description">{{ game.description }}</p>
+                            {% endif %}
+
+                            <div class="game-card__meta">
+                                {% if game.metacriticScore %}
+                                    {% set score = game.metacriticScore %}
+                                    <span class="badge {{ score >= 75 ? 'badge--good' : (score >= 50 ? 'badge--mid' : 'badge--bad') }}">
+                                        {{ score }}
+                                    </span>
+                                {% endif %}
+                                {% if game.releaseDate %}
+                                    <span class="game-card__year">{{ game.releaseDate|date('Y') }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+
+            {% if totalPages > 1 %}
+                <nav class="pagination">
+                    <a
+                        class="pagination__link {{ page <= 1 ? 'pagination__link--disabled' : '' }}"
+                        href="{{ path('app_game_index', {page: page - 1}) }}"
+                    >← Назад</a>
+
+                    <span class="pagination__link pagination__link--active">{{ page }} / {{ totalPages }}</span>
+
+                    <a
+                        class="pagination__link {{ page >= totalPages ? 'pagination__link--disabled' : '' }}"
+                        href="{{ path('app_game_index', {page: page + 1}) }}"
+                    >Вперёд →</a>
+                </nav>
+            {% endif %}
+        {% endif %}
+    </div>
+{% endblock %}
