@@ -6,40 +6,74 @@
         <title>{% block title %}Админка — RetroGame{% endblock %}</title>
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%22110%22 font-size=%22110%22>🎮</text></svg>">
         {% block stylesheets %}
-            {{ reprise_entry_link_tags('app') }}
-            <link rel="stylesheet" href="{{ asset('build/styles/common.css') }}">
+            {{ reprise_entry_link_tags('admin') }}
             <link rel="stylesheet" href="{{ asset('build/styles/admin/base.css') }}">
+            {{ reprise_entry_link_tags('app') }}
         {% endblock %}
 
         {% block javascripts %}
+            {{ reprise_entry_script_tags('admin') }}
             {{ reprise_entry_script_tags('app') }}
         {% endblock %}
     </head>
     <body>
-        <div class="admin-shell">
-            <aside class="admin-sidebar">
-                <a href="{{ path('admin_dashboard') }}" class="admin-sidebar__logo">🎮 RetroGame</a>
-                <nav class="admin-nav">
-                    <a
-                        href="{{ path('admin_dashboard') }}"
-                        class="admin-nav__link {{ app.request.attributes.get('_route') == 'admin_dashboard' ? 'admin-nav__link--active' : '' }}"
-                    >
-                        📊 Дашборд
-                    </a>
-                </nav>
-            </aside>
+        <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+            <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6" href="{{ path('admin_dashboard') }}">🎮 RetroGame</a>
+            <button
+                class="navbar-toggler d-md-none collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#sidebarMenu"
+                aria-controls="sidebarMenu"
+                aria-expanded="false"
+                aria-label="Переключить меню"
+            >
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="navbar-nav flex-row d-flex ms-auto">
+                <div class="nav-item text-nowrap px-3 text-white-50">{{ app.user.email }}</div>
+            </div>
+        </header>
 
-            <div class="admin-main">
-                <header class="admin-header">
-                    <span class="admin-header__title">{% block admin_title %}{% endblock %}</span>
-                    <div class="admin-header__user">
-                        <span>{{ app.user.email }}</span>
-                        <a href="{{ path('app_game_index') }}">На сайт</a>
-                        <a href="{{ path('logout') }}">Выйти</a>
+        <div class="container-fluid">
+            <div class="row">
+                <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-body-tertiary sidebar collapse">
+                    <div class="position-sticky pt-3 sidebar-sticky d-flex flex-column">
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a
+                                    class="nav-link {{ app.request.attributes.get('_route') == 'admin_dashboard' ? 'active' : '' }}"
+                                    href="{{ path('admin_dashboard') }}"
+                                >
+                                    📊 Дашборд
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a
+                                    class="nav-link {{ app.request.attributes.get('_route') starts with 'admin_game_' ? 'active' : '' }}"
+                                    href="{{ path('admin_game_index') }}"
+                                >
+                                    🎮 Игры
+                                </a>
+                            </li>
+                        </ul>
+
+                        <ul class="nav flex-column mt-auto">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ path('app_game_index') }}">↗️ На сайт</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ path('logout') }}">🚪 Выйти</a>
+                            </li>
+                        </ul>
                     </div>
-                </header>
+                </nav>
 
-                <main class="admin-content">
+                <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+                        <h1 class="h2">{% block admin_title %}{% endblock %}</h1>
+                    </div>
+
                     {% block body %}{% endblock %}
                 </main>
             </div>

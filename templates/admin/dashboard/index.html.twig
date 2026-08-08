@@ -4,5 +4,7 @@
 {% block admin_title %}Дашборд{% endblock %}
 
 {% block body %}
-    <p>Вы вошли как {{ user.email }} ({{ user.role.value }}).</p>
+    <div class="alert alert-secondary">
+        Вы вошли как <strong>{{ user.email }}</strong> ({{ user.role.value }}).
+    </div>
 {% endblock %}

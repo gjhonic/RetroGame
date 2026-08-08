@@ -22,6 +22,23 @@ class GameMapper
         ];
     }
 
+    /**
+     * Пункт списка для таблицы в админке — в отличие от toListItem(), включает
+     * разработчиков/издателей/жанры (репозиторий подгружает их через fetch-join,
+     * см. GameRepository::findForAdminList(), поэтому лишних запросов не будет).
+     *
+     * @return array<string, mixed>
+     */
+    public function toAdminListItem(Game $game): array
+    {
+        return [
+            ...$this->toListItem($game),
+            'developers' => $this->names($game->getDevelopers()->toArray()),
+            'publishers' => $this->names($game->getPublishers()->toArray()),
+            'genres' => $this->names($game->getGenres()->toArray()),
+        ];
+    }
+
     /** @return array<string, mixed> */
     public function toDetail(Game $game): array
     {

@@ -1,87 +1,59 @@
-/* Admin shell: header + left sidebar (templates/admin/base.html.twig) */
+/*
+ * Admin shell (templates/admin/base.html.twig) — адаптация официального
+ * примера Bootstrap Dashboard (https://getbootstrap.com/docs/5.3/examples/dashboard/).
+ */
 
-.admin-shell {
-    display: grid;
-    grid-template-columns: 20% 80%;
-    min-height: 100vh;
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 48px 0 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.1);
 }
 
-/* Sidebar */
-
-.admin-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    padding: 24px 16px;
-    background-color: var(--color-surface);
-    border-right: 1px solid var(--color-border);
+@media (max-width: 767.98px) {
+    .sidebar {
+        top: 5rem;
+    }
 }
 
-.admin-sidebar__logo {
-    font-size: 1.1rem;
-    font-weight: 700;
-    padding: 0 8px;
+.sidebar-sticky {
+    position: relative;
+    top: 0;
+    height: calc(100vh - 48px);
+    padding-top: 0.5rem;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
-.admin-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.admin-nav__link {
-    padding: 10px 12px;
-    border-radius: var(--radius);
-    color: var(--color-text-muted);
+.sidebar .nav-link {
     font-weight: 500;
+    color: #333;
 }
 
-.admin-nav__link:hover {
-    color: var(--color-text);
-    background-color: var(--color-surface-hover);
+.sidebar .nav-link.active {
+    color: #0d6efd;
 }
 
-.admin-nav__link--active {
-    color: var(--color-text);
-    background-color: var(--color-surface-hover);
+.navbar-brand {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    background-color: rgba(0, 0, 0, 0.25);
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25);
 }
 
-/* Main column */
+/* Обложки в таблице/карточке игры — Bootstrap не включает утилиты object-fit по умолчанию */
 
-.admin-main {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
+.cover-thumb {
+    width: 120px;
+    aspect-ratio: 460 / 215;
+    object-fit: cover;
 }
 
-.admin-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 64px;
-    padding: 0 32px;
-    border-bottom: 1px solid var(--color-border);
-    background-color: var(--color-surface);
-}
-
-.admin-header__title {
-    font-size: 1.1rem;
-    font-weight: 600;
-}
-
-.admin-header__user {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    color: var(--color-text-muted);
-    font-size: 0.875rem;
-}
-
-.admin-header__user a:hover {
-    color: var(--color-text);
-}
-
-.admin-content {
-    flex: 1;
-    padding: 32px;
+.cover-large {
+    width: 100%;
+    aspect-ratio: 460 / 215;
+    object-fit: cover;
 }
