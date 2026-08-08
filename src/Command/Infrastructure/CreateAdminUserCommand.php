@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Command;
+namespace App\Command\Infrastructure;
 
 use App\Service\User\CreateAdminUserService;
 use Symfony\Component\Console\Attribute\AsCommand;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Command;
+namespace App\Command\Import;
 
 use App\Entity\Enum\SteamGameStatus;
 use App\Entity\SteamGame;
@@ -51,6 +51,14 @@ class ImportGamesCommand extends Command
         $delayMs = (int) $input->getOption('delay-ms');
         $lastAppIdOption = $input->getOption('last-appid');
         $lastAppId = $lastAppIdOption === null ? null : (int) $lastAppIdOption;
+
+        $io->writeln(sprintf(
+            'Запуск импорта в %s. Параметры: limit=%d, last-appid=%s, delay-ms=%d.',
+            (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
+            $limit,
+            $lastAppId === null ? 'авто (с прошлого запуска)' : (string) $lastAppId,
+            $delayMs,
+        ));
 
         $result = $this->gameImportService->importNextBatch($limit, $lastAppId, $delayMs);
 
