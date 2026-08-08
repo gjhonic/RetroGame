@@ -27,6 +27,18 @@
   без `expects()`), и как мок (проверка вызовов) — добавляйте класс-атрибут
   `#[AllowMockObjectsWithoutExpectations]`, как в примерах выше.
 
+## Frontend (Vue)
+
+Компоненты `assets/vue/**/*.vue` покрываются тестами в `tests/Frontend/`
+(структура повторяет `assets/vue/`: `tests/Frontend/Admin/`,
+`tests/Frontend/Public/`), стек — Vitest + `@vue/test-utils`
+(`jsdom`-окружение, конфиг `vitest.config.ts` в корне, запуск
+`npm run test`). `global.fetch` мокается через хелперы
+`tests/Frontend/support/mockFetch.js`, реального похода в API нет.
+`TestCases.md` ведётся так же, как для PHP-юнит-тестов (см. выше) —
+отдельным файлом в каждой директории с тестами, пример:
+[`tests/Frontend/Admin/TestCases.md`](../../tests/Frontend/Admin/TestCases.md).
+
 ## Остальное
 
 Дополнять по мере разработки: фикстуры, именование, покрытие и т.д.
