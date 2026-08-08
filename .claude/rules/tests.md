@@ -8,7 +8,25 @@
 
 Пример: [`tests/Unit/Service/Steam/TestCases.md`](../../tests/Unit/Service/Steam/TestCases.md).
 
+## Unit vs functional
+
+В проекте — только юнит-тесты (`tests/Unit/`), без реальной БД: в CI нет
+поднятого Postgres (см. `.github/workflows/ci.yml`), поэтому
+функциональные тесты с настоящим Doctrine не заводим.
+
+- **Сервисы** (`src/Service/`) — зависимости мокаются (`createMock`),
+  пример: `tests/Unit/Service/Steam/GameImportServiceTest.php`.
+- **API-контроллеры** (`src/Controller/Api/`) — тестируются напрямую, без
+  Kernel: `new SomeApiController()`, затем
+  `setContainer(new \Symfony\Component\DependencyInjection\Container())`
+  (пустой контейнер — `AbstractController::json()` проверяет
+  `container->has('serializer')` и при `false` отдаёт обычный
+  `JsonResponse` без похода в DI), репозитории — `createMock`. Пример:
+  `tests/Unit/Controller/Api/GameApiControllerTest.php`.
+- Если тест одновременно использует мок и как стаб (`method()->willReturn()`
+  без `expects()`), и как мок (проверка вызовов) — добавляйте класс-атрибут
+  `#[AllowMockObjectsWithoutExpectations]`, как в примерах выше.
+
 ## Остальное
 
-Дополнять по мере разработки: структура тестов, unit vs functional, фикстуры,
-именование, покрытие и т.д.
+Дополнять по мере разработки: фикстуры, именование, покрытие и т.д.

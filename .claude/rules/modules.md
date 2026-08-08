@@ -10,6 +10,15 @@
   модуля (например, `src/Service/Steam/Exceptions/SteamApiException.php`),
   namespace дополняется сегментом `Exceptions`.
 
+## Controller
+
+- В классах контроллеров (`src/Controller/**`) — только public action-методы
+  (по одному на маршрут). Никаких приватных/protected методов: любую
+  вспомогательную логику (маппинг сущности в массив, вычисления и т.п.)
+  выносить в отдельный класс (`src/Service/...`), контроллер получает его
+  через DI как аргумент action-метода. Пример: `GameApiController` +
+  `src/Service/Game/GameMapper.php`.
+
 ## Doctrine Entity
 
 - Маппинг через PHP-атрибуты (`#[ORM\...]`), не аннотации/XML/YAML.

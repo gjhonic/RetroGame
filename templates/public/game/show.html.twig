@@ -1,89 +1,16 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}{{ game.name }} — RetroGame{% endblock %}
+{% block title %}Игра — RetroGame{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
-    <link rel="stylesheet" href="{{ asset('styles/public/game-show.css') }}">
+    <link rel="stylesheet" href="{{ asset('build/styles/public/game-show.css') }}">
 {% endblock %}
 
 {% block body %}
     <div class="container">
         <a href="{{ path('app_game_index') }}" class="back-link">← Назад в каталог</a>
 
-        <div class="game-detail">
-            <div class="game-detail__cover">
-                {% if game.coverImagePath %}
-                    <img src="{{ '/' ~ game.coverImagePath }}" alt="{{ game.name }}">
-                {% else %}
-                    <div class="game-detail__cover game-card__cover--placeholder">🎮</div>
-                {% endif %}
-            </div>
-
-            <div class="game-detail__header">
-                <h1>{{ game.name }}</h1>
-
-                <div class="game-card__meta">
-                    {% if game.metacriticScore %}
-                        {% set score = game.metacriticScore %}
-                        <span class="badge {{ score >= 75 ? 'badge--good' : (score >= 50 ? 'badge--mid' : 'badge--bad') }}">
-                            Metacritic {{ score }}
-                        </span>
-                    {% endif %}
-                    {% if game.releaseDate %}
-                        <span class="game-card__year">{{ game.releaseDate|date('d.m.Y') }}</span>
-                    {% endif %}
-                </div>
-            </div>
-
-            {% if game.description %}
-                <p class="game-detail__description">{{ game.description }}</p>
-            {% endif %}
-
-            <dl class="game-facts">
-                {% if game.developers|length > 0 %}
-                    <div class="game-facts__row">
-                        <dt>Разработчик</dt>
-                        <dd>{{ game.developers|map(d => d.name)|join(', ') }}</dd>
-                    </div>
-                {% endif %}
-                {% if game.publishers|length > 0 %}
-                    <div class="game-facts__row">
-                        <dt>Издатель</dt>
-                        <dd>{{ game.publishers|map(p => p.name)|join(', ') }}</dd>
-                    </div>
-                {% endif %}
-                {% if game.genres|length > 0 %}
-                    <div class="game-facts__row">
-                        <dt>Жанры</dt>
-                        <dd>{{ game.genres|map(g => g.name)|join(', ') }}</dd>
-                    </div>
-                {% endif %}
-                {% if game.platforms|length > 0 %}
-                    <div class="game-facts__row">
-                        <dt>Платформы</dt>
-                        <dd>{{ game.platforms|map(p => p.name)|join(', ') }}</dd>
-                    </div>
-                {% endif %}
-            </dl>
-
-            {% if game.screenshotUrls %}
-                <h2 class="game-detail__subtitle">Скриншоты</h2>
-                <div class="screenshot-grid" data-controller="lightbox" data-lightbox-urls-value="{{ game.screenshotUrls|json_encode }}">
-                    {% for url in game.screenshotUrls %}
-                        <button type="button" class="screenshot-grid__item" data-lightbox-index="{{ loop.index0 }}" data-action="lightbox#open">
-                            <img src="{{ url }}" alt="{{ game.name }} — скриншот" loading="lazy">
-                        </button>
-                    {% endfor %}
-
-                    <div class="lightbox" data-lightbox-target="overlay" data-action="click->lightbox#closeOnOverlayClick">
-                        <button type="button" class="lightbox__close" aria-label="Закрыть" data-action="lightbox#close">✕</button>
-                        <button type="button" class="lightbox__nav lightbox__nav--prev" aria-label="Предыдущий скриншот" data-action="lightbox#prev">‹</button>
-                        <img class="lightbox__image" data-lightbox-target="image" src="" alt="{{ game.name }} — скриншот">
-                        <button type="button" class="lightbox__nav lightbox__nav--next" aria-label="Следующий скриншот" data-action="lightbox#next">›</button>
-                    </div>
-                </div>
-            {% endif %}
-        </div>
+        <div {{ vue_component('Public/GameDetail', { slug: slug }) }}></div>
     </div>
 {% endblock %}
