@@ -18,6 +18,7 @@ class GameMapper
             'coverImageUrl' => $this->coverImageUrl($game),
             'description' => $game->getDescription(),
             'metacriticScore' => $game->getMetacriticScore(),
+            'popularity' => $game->getPopularity(),
             'releaseYear' => $game->getReleaseDate()?->format('Y'),
         ];
     }
@@ -51,6 +52,7 @@ class GameMapper
             'description' => $game->getDescription(),
             'rating' => $game->getRating(),
             'metacriticScore' => $game->getMetacriticScore(),
+            'popularity' => $game->getPopularity(),
             'releaseDate' => $game->getReleaseDate()?->format('Y-m-d'),
             'developers' => $this->names($game->getDevelopers()->toArray()),
             'publishers' => $this->names($game->getPublishers()->toArray()),

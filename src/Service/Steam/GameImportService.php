@@ -148,6 +148,9 @@ class GameImportService
         $metacriticScore = $details['metacritic']['score'] ?? null;
         $game->setMetacriticScore($metacriticScore === null ? null : (int) $metacriticScore);
 
+        $popularity = $details['recommendations']['total'] ?? null;
+        $game->setPopularity($popularity === null ? null : (int) $popularity);
+
         $game->getDevelopers()->clear();
         foreach ($this->stringList($details['developers'] ?? null) as $name) {
             $game->addDeveloper($this->findOrCreateNamed(Developer::class, $name));

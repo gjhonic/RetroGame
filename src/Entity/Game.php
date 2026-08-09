@@ -60,6 +60,10 @@ class Game
     #[ORM\Column(nullable: true)]
     private ?int $metacriticScore = null;
 
+    /** Число обзоров/рекомендаций в Steam (recommendations.total) — прокси-показатель популярности игры. */
+    #[ORM\Column(nullable: true)]
+    private ?int $popularity = null;
+
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $createdAt;
 
@@ -281,6 +285,20 @@ class Game
     public function setMetacriticScore(?int $metacriticScore): static
     {
         $this->metacriticScore = $metacriticScore;
+
+        return $this;
+    }
+
+    /** Возвращает популярность игры (число обзоров/рекомендаций в Steam). */
+    public function getPopularity(): ?int
+    {
+        return $this->popularity;
+    }
+
+    /** Задаёт популярность игры. */
+    public function setPopularity(?int $popularity): static
+    {
+        $this->popularity = $popularity;
 
         return $this;
     }

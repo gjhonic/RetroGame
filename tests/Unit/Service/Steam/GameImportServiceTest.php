@@ -455,6 +455,28 @@ class GameImportServiceTest extends TestCase
         self::assertCount(0, $game->getPlatforms());
         self::assertNull($game->getScreenshotUrls());
         self::assertNull($game->getReleaseDate());
+        self::assertNull($game->getPopularity());
+    }
+
+    public function testImportNextBatchExtractsPopularityFromRecommendationsTotal(): void
+    {
+        $this->steamClient->method('fetchGameAppList')->willReturn([
+            'apps' => [['appid' => 302, 'name' => 'Popular Game']],
+            'hasMore' => false,
+            'lastAppId' => 302,
+        ]);
+        $this->steamGameRepository->method('findOneBySteamAppId')->willReturn(null);
+        $this->slugger->method('slug')->willReturn(new UnicodeString('popular-game'));
+        $this->gameRepository->method('findOneBy')->willReturn(null);
+        $this->steamClient->method('fetchAppDetails')->willReturn([
+            'name' => 'Popular Game',
+            'recommendations' => ['total' => 169229],
+        ]);
+
+        $result = $this->service->importNextBatch(5, 0, 1500);
+
+        $game = $result->steamGames[0]->getGame();
+        self::assertSame(169229, $game->getPopularity());
     }
 
     /**

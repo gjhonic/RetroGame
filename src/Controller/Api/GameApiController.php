@@ -3,6 +3,8 @@
 namespace App\Controller\Api;
 
 use App\Repository\GameRepository;
+use App\Repository\GenreRepository;
+use App\Repository\PlatformRepository;
 use App\Service\Game\GameMapper;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -17,13 +19,61 @@ class GameApiController extends AbstractController
 {
     private const int PER_PAGE = 24;
 
-    /** Список игр с постраничной навигацией. */
+    /** Колонки, по которым разрешена сортировка (см. GameRepository::applyPublicSort()). */
+    private const array SORTABLE_FIELDS = ['popularity', 'metacriticScore', 'releaseYear', 'name'];
+
+    /** Колонки, по которым разрешена фильтрация (query-параметр filters[<ключ>]). */
+    private const array FILTERABLE_FIELDS = ['name', 'genre', 'platform', 'releaseYearFrom', 'releaseYearTo'];
+
+    /** Список игр с фильтрами, сортировкой и постраничной навигацией. */
     #[Route('', name: 'app_api_game_list', methods: ['GET'])]
     #[OA\Parameter(
         name: 'page',
         description: 'Номер страницы (по умолчанию 1)',
         in: 'query',
         schema: new OA\Schema(type: 'integer', default: 1),
+    )]
+    #[OA\Parameter(
+        name: 'filters[name]',
+        description: 'Поиск по названию (подстрока)',
+        in: 'query',
+        schema: new OA\Schema(type: 'string'),
+    )]
+    #[OA\Parameter(
+        name: 'filters[genre]',
+        description: 'Фильтр по ID жанра',
+        in: 'query',
+        schema: new OA\Schema(type: 'integer'),
+    )]
+    #[OA\Parameter(
+        name: 'filters[platform]',
+        description: 'Фильтр по ID платформы',
+        in: 'query',
+        schema: new OA\Schema(type: 'integer'),
+    )]
+    #[OA\Parameter(
+        name: 'filters[releaseYearFrom]',
+        description: 'Фильтр по году выхода: не раньше',
+        in: 'query',
+        schema: new OA\Schema(type: 'integer'),
+    )]
+    #[OA\Parameter(
+        name: 'filters[releaseYearTo]',
+        description: 'Фильтр по году выхода: не позже',
+        in: 'query',
+        schema: new OA\Schema(type: 'integer'),
+    )]
+    #[OA\Parameter(
+        name: 'sortBy',
+        description: 'Поле сортировки: popularity, metacriticScore, releaseYear, name',
+        in: 'query',
+        schema: new OA\Schema(type: 'string', default: 'popularity'),
+    )]
+    #[OA\Parameter(
+        name: 'sortDir',
+        description: 'Направление сортировки: asc, desc',
+        in: 'query',
+        schema: new OA\Schema(type: 'string', default: 'desc'),
     )]
     #[OA\Response(
         response: 200,
@@ -38,6 +88,7 @@ class GameApiController extends AbstractController
                         new OA\Property(property: 'coverImageUrl', type: 'string', nullable: true),
                         new OA\Property(property: 'description', type: 'string', nullable: true),
                         new OA\Property(property: 'metacriticScore', type: 'integer', nullable: true),
+                        new OA\Property(property: 'popularity', type: 'integer', nullable: true),
                         new OA\Property(property: 'releaseYear', type: 'string', nullable: true),
                     ],
                     type: 'object',
@@ -51,16 +102,29 @@ class GameApiController extends AbstractController
     )]
     public function list(Request $request, GameRepository $gameRepository, GameMapper $gameMapper): JsonResponse
     {
-        $page = max(1, $request->query->getInt('page', 1));
-        $total = $gameRepository->count([]);
-        $totalPages = max(1, (int) ceil($total / self::PER_PAGE));
-        $page = min($page, $totalPages);
+        $rawFilters = $request->query->all('filters');
+        $filters = [];
+        foreach (self::FILTERABLE_FIELDS as $field) {
+            $value = $rawFilters[$field] ?? null;
+            if (\is_string($value) && trim($value) !== '') {
+                $filters[$field] = trim($value);
+            }
+        }
 
-        $games = $gameRepository->findBy(
-            criteria: [],
-            orderBy: ['name' => 'ASC'],
-            limit: self::PER_PAGE,
-            offset: ($page - 1) * self::PER_PAGE,
+        $sortBy = $request->query->getString('sortBy', 'popularity');
+        $sortField = \in_array($sortBy, self::SORTABLE_FIELDS, true) ? $sortBy : 'popularity';
+        $sortDir = strtolower($request->query->getString('sortDir', 'desc')) === 'asc' ? 'ASC' : 'DESC';
+
+        $total = $gameRepository->countForPublicCatalog($filters);
+        $totalPages = max(1, (int) ceil($total / self::PER_PAGE));
+        $page = min(max(1, $request->query->getInt('page', 1)), $totalPages);
+
+        $games = $gameRepository->findForPublicCatalog(
+            $filters,
+            $sortField,
+            $sortDir,
+            self::PER_PAGE,
+            ($page - 1) * self::PER_PAGE,
         );
 
         return $this->json([
@@ -68,6 +132,54 @@ class GameApiController extends AbstractController
             'total' => $total,
             'page' => $page,
             'totalPages' => $totalPages,
+        ]);
+    }
+
+    /** Справочные данные для формы фильтров каталога: жанры, платформы, диапазон годов выхода. */
+    #[Route('/filters', name: 'app_api_game_filters', methods: ['GET'])]
+    #[OA\Response(
+        response: 200,
+        description: 'Справочные данные для фильтров каталога',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'genres', type: 'array', items: new OA\Items(
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer'),
+                        new OA\Property(property: 'name', type: 'string'),
+                    ],
+                    type: 'object',
+                )),
+                new OA\Property(property: 'platforms', type: 'array', items: new OA\Items(
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer'),
+                        new OA\Property(property: 'name', type: 'string'),
+                    ],
+                    type: 'object',
+                )),
+                new OA\Property(property: 'releaseYearMin', type: 'integer', nullable: true),
+                new OA\Property(property: 'releaseYearMax', type: 'integer', nullable: true),
+            ],
+            type: 'object',
+        ),
+    )]
+    public function filters(
+        GameRepository $gameRepository,
+        GenreRepository $genreRepository,
+        PlatformRepository $platformRepository,
+    ): JsonResponse {
+        $yearRange = $gameRepository->findPublicReleaseYearRange();
+
+        return $this->json([
+            'genres' => array_map(
+                static fn ($genre): array => ['id' => $genre->getId(), 'name' => $genre->getName()],
+                $genreRepository->findBy([], ['name' => 'ASC']),
+            ),
+            'platforms' => array_map(
+                static fn ($platform): array => ['id' => $platform->getId(), 'name' => $platform->getName()],
+                $platformRepository->findBy([], ['name' => 'ASC']),
+            ),
+            'releaseYearMin' => $yearRange['min'] ?? null,
+            'releaseYearMax' => $yearRange['max'] ?? null,
         ]);
     }
 
@@ -93,6 +205,7 @@ class GameApiController extends AbstractController
                 new OA\Property(property: 'description', type: 'string', nullable: true),
                 new OA\Property(property: 'rating', type: 'number', nullable: true),
                 new OA\Property(property: 'metacriticScore', type: 'integer', nullable: true),
+                new OA\Property(property: 'popularity', type: 'integer', nullable: true),
                 new OA\Property(property: 'releaseDate', type: 'string', nullable: true),
                 new OA\Property(property: 'developers', type: 'array', items: new OA\Items(type: 'string')),
                 new OA\Property(property: 'publishers', type: 'array', items: new OA\Items(type: 'string')),

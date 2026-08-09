@@ -121,6 +121,11 @@
     pointer-events: none;
 }
 
+.pagination__ellipsis {
+    padding: 0 4px;
+    color: var(--color-text-muted);
+}
+
 /* Footer */
 
 .site-footer {

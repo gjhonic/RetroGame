@@ -24,6 +24,9 @@
                     class="badge"
                     :class="scoreBadgeClass(game.metacriticScore)"
                 >Metacritic {{ game.metacriticScore }}</span>
+                <span v-if="game.popularity" class="game-card__popularity">
+                    👥 {{ formatPopularity(game.popularity) }} отзывов в Steam
+                </span>
                 <span v-if="releaseDateFormatted" class="game-card__year">{{ releaseDateFormatted }}</span>
             </div>
         </div>
@@ -121,6 +124,10 @@ function scoreBadgeClass(score) {
     }
 
     return score >= 50 ? 'badge--mid' : 'badge--bad';
+}
+
+function formatPopularity(value) {
+    return new Intl.NumberFormat('ru-RU', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
 }
 
 function openLightbox(index) {

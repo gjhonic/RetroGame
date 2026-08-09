@@ -9,6 +9,8 @@ use App\Entity\Genre;
 use App\Entity\Platform;
 use App\Entity\Publisher;
 use App\Repository\GameRepository;
+use App\Repository\GenreRepository;
+use App\Repository\PlatformRepository;
 use App\Service\Game\GameMapper;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -18,20 +20,24 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * Мок GameRepository здесь и как стаб (готовые ответы findBy/findOneBy/count),
- * и как мок (проверка аргументов пагинации) — строгая проверка "мок без
+ * Мок GameRepository здесь и как стаб (готовые ответы findForPublicCatalog/findOneBy/countForPublicCatalog),
+ * и как мок (проверка аргументов фильтров/сортировки/пагинации) — строгая проверка "мок без
  * expects()" отключена, как и в GameImportServiceTest.
  */
 #[AllowMockObjectsWithoutExpectations]
 class GameApiControllerTest extends TestCase
 {
     private GameRepository&MockObject $gameRepository;
+    private GenreRepository&MockObject $genreRepository;
+    private PlatformRepository&MockObject $platformRepository;
     private GameMapper $gameMapper;
     private GameApiController $controller;
 
     protected function setUp(): void
     {
         $this->gameRepository = $this->createMock(GameRepository::class);
+        $this->genreRepository = $this->createMock(GenreRepository::class);
+        $this->platformRepository = $this->createMock(PlatformRepository::class);
         $this->gameMapper = new GameMapper();
 
         $this->controller = new GameApiController();
@@ -50,10 +56,10 @@ class GameApiControllerTest extends TestCase
 
         $gameWithoutCover = new Game('No Cover Game', 'no-cover-game');
 
-        $this->gameRepository->method('count')->willReturn(2);
+        $this->gameRepository->method('countForPublicCatalog')->willReturn(2);
         $this->gameRepository->expects($this->once())
-            ->method('findBy')
-            ->with([], ['name' => 'ASC'], 24, 0)
+            ->method('findForPublicCatalog')
+            ->with([], 'popularity', 'DESC', 24, 0)
             ->willReturn([$gameWithCover, $gameWithoutCover]);
 
         $response = $this->controller->list(new Request(), $this->gameRepository, $this->gameMapper);
@@ -69,6 +75,7 @@ class GameApiControllerTest extends TestCase
             'coverImageUrl' => '/uploads/games/1.jpg',
             'description' => 'A sci-fi shooter',
             'metacriticScore' => 96,
+            'popularity' => null,
             'releaseYear' => '1998',
         ], $data['items'][0]);
         self::assertNull($data['items'][1]['coverImageUrl']);
@@ -76,10 +83,10 @@ class GameApiControllerTest extends TestCase
 
     public function testListDefaultsToFirstPageWhenPageIsMissing(): void
     {
-        $this->gameRepository->method('count')->willReturn(0);
+        $this->gameRepository->method('countForPublicCatalog')->willReturn(0);
         $this->gameRepository->expects($this->once())
-            ->method('findBy')
-            ->with([], ['name' => 'ASC'], 24, 0)
+            ->method('findForPublicCatalog')
+            ->with([], 'popularity', 'DESC', 24, 0)
             ->willReturn([]);
 
         $response = $this->controller->list(new Request(), $this->gameRepository, $this->gameMapper);
@@ -91,10 +98,10 @@ class GameApiControllerTest extends TestCase
 
     public function testListClampsRequestedPageToTotalPages(): void
     {
-        $this->gameRepository->method('count')->willReturn(1);
+        $this->gameRepository->method('countForPublicCatalog')->willReturn(1);
         $this->gameRepository->expects($this->once())
-            ->method('findBy')
-            ->with([], ['name' => 'ASC'], 24, 0)
+            ->method('findForPublicCatalog')
+            ->with([], 'popularity', 'DESC', 24, 0)
             ->willReturn([]);
 
         $response = $this->controller->list(new Request(['page' => '999']), $this->gameRepository, $this->gameMapper);
@@ -104,12 +111,94 @@ class GameApiControllerTest extends TestCase
         self::assertSame(1, $data['totalPages']);
     }
 
+    public function testListPassesFiltersAndSortingToRepository(): void
+    {
+        $this->gameRepository->method('countForPublicCatalog')->willReturn(0);
+        $this->gameRepository->expects($this->once())
+            ->method('findForPublicCatalog')
+            ->with(
+                ['name' => 'half', 'genre' => '1', 'releaseYearFrom' => '1998'],
+                'releaseYear',
+                'ASC',
+                24,
+                0,
+            )
+            ->willReturn([]);
+
+        $request = new Request([
+            'filters' => [
+                'name' => ' half ',
+                'genre' => ' 1 ',
+                'releaseYearFrom' => ' 1998 ',
+                'unknownField' => 'ignored',
+            ],
+            'sortBy' => 'releaseYear',
+            'sortDir' => 'asc',
+        ]);
+        $this->controller->list($request, $this->gameRepository, $this->gameMapper);
+    }
+
+    public function testListFallsBackToDefaultSortForUnknownSortField(): void
+    {
+        $this->gameRepository->method('countForPublicCatalog')->willReturn(0);
+        $this->gameRepository->expects($this->once())
+            ->method('findForPublicCatalog')
+            ->with([], 'popularity', 'DESC', 24, 0)
+            ->willReturn([]);
+
+        $request = new Request(['sortBy' => 'unknownField', 'sortDir' => 'unknownDirection']);
+        $this->controller->list($request, $this->gameRepository, $this->gameMapper);
+    }
+
+    public function testFiltersReturnsGenresPlatformsAndReleaseYearRange(): void
+    {
+        $this->genreRepository->expects($this->once())
+            ->method('findBy')
+            ->with([], ['name' => 'ASC'])
+            ->willReturn([(new Genre('Экшены'))]);
+        $this->platformRepository->expects($this->once())
+            ->method('findBy')
+            ->with([], ['name' => 'ASC'])
+            ->willReturn([(new Platform('Windows'))]);
+        $this->gameRepository->method('findPublicReleaseYearRange')->willReturn(['min' => 1998, 'max' => 2024]);
+
+        $response = $this->controller->filters(
+            $this->gameRepository,
+            $this->genreRepository,
+            $this->platformRepository,
+        );
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertSame([['id' => null, 'name' => 'Экшены']], $data['genres']);
+        self::assertSame([['id' => null, 'name' => 'Windows']], $data['platforms']);
+        self::assertSame(1998, $data['releaseYearMin']);
+        self::assertSame(2024, $data['releaseYearMax']);
+    }
+
+    public function testFiltersReturnsNullReleaseYearRangeWhenNoGamesHaveReleaseDate(): void
+    {
+        $this->genreRepository->method('findBy')->willReturn([]);
+        $this->platformRepository->method('findBy')->willReturn([]);
+        $this->gameRepository->method('findPublicReleaseYearRange')->willReturn(null);
+
+        $response = $this->controller->filters(
+            $this->gameRepository,
+            $this->genreRepository,
+            $this->platformRepository,
+        );
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertNull($data['releaseYearMin']);
+        self::assertNull($data['releaseYearMax']);
+    }
+
     public function testShowReturnsFullDetailWithRelatedEntityNames(): void
     {
         $game = (new Game('Day of Defeat', 'day-of-defeat'))
             ->setDescription('Team-based shooter')
             ->setRating(4.5)
             ->setMetacriticScore(80)
+            ->setPopularity(1234)
             ->setReleaseDate(new \DateTimeImmutable('2003-05-01'))
             ->setScreenshotUrls(['https://example.test/screenshot.jpg']);
         $game->addDeveloper(new Developer('Valve'));
@@ -128,6 +217,7 @@ class GameApiControllerTest extends TestCase
         self::assertSame('Day of Defeat', $data['name']);
         self::assertSame(['https://example.test/screenshot.jpg'], $data['screenshotUrls']);
         self::assertSame(4.5, $data['rating']);
+        self::assertSame(1234, $data['popularity']);
         self::assertSame('2003-05-01', $data['releaseDate']);
         self::assertSame(['Valve'], $data['developers']);
         self::assertSame(['Valve'], $data['publishers']);
