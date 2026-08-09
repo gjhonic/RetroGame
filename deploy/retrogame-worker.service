@@ -1,0 +1,30 @@
+# Консьюмер очереди Symfony Messenger (config/packages/messenger.yaml,
+# транспорт async -> doctrine). Сейчас в приложении нет собственных
+# сообщений (routing настроен только на служебные SendEmailMessage/
+# ChatMessage/SmsMessage), так что это скорее задел на будущее — юнит
+# можно не включать, пока в очередь реально что-то не полетит.
+#
+# Установка:
+#   sudo cp deploy/retrogame-worker.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now retrogame-worker
+#
+# current — тот же симлинк, что переключает деплой (см. deploy/activate-release.sh),
+# поэтому после каждого релиза сервис нужно перезапустить (restart, не reload —
+# у messenger:consume нет обработки SIGHUP на подхват нового кода):
+#   sudo systemctl restart retrogame-worker
+
+[Unit]
+Description=RetroGame Messenger consumer (async transport)
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=retrogame
+WorkingDirectory=/var/www/retrogame/current
+ExecStart=/usr/bin/php /var/www/retrogame/current/bin/console messenger:consume async --time-limit=3600 --memory-limit=128M --env=prod
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

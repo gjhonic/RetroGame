@@ -64,6 +64,14 @@ make test-phpstan DIR=src/Controller
 
 Перед тем как открыть PR, рекомендуется прогнать `make ci` локально — она полностью повторяет проверки из пайплайна.
 
+## 🚢 Деплой
+
+После зелёного CI пуш в `main` автоматически выкладывает прод-релиз на VPS
+(джоб `deploy` в том же [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
+сборка `composer install --no-dev` + `npm run build`, атомарное переключение
+релиза по SSH). Настройка сервера с нуля и структура каталогов — в
+[`docs/DEPLOY.md`](docs/DEPLOY.md), шаблоны конфигов — в [`deploy/`](deploy/).
+
 ## 🕹️ Импорт игр из Steam
 
 Источник данных об играх — Steam Web API: список игр через `IStoreService/GetAppList`
