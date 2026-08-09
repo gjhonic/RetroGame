@@ -1,0 +1,148 @@
+/* Login page (templates/public/security/login.html.twig) */
+
+/* Фон: замыленная сетка обложек игр, медленно едущая вправо */
+
+.auth-bg {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background-color: var(--color-bg);
+    filter: blur(6px);
+}
+
+.auth-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(15, 17, 22, 0.55), rgba(15, 17, 22, 0.85));
+}
+
+.auth-bg__row {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    gap: 8px;
+    width: max-content;
+    animation: auth-bg-scroll 240s linear infinite;
+}
+
+.auth-bg__row img {
+    height: 100%;
+    width: auto;
+    aspect-ratio: 460 / 215;
+    object-fit: cover;
+    border-radius: 8px;
+    flex: none;
+}
+
+@keyframes auth-bg-scroll {
+    from {
+        transform: translateX(-50%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .auth-bg__row {
+        animation: none;
+    }
+}
+
+.auth-page {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    padding: 96px 24px;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 380px;
+    padding: 32px;
+    border-radius: var(--radius);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+}
+
+.auth-card__title {
+    margin: 0 0 4px;
+    font-size: 1.5rem;
+    text-align: center;
+}
+
+.auth-card__subtitle {
+    margin: 0 0 24px;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-field label {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+}
+
+.form-field input {
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-size: 1rem;
+}
+
+.form-field input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+}
+
+.btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn--primary {
+    background-color: var(--color-accent);
+    color: #fff;
+}
+
+.btn--primary:hover {
+    background-color: var(--color-accent-hover);
+}
+
+.alert {
+    margin: 0 0 16px;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+}
+
+.alert--error {
+    background-color: rgba(224, 93, 93, 0.15);
+    color: var(--color-bad);
+    border: 1px solid rgba(224, 93, 93, 0.4);
+}

@@ -1,0 +1,8 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Дашборд — Админка — RetroGame{% endblock %}
+{% block admin_title %}Дашборд{% endblock %}
+
+{% block body %}
+    <div {{ vue_component('Admin/Dashboard') }}></div>
+{% endblock %}

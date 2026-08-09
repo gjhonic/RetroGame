@@ -1,0 +1,11 @@
+# Крон-задачи RetroGame. Установка на сервере: crontab -u retrogame -e,
+# вставить нужные строки (пути и DEPLOY_PATH подставить свои).
+#
+# current — тот же симлинк, что переключает деплой (deploy/activate-release.sh),
+# так что крону не нужно ничего знать про релизы — он всегда видит свежий код.
+#
+# Каждый запуск фиксируется в БД и логируется в var/log/cron/ — см. модуль
+# "Кроны" в админке (/admin/cron-runs, App\EventListener\CronTrackingListener).
+
+# Импорт игр из Steam — раз в час, порциями по 20 штук.
+0 * * * * /usr/bin/php /var/www/retrogame/current/bin/console app:games:import --limit=20 --env=prod >> /var/www/retrogame/shared/var/log/cron-games-import.log 2>&1

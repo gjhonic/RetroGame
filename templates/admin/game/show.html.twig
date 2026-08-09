@@ -1,0 +1,10 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Игра — Админка — RetroGame{% endblock %}
+{% block admin_title %}Игра{% endblock %}
+
+{% block body %}
+    <a href="{{ path('admin_game_index') }}" class="d-inline-block mb-3 link-secondary">← Назад к списку игр</a>
+
+    <div {{ vue_component('Admin/GameDetail', { id: id }) }}></div>
+{% endblock %}

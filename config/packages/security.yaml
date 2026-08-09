@@ -5,7 +5,10 @@ security:
 
     # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
     providers:
-        users_in_memory: { memory: null }
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+                property: email
 
     firewalls:
         dev:
@@ -14,18 +17,33 @@ security:
             security: false
         main:
             lazy: true
-            provider: users_in_memory
-
-            # Activate different ways to authenticate:
-            # https://symfony.com/doc/current/security.html#the-firewall
+            provider: app_user_provider
+            entry_point: App\Security\AuthenticationEntryPoint
+            access_denied_handler: App\Security\AccessDeniedHandler
+            form_login:
+                login_path: login
+                check_path: login
+                default_target_path: admin_dashboard
+                username_parameter: email
+                password_parameter: password
+            logout:
+                path: logout
+                target: app_game_index
 
             # https://symfony.com/doc/current/security/impersonating_user.html
             # switch_user: true
 
+    # Роль наследуется вниз: ROLE_ADMIN получает и ROLE_MODERATOR, тот — ROLE_USER.
+    role_hierarchy:
+        ROLE_ADMIN: ROLE_MODERATOR
+        ROLE_MODERATOR: ROLE_USER
+
     # Note: Only the *first* matching rule is applied
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+        - { path: ^/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/admin, roles: ROLE_MODERATOR }
+        - { path: ^/api/cabinet, roles: ROLE_USER }
+        - { path: ^/admin, roles: ROLE_MODERATOR }
 
 when@test:
     security:

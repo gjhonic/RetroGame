@@ -1,6 +1,6 @@
 # Makefile
 
-.PHONY: help server-start server-stop test test-phpstan test-phpcs test-unit test-audit test-lint-yaml test-lint-container fix-cs ci
+.PHONY: help server-start server-stop db-start db-stop composer-install assets-install assets-build cache-clear build clean rebuild test test-phpstan test-phpcs test-unit test-audit test-lint-yaml test-lint-container fix-cs ci
 
 .DEFAULT_GOAL := help
 
@@ -15,11 +15,46 @@ DIR ?= src tests
 
 ## 🖥️  Symfony Server
 
-server-start: ## 🚀 Запуск Symfony сервера на http://127.0.0.1:8000
-	symfony server:start --allow-http --port=8000
+server-start: assets-build ## 🚀 Запуск Symfony сервера на http://127.0.0.1:8000
+	symfony server:start
 
 server-stop: ## 🛑 Остановка Symfony сервера
 	symfony server:stop
+
+## 🎨 Frontend (Vite/Reprise)
+
+assets-install: ## 📥 Установка npm-зависимостей фронтенда
+	npm install
+
+assets-build: ## 🏗️ Сборка фронтенд-ассетов (Vite) в public/build
+	npm run build
+
+## 📦 PHP-зависимости
+
+composer-install: ## 📥 Установка PHP-зависимостей (composer)
+	composer install
+
+## 🔧 Сборка проекта
+
+build: composer-install assets-install assets-build cache-clear ## 🔧 Установить все зависимости (composer+npm) и собрать фронтенд — "почини и запусти"
+	@printf "$(C_GREEN)✅ Проект собран: PHP- и npm-зависимости установлены, фронтенд собран.$(CE)\n"
+
+clean: ## 🗑️ Удалить vendor/node_modules/сборки/кэш (для чистой пересборки)
+	rm -rf vendor node_modules public/build assets/vendor var/cache
+
+rebuild: clean build ## ♻️ Полная пересборка с нуля: чистит vendor/node_modules/build/кэш и пересобирает всё заново
+	@printf "$(C_GREEN)✅ Проект пересобран с нуля.$(CE)\n"
+
+cache-clear: ## 🧹 Очистка кэша Symfony
+	php bin/console cache:clear
+
+## 🗄️  PostgreSQL в WSL
+
+db-start: ## ▶️ Запуск PostgreSQL-сервера в WSL
+	sudo service postgresql start
+
+db-stop: ## ⏹️ Остановка PostgreSQL-сервера в WSL
+	sudo service postgresql stop
 
 ## ✅ Тесты
 
@@ -62,10 +97,9 @@ ci: ## 🤖 Локальная симуляция CI-пайплайна (без 
 help: ## ❓ Показать доступные команды
 	@echo ""
 	@echo "  ╔═══════════════════════════╗"
-	@echo "  ║       RETRO GAME 🎮        ║"
+	@echo "  ║       RETRO GAME 🎮       ║"
 	@echo "  ╚═══════════════════════════╝"
-	@echo ""
-	@printf "🧰 \033[1mКоманды:\033[0m\n"
-	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | \
-		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-21s\033[0m %s\n", $$1, $$2}'
+	@awk 'BEGIN {FS = ":.*?## "} \
+		/^## / {printf "\n$(C_YELLOW)%s$(CE)\n", substr($$0, 4)} \
+		/^[a-zA-Z0-9_-]+:.*?## / {printf "  \033[36m%-21s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""

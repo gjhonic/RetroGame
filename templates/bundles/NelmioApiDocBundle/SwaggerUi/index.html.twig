@@ -1,0 +1,16 @@
+{% extends '@!NelmioApiDoc/SwaggerUi/index.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/api-doc-theme.css') }}">
+{% endblock stylesheets %}
+
+{% block header %}
+    {% set current_area = app.request.attributes.get('area', 'default') %}
+    <a id="logo" href="/">RetroGame</a>
+    <nav class="api-doc-nav">
+        <a href="{{ path('app.swagger_ui', { area: 'default' }) }}" class="{{ current_area == 'default' ? 'active' }}">Публичное API</a>
+        <a href="{{ path('app.swagger_ui', { area: 'cabinet' }) }}" class="{{ current_area == 'cabinet' ? 'active' }}">Личный кабинет</a>
+        <a href="{{ path('app.swagger_ui', { area: 'admin' }) }}" class="{{ current_area == 'admin' ? 'active' }}">Админка</a>
+    </nav>
+{% endblock header %}

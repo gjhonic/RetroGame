@@ -1,0 +1,234 @@
+/*
+ * Тёмная тема Swagger UI (/api/doc) в палитре сайта — см. assets/styles/common.css.
+ * Значения переменных продублированы вручную: эта страница рендерится напрямую
+ * Twig-бандлом nelmio/api-doc-bundle, без Vite-сборки и общего common.css.
+ */
+
+:root {
+    --api-doc-bg: #0f1116;
+    --api-doc-surface: #1a1d27;
+    --api-doc-surface-hover: #21252f;
+    --api-doc-border: #2a2e3a;
+    --api-doc-text: #e6e8ef;
+    --api-doc-text-muted: #9098a8;
+    --api-doc-accent: #7c5cff;
+    --api-doc-accent-hover: #9179ff;
+    --api-doc-good: #3ecf8e;
+    --api-doc-mid: #e0b93c;
+    --api-doc-bad: #e05d5d;
+}
+
+html,
+body {
+    background-color: var(--api-doc-bg);
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Header */
+
+header:before {
+    background-color: var(--api-doc-surface);
+    border-bottom: 1px solid var(--api-doc-border);
+    box-shadow: none;
+}
+
+header #logo {
+    position: fixed;
+    top: 20px;
+    left: 40px;
+    right: auto;
+    transform: none;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--api-doc-text);
+}
+
+.api-doc-nav {
+    position: fixed;
+    top: 0;
+    right: 40px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 102;
+}
+
+.api-doc-nav a {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    color: var(--api-doc-text-muted);
+    font-size: 0.9rem;
+}
+
+.api-doc-nav a:hover {
+    color: var(--api-doc-text);
+    border-color: var(--api-doc-border);
+}
+
+.api-doc-nav a.active {
+    background-color: var(--api-doc-accent);
+    color: #fff;
+}
+
+/* Swagger UI surfaces */
+
+#swagger-ui.api-platform,
+.swagger-ui {
+    background-color: var(--api-doc-bg);
+    color: var(--api-doc-text);
+}
+
+.swagger-ui .info .title,
+.swagger-ui .info li,
+.swagger-ui .info p,
+.swagger-ui .info h1,
+.swagger-ui .info h2,
+.swagger-ui .info h3,
+.swagger-ui .opblock-tag,
+.swagger-ui .opblock .opblock-summary-description,
+.swagger-ui table thead tr td,
+.swagger-ui table thead tr th,
+.swagger-ui .parameter__name,
+.swagger-ui .parameter__type,
+.swagger-ui .response-col_status,
+.swagger-ui .response-col_description,
+.swagger-ui .model-title,
+.swagger-ui .model,
+.swagger-ui label,
+.swagger-ui .scheme-container .schemes > label {
+    color: var(--api-doc-text);
+}
+
+.swagger-ui .opblock-description-wrapper p,
+.swagger-ui .opblock-external-docs-wrapper p,
+.swagger-ui .opblock-title_normal p,
+.swagger-ui .response-col_description__inner p,
+.swagger-ui .parameter__extension,
+.swagger-ui .parameter__in,
+.swagger-ui .renderedMarkdown p {
+    color: var(--api-doc-text-muted);
+}
+
+#swagger-ui.api-platform .information-container.wrapper {
+    border-bottom: 1px solid var(--api-doc-border);
+}
+
+.swagger-ui .scheme-container {
+    background-color: var(--api-doc-surface);
+    box-shadow: none;
+    border-bottom: 1px solid var(--api-doc-border);
+}
+
+.swagger-ui .opblock {
+    background-color: var(--api-doc-surface);
+    border-color: var(--api-doc-border);
+    box-shadow: none;
+}
+
+.swagger-ui .opblock .opblock-summary {
+    border-color: var(--api-doc-border);
+}
+
+.swagger-ui .opblock .opblock-section-header {
+    background-color: var(--api-doc-surface-hover);
+    box-shadow: none;
+}
+
+.swagger-ui .opblock.opblock-get {
+    background-color: var(--api-doc-surface);
+    border-color: var(--api-doc-accent);
+}
+
+.swagger-ui .opblock.opblock-get .opblock-summary-method {
+    background-color: var(--api-doc-accent);
+}
+
+.swagger-ui .opblock.opblock-post .opblock-summary-method {
+    background-color: var(--api-doc-good);
+}
+
+.swagger-ui .opblock.opblock-post {
+    border-color: var(--api-doc-good);
+}
+
+.swagger-ui .btn {
+    color: var(--api-doc-text);
+    border-color: var(--api-doc-border);
+    background: transparent;
+}
+
+.swagger-ui .btn.authorize {
+    color: var(--api-doc-accent);
+    border-color: var(--api-doc-accent);
+}
+
+.swagger-ui .btn.authorize svg {
+    fill: var(--api-doc-accent);
+}
+
+.swagger-ui .btn.execute {
+    background-color: var(--api-doc-accent);
+    border-color: var(--api-doc-accent);
+    color: #fff;
+}
+
+.swagger-ui select,
+.swagger-ui input[type=text],
+.swagger-ui input[type=password],
+.swagger-ui input[type=search],
+.swagger-ui input[type=email],
+.swagger-ui textarea {
+    background-color: var(--api-doc-surface-hover);
+    border-color: var(--api-doc-border);
+    color: var(--api-doc-text);
+}
+
+.swagger-ui .model-box,
+.swagger-ui section.models {
+    background-color: var(--api-doc-surface);
+    border-color: var(--api-doc-border);
+}
+
+.swagger-ui section.models.is-open h4 {
+    border-color: var(--api-doc-border);
+}
+
+.swagger-ui .tab li {
+    border-color: var(--api-doc-border);
+}
+
+.swagger-ui .dialog-ux .modal-ux {
+    background-color: var(--api-doc-surface);
+    border-color: var(--api-doc-border);
+}
+
+.swagger-ui .dialog-ux .modal-ux-header h3,
+.swagger-ui .dialog-ux .modal-ux-content h4,
+.swagger-ui .dialog-ux .modal-ux-content p {
+    color: var(--api-doc-text);
+}
+
+.swagger-ui .microlight {
+    color: var(--api-doc-text);
+}
+
+.swagger-ui .highlight-code,
+.swagger-ui .opblock-body pre.microlight {
+    background-color: var(--api-doc-bg);
+}
+
+.swagger-ui .responses-inner h4,
+.swagger-ui .responses-inner h5 {
+    color: var(--api-doc-text);
+}
+
+.swagger-ui table tbody tr td {
+    border-color: var(--api-doc-border);
+    color: var(--api-doc-text-muted);
+}

@@ -21,3 +21,9 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+    # %kernel.debug% не автосвязывается с bool $debug — только для 500-х в ApiExceptionListener
+    # решает, показывать ли реальное сообщение исключения или общее "Внутренняя ошибка сервера."
+    App\EventListener\ApiExceptionListener:
+        arguments:
+            $debug: '%kernel.debug%'
