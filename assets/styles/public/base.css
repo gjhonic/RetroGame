@@ -100,9 +100,13 @@
 
 .pagination__link {
     padding: 8px 14px;
+    background: none;
     border-radius: var(--radius);
     border: 1px solid var(--color-border);
     color: var(--color-text-muted);
+    font: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
 }
 
 .pagination__link:hover {
@@ -113,6 +117,10 @@
 .pagination__link--active {
     background-color: var(--color-accent);
     border-color: var(--color-accent);
+    color: #fff;
+}
+
+.pagination__link--active:hover {
     color: #fff;
 }
 

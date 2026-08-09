@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Tests\Unit\Controller\Api;
+namespace App\Tests\Unit\Controller\Api\Public;
 
-use App\Controller\Api\GameApiController;
+use App\Controller\Api\Public\GameApiController;
 use App\Entity\Developer;
 use App\Entity\Game;
 use App\Entity\Genre;

@@ -2,9 +2,26 @@ nelmio_api_doc:
     documentation:
         info:
             title: RetroGame API
-            description: JSON API каталога игр, используется Vue-компонентами публичных страниц.
             version: 1.0.0
     areas:
         default:
             path_patterns:
-                - ^/api(?!/doc)
+                - ^/api/games
+            documentation:
+                info:
+                    title: 'RetroGame API — Публичная часть'
+                    description: 'Открытый JSON API без авторизации: каталог игр, фильтры, карточка игры. Используется Vue-компонентами публичных страниц.'
+        cabinet:
+            path_patterns:
+                - ^/api/cabinet
+            documentation:
+                info:
+                    title: 'RetroGame API — Личный кабинет'
+                    description: 'API для авторизованных пользователей (роль ROLE_USER и выше).'
+        admin:
+            path_patterns:
+                - ^/api/admin
+            documentation:
+                info:
+                    title: 'RetroGame API — Администрирование'
+                    description: 'API админ-панели: доступно ролям ROLE_MODERATOR и ROLE_ADMIN.'

@@ -1,7 +1,13 @@
 app.swagger_ui:
-    path: /api/doc
+    path: /api/doc/{area}
     controller: nelmio_api_doc.controller.swagger_ui
+    defaults:
+        area: default
+    requirements:
+        area: '[^.]+'
 
 app.swagger_json:
-    path: /api/doc.json
+    path: /api/doc/{area}.json
     controller: nelmio_api_doc.controller.swagger_json
+    defaults:
+        area: default

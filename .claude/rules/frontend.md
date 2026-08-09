@@ -6,13 +6,30 @@
 `render()`) для таких страниц больше не используется — см. пример
 `src/Controller/Public/GameController.php` + `templates/public/game/` +
 `assets/vue/Public/GameCatalog.vue`/`GameDetail.vue` +
-`src/Controller/Api/GameApiController.php`.
+`src/Controller/Api/Public/GameApiController.php`.
 
 ## Структура
 
-- `src/Controller/Api/` — JSON-контроллеры, по одному классу на ресурс
-  (например `GameApiController`), маршруты с префиксом `/api/...`, ответ
-  через `$this->json(...)`. Сложную логику (импорт, вычисления) выносить в
+- `src/Controller/Api/` — JSON-контроллеры, разложены по трём версиям API
+  (подпапка = namespace-сегмент), у каждой свой контур доступа и своя
+  секция в Swagger (`/api/doc/{area}`, area = имя подпапки в нижнем
+  регистре):
+  - `Api/Public/` — без авторизации, доступно всем (`PUBLIC_ACCESS`,
+    явных правил в `access_control` не требуется). Пример:
+    `Public/GameApiController.php`, маршруты `/api/games...`.
+  - `Api/Cabinet/` — личный кабинет, требует авторизации (`ROLE_USER`),
+    маршруты `/api/cabinet/...`. `access_control` в `security.yaml` уже
+    настроен, эндпоинтов пока нет.
+  - `Api/Admin/` — админ-панель, требует `ROLE_MODERATOR` (роль
+    наследуется от `ROLE_ADMIN`), маршруты `/api/admin/...`. Пример:
+    `Admin/GameApiController.php`.
+  - Права проверяются централизованно через `access_control` в
+    `config/packages/security.yaml` по префиксу пути — при добавлении
+    нового контроллера в `Cabinet`/`Admin` отдельно навешивать
+    `#[IsGranted]` не нужно, но не забывать это при переносе
+    роута в другую версию.
+  - По одному классу-контроллеру на ресурс (например `GameApiController`),
+    ответ через `$this->json(...)`. Сложную логику (импорт, вычисления) выносить в
   `src/Service/`, в контроллере — только выборка через репозиторий и
   маппинг сущности в массив.
 - `src/Controller/Public/` — контроллеры страниц только рендерят тонкую

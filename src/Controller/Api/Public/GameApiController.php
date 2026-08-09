@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Controller\Api;
+namespace App\Controller\Api\Public;
 
 use App\Repository\GameRepository;
 use App\Repository\GenreRepository;
