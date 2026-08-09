@@ -31,4 +31,5 @@ Thumbs.db
 ###> symfony/reprise ###
 /node_modules/
 /public/build/
+/assets/vendor/
 ###< symfony/reprise ###
