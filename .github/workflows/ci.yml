@@ -61,6 +61,11 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: production
+    env:
+      # .env по умолчанию содержит APP_ENV=dev — без явного прод-окружения здесь
+      # автоскрипт `cache:clear` после composer install --no-dev пытается
+      # загрузить DebugBundle, которого нет среди прод-зависимостей, и падает.
+      APP_ENV: prod
 
     steps:
       - name: Checkout
