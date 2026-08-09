@@ -37,6 +37,10 @@
     color: #0d6efd;
 }
 
+.sidebar-heading {
+    font-size: 0.75rem;
+}
+
 .navbar-brand {
     padding-top: 0.75rem;
     padding-bottom: 0.75rem;
@@ -56,4 +60,12 @@
     width: 100%;
     aspect-ratio: 460 / 215;
     object-fit: cover;
+}
+
+/* Дашборд (assets/vue/Admin/Dashboard.vue) — иконки в карточках статистики */
+
+.stat-icon {
+    width: 3rem;
+    height: 3rem;
+    flex: none;
 }

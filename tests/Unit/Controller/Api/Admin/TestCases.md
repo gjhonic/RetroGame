@@ -27,3 +27,9 @@ gamesCount; набор кейсов идентичен во всех трёх ф
 | `filters[name]`/`sortBy`/`sortDir`/`perPage` из query передаются в репозиторий (значение фильтра триммится, неизвестные ключи отбрасываются) | `testListPassesFiltersAndSortingToRepository` |
 | Неизвестный `sortBy` → сортировка по имени; `perPage` вне диапазона клампится до максимума | `testListFallsBackToNameSortingForUnknownSortByAndClampsPerPage` |
 | Запрошенная страница выходит за `totalPages`: значение клампится до последней доступной | `testListClampsRequestedPageToTotalPages` |
+
+## StatsApiControllerTest.php
+
+| Кейс | Метод теста |
+|---|---|
+| `totals`/`gamesByYear`/`topGenres` (топ-6 по `gamesCount`)/`scoreDistribution` собираются из репозиториев и отдаются как есть | `testIndexReturnsTotalsAndAggregatedStats` |

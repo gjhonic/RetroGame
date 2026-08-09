@@ -38,7 +38,7 @@
         <div class="container-fluid">
             <div class="row">
                 <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-body-tertiary sidebar collapse">
-                    <div class="position-sticky pt-3 sidebar-sticky d-flex flex-column">
+                    <div class="position-sticky pt-3 sidebar-sticky">
                         <ul class="nav flex-column">
                             <li class="nav-item">
                                 <a
@@ -48,6 +48,12 @@
                                     📊 Дашборд
                                 </a>
                             </li>
+                        </ul>
+
+                        <h6 class="sidebar-heading d-flex align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
+                            <span>База данных</span>
+                        </h6>
+                        <ul class="nav flex-column">
                             <li class="nav-item">
                                 <a
                                     class="nav-link {{ app.request.attributes.get('_route') starts with 'admin_game_' ? 'active' : '' }}"
@@ -82,7 +88,7 @@
                             </li>
                         </ul>
 
-                        <ul class="nav flex-column mt-auto">
+                        <ul class="nav flex-column mt-4">
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ path('app_game_index') }}">↗️ На сайт</a>
                             </li>

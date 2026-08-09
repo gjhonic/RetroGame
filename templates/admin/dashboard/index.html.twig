@@ -4,7 +4,5 @@
 {% block admin_title %}Дашборд{% endblock %}
 
 {% block body %}
-    <div class="alert alert-secondary">
-        Вы вошли как <strong>{{ user.email }}</strong> ({{ user.role.value }}).
-    </div>
+    <div {{ vue_component('Admin/Dashboard') }}></div>
 {% endblock %}

@@ -18,6 +18,77 @@ class GameRepository extends ServiceEntityRepository
         parent::__construct($registry, Game::class);
     }
 
+    /** Общее количество игр (для карточек статистики на дашборде). */
+    public function countAll(): int
+    {
+        return (int) $this->createQueryBuilder('g')
+            ->select('COUNT(g.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Количество игр по году выхода (для графика на дашборде) — EXTRACT(YEAR ...)
+     * не входит в стандартный DQL, поэтому агрегируем нативным SQL.
+     *
+     * @return array<int, array{year: int, count: int}>
+     */
+    public function findGamesCountByReleaseYear(): array
+    {
+        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            'SELECT EXTRACT(YEAR FROM release_date)::int AS year, COUNT(*) AS count
+             FROM game
+             WHERE release_date IS NOT NULL
+             GROUP BY year
+             ORDER BY year',
+        );
+
+        return array_map(
+            static fn (array $row): array => ['year' => (int) $row['year'], 'count' => (int) $row['count']],
+            $rows,
+        );
+    }
+
+    /**
+     * Распределение игр по диапазонам оценки Metacritic (для графика на дашборде).
+     *
+     * @return array<int, array{label: string, count: int}>
+     */
+    public function findScoreDistribution(): array
+    {
+        $buckets = [
+            ['label' => '90–100', 'min' => 90, 'max' => 100],
+            ['label' => '75–89', 'min' => 75, 'max' => 89],
+            ['label' => '50–74', 'min' => 50, 'max' => 74],
+            ['label' => '0–49', 'min' => 0, 'max' => 49],
+        ];
+
+        $distribution = [];
+        foreach ($buckets as $bucket) {
+            $distribution[] = [
+                'label' => $bucket['label'],
+                'count' => (int) $this->createQueryBuilder('g')
+                    ->select('COUNT(g.id)')
+                    ->andWhere('g.metacriticScore BETWEEN :min AND :max')
+                    ->setParameter('min', $bucket['min'])
+                    ->setParameter('max', $bucket['max'])
+                    ->getQuery()
+                    ->getSingleScalarResult(),
+            ];
+        }
+
+        $distribution[] = [
+            'label' => 'Без оценки',
+            'count' => (int) $this->createQueryBuilder('g')
+                ->select('COUNT(g.id)')
+                ->andWhere('g.metacriticScore IS NULL')
+                ->getQuery()
+                ->getSingleScalarResult(),
+        ];
+
+        return $distribution;
+    }
+
     /**
      * Пути обложек для декоративного фона (страница входа и т.п.), в случайном порядке.
      *
