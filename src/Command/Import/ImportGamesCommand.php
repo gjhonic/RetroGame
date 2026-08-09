@@ -2,6 +2,7 @@
 
 namespace App\Command\Import;
 
+use App\Cron\Attribute\AsTrackedCron;
 use App\Entity\Enum\SteamGameStatus;
 use App\Entity\SteamGame;
 use App\Service\Steam\GameImportService;
@@ -20,6 +21,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
     name: 'app:games:import',
     description: 'Импорт игр из Steam порциями, с сохранением в БД',
 )]
+#[AsTrackedCron]
 class ImportGamesCommand extends Command
 {
     /** Принимает сервис импорта. */

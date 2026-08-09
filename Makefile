@@ -1,6 +1,6 @@
 # Makefile
 
-.PHONY: help server-start server-stop db-start db-stop assets-install assets-build test test-phpstan test-phpcs test-unit test-audit test-lint-yaml test-lint-container fix-cs ci
+.PHONY: help server-start server-stop db-start db-stop composer-install assets-install assets-build cache-clear build clean rebuild test test-phpstan test-phpcs test-unit test-audit test-lint-yaml test-lint-container fix-cs ci
 
 .DEFAULT_GOAL := help
 
@@ -28,6 +28,25 @@ assets-install: ## 📥 Установка npm-зависимостей фрон
 
 assets-build: ## 🏗️ Сборка фронтенд-ассетов (Vite) в public/build
 	npm run build
+
+## 📦 PHP-зависимости
+
+composer-install: ## 📥 Установка PHP-зависимостей (composer)
+	composer install
+
+## 🔧 Сборка проекта
+
+build: composer-install assets-install assets-build cache-clear ## 🔧 Установить все зависимости (composer+npm) и собрать фронтенд — "почини и запусти"
+	@printf "$(C_GREEN)✅ Проект собран: PHP- и npm-зависимости установлены, фронтенд собран.$(CE)\n"
+
+clean: ## 🗑️ Удалить vendor/node_modules/сборки/кэш (для чистой пересборки)
+	rm -rf vendor node_modules public/build assets/vendor var/cache
+
+rebuild: clean build ## ♻️ Полная пересборка с нуля: чистит vendor/node_modules/build/кэш и пересобирает всё заново
+	@printf "$(C_GREEN)✅ Проект пересобран с нуля.$(CE)\n"
+
+cache-clear: ## 🧹 Очистка кэша Symfony
+	php bin/console cache:clear
 
 ## 🗄️  PostgreSQL в WSL
 

@@ -33,3 +33,20 @@ gamesCount; набор кейсов идентичен во всех трёх ф
 | Кейс | Метод теста |
 |---|---|
 | `totals`/`gamesByYear`/`topGenres` (топ-6 по `gamesCount`)/`scoreDistribution` собираются из репозиториев и отдаются как есть | `testIndexReturnsTotalsAndAggregatedStats` |
+
+## CronRunApiControllerTest.php
+
+| Кейс | Метод теста |
+|---|---|
+| Список запусков: страница по умолчанию (сортировка `startedAt DESC`, `perPage=25`) | `testListReturnsPageWithDefaultSortingAndPagination` |
+| `filters[command]`/`filters[status]`/`sortBy`/`sortDir`/`perPage` из query передаются в репозиторий (значения фильтров триммятся) | `testListPassesFiltersAndSortingToRepository` |
+| `dateFrom`/`dateTo` парсятся в `DateTimeImmutable` и передаются в репозиторий | `testListPassesDateRangeToRepository` |
+| Неизвестный `sortBy` → сортировка по `startedAt` | `testListFallsBackToStartedAtSortingForUnknownSortBy` |
+| Детали запуска: статус/аргументы/признак наличия лога | `testShowReturnsRunDetail` |
+| Несуществующий `id` в `show()` → `NotFoundHttpException` | `testShowThrowsNotFoundExceptionForUnknownId` |
+| Справочник `/commands` — список уникальных имён команд | `testCommandsReturnsDistinctCommandList` |
+| `/timeline` передаёт `dateFrom`/`dateTo` из query в репозиторий как есть | `testTimelinePassesRequestedDateRangeToRepository` |
+| `/timeline` без `dateFrom`/`dateTo` — подставляются сутки по умолчанию | `testTimelineDefaultsToLastDayWhenRangeNotProvided` |
+| `/{id}/log` отдаёт текст лога через `CronLogReader` с `Content-Type: text/plain` | `testLogReturnsPlainTextContent` |
+| `/{id}/log?download=1` добавляет `Content-Disposition: attachment` с именем файла | `testLogWithDownloadFlagSetsContentDisposition` |
+| `/{id}/log` без файла лога → `NotFoundHttpException` | `testLogThrowsNotFoundExceptionWhenLogFileMissing` |

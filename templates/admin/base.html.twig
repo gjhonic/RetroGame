@@ -88,6 +88,20 @@
                             </li>
                         </ul>
 
+                        <h6 class="sidebar-heading d-flex align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
+                            <span>Система</span>
+                        </h6>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a
+                                    class="nav-link {{ app.request.attributes.get('_route') starts with 'admin_cron_run_' ? 'active' : '' }}"
+                                    href="{{ path('admin_cron_run_index') }}"
+                                >
+                                    ⏱️ Кроны
+                                </a>
+                            </li>
+                        </ul>
+
                         <ul class="nav flex-column mt-4">
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ path('app_game_index') }}">↗️ На сайт</a>
