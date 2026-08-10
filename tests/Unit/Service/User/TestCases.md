@@ -22,3 +22,17 @@
 | Кейс | Метод теста |
 |---|---|
 | Маппинг публичных полей, пароль в ответ не попадает | `testToPublicMapsFieldsWithoutPassword` |
+
+## ChangePasswordServiceTest.php
+
+| Кейс | Метод теста |
+|---|---|
+| Текущий пароль верный: новый пароль хешируется и сохраняется | `testChangePasswordHashesNewPasswordWhenCurrentIsValid` |
+| Текущий пароль неверный: бросается `InvalidCurrentPasswordException`, `flush` не вызывается | `testChangePasswordThrowsWhenCurrentPasswordIsInvalid` |
+
+## AvatarUploadServiceTest.php
+
+| Кейс | Метод теста |
+|---|---|
+| Файл перемещается в `uploads/avatars/{id}.{ext}`, `avatarUrl` обновляется | `testUploadMovesFileAndSetsAvatarUrl` |
+| Старый аватар с другим расширением удаляется при загрузке нового | `testUploadRemovesPreviousAvatarWithDifferentExtension` |
