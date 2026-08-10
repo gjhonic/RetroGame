@@ -33,6 +33,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $updatedAt;
 
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $nickname = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $avatarUrl = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $lastLoginAt = null;
+
     /**
      * Создаёт пользователя с обязательными полями, остальное — через сеттеры.
      *
@@ -135,6 +144,48 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function touch(): static
     {
         $this->updatedAt = new \DateTimeImmutable();
+
+        return $this;
+    }
+
+    /** Возвращает публичное имя пользователя. */
+    public function getNickname(): ?string
+    {
+        return $this->nickname;
+    }
+
+    /** Задаёт публичное имя пользователя. */
+    public function setNickname(?string $nickname): static
+    {
+        $this->nickname = $nickname;
+
+        return $this;
+    }
+
+    /** Возвращает ссылку на аватар пользователя. */
+    public function getAvatarUrl(): ?string
+    {
+        return $this->avatarUrl;
+    }
+
+    /** Задаёт ссылку на аватар пользователя. */
+    public function setAvatarUrl(?string $avatarUrl): static
+    {
+        $this->avatarUrl = $avatarUrl;
+
+        return $this;
+    }
+
+    /** Возвращает дату последнего входа пользователя. */
+    public function getLastLoginAt(): ?\DateTimeImmutable
+    {
+        return $this->lastLoginAt;
+    }
+
+    /** Обновляет дату последнего входа на текущий момент. */
+    public function touchLastLogin(): static
+    {
+        $this->lastLoginAt = new \DateTimeImmutable();
 
         return $this;
     }

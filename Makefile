@@ -15,8 +15,10 @@ DIR ?= src tests
 
 ## 🖥️  Symfony Server
 
-server-start: assets-build ## 🚀 Запуск Symfony сервера на http://127.0.0.1:8000
-	symfony server:start
+# Порт зафиксирован явным флагом: ключ port в .symfony.local.yaml Symfony CLI
+# (v5.17.1) на практике не читает, он всегда стартует на 8000 по умолчанию.
+server-start: assets-build ## 🚀 Запуск Symfony сервера на http://127.0.0.1:8001
+	symfony server:start --port=8001
 
 server-stop: ## 🛑 Остановка Symfony сервера
 	symfony server:stop

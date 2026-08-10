@@ -1,0 +1,152 @@
+/* Тэйки на странице игры в кабинете (templates/cabinet/game/show.html.twig) */
+
+.game-takes {
+    margin-top: 40px;
+}
+
+.game-takes__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.take-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.take-card {
+    padding: 18px 20px;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+}
+
+.take-card__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+}
+
+.take-card__author {
+    font-weight: 600;
+}
+
+.take-card__date {
+    color: var(--color-text-muted);
+}
+
+.take-card__text {
+    margin: 0 0 12px;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+
+.take-card__counts {
+    display: flex;
+    gap: 16px;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+}
+
+/* Модальное окно (assets/vue/Cabinet/TakeCreateModal.vue) */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+}
+
+.modal-window {
+    width: 100%;
+    max-width: 480px;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+}
+
+.modal-window__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.modal-window__title {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.modal-window__close {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.modal-window__close:hover {
+    color: var(--color-text);
+}
+
+.modal-window__body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+}
+
+.modal-window__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.form-field textarea {
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.form-field textarea:focus {
+    outline: none;
+    border-color: var(--color-accent);
+}
+
+.take-modal__counter {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+    text-align: right;
+}
+
+.btn--secondary {
+    background-color: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+}
+
+.btn--secondary:hover:not(:disabled) {
+    background-color: var(--color-surface-hover);
+}

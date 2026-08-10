@@ -22,8 +22,12 @@ class SteamGame
     private ?int $id = null;
 
     #[ORM\OneToOne(targetEntity: Game::class, cascade: ['persist'])]
-    #[ORM\JoinColumn(name: 'game_id', nullable: false, unique: true)]
-    private Game $game;
+    #[ORM\JoinColumn(name: 'game_id', nullable: true, unique: true)]
+    private ?Game $game = null;
+
+    #[ORM\OneToOne(targetEntity: Dlc::class, cascade: ['persist'])]
+    #[ORM\JoinColumn(name: 'dlc_id', nullable: true, unique: true)]
+    private ?Dlc $dlc = null;
 
     #[ORM\Column(unique: true)]
     private int $steamAppId;
@@ -58,10 +62,9 @@ class SteamGame
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $updatedAt;
 
-    /** Создаёт запись Steam-игры в статусе "ожидает загрузки". */
-    public function __construct(Game $game, int $steamAppId)
+    /** Создаёт запись Steam-приложения в статусе "ожидает загрузки" (тип пока неизвестен). */
+    public function __construct(int $steamAppId)
     {
-        $this->game = $game;
         $this->steamAppId = $steamAppId;
         $this->status = SteamGameStatus::Pending;
         $this->createdAt = new \DateTimeImmutable();
@@ -74,10 +77,32 @@ class SteamGame
         return $this->id;
     }
 
-    /** Возвращает связанную базовую сущность Game. */
-    public function getGame(): Game
+    /** Возвращает связанную сущность Game (null — это не игра, а DLC/другой тип, либо детали ещё не загружены). */
+    public function getGame(): ?Game
     {
         return $this->game;
+    }
+
+    /** Привязывает эту Steam-запись к базовой игре. */
+    public function setGame(Game $game): static
+    {
+        $this->game = $game;
+
+        return $this;
+    }
+
+    /** Возвращает связанную сущность Dlc (null — это не DLC). */
+    public function getDlc(): ?Dlc
+    {
+        return $this->dlc;
+    }
+
+    /** Привязывает эту Steam-запись к DLC. */
+    public function setDlc(Dlc $dlc): static
+    {
+        $this->dlc = $dlc;
+
+        return $this;
     }
 
     /** Возвращает appid игры в Steam. */

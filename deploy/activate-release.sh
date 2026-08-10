@@ -34,8 +34,15 @@ if [ ! -f "$SHARED_DIR/.env.local" ]; then
     exit 1
 fi
 
+if [ ! -f "$SHARED_DIR/config/jwt/private.pem" ] || [ ! -f "$SHARED_DIR/config/jwt/public.pem" ]; then
+    echo "Нет $SHARED_DIR/config/jwt/{private,public}.pem — сгенерируйте их вручную перед первым" \
+        "деплоем (см. docs/DEPLOY.md)." >&2
+    exit 1
+fi
+
 ln -sfn "$SHARED_DIR/.env.local" "$RELEASE_DIR/.env.local"
 ln -sfn "$SHARED_DIR/var/log" "$RELEASE_DIR/var/log"
+ln -sfn "$SHARED_DIR/config/jwt" "$RELEASE_DIR/config/jwt"
 rm -rf "$RELEASE_DIR/public/uploads"
 ln -sfn "$SHARED_DIR/public/uploads" "$RELEASE_DIR/public/uploads"
 

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}Личный кабинет — RetroGame{% endblock %}</title>
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon/favicon-32.png') }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon/favicon-16.png') }}">
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('favicon/apple-touch-icon.png') }}">
+        {% block stylesheets %}
+            {{ reprise_entry_link_tags('app') }}
+            <link rel="stylesheet" href="{{ asset('build/styles/common.css') }}">
+            <link rel="stylesheet" href="{{ asset('build/styles/cabinet/base.css') }}">
+        {% endblock %}
+
+        {% block javascripts %}
+            {{ reprise_entry_script_tags('app') }}
+        {% endblock %}
+    </head>
+    <body class="cabinet">
+        <header class="site-header">
+            <div class="container site-header__inner">
+                <a href="{{ path('app_game_index') }}" class="site-logo">RetroGame</a>
+            </div>
+        </header>
+
+        <div class="container cabinet-layout">
+            <aside class="cabinet-sidebar">
+                <div class="cabinet-profile">
+                    {% if app.user.avatarUrl %}
+                        <img src="{{ '/' ~ app.user.avatarUrl }}" alt="" class="cabinet-profile__avatar cabinet-profile__avatar--image">
+                    {% else %}
+                        <div class="cabinet-profile__avatar">{{ app.user.email|slice(0, 1)|upper }}</div>
+                    {% endif %}
+                    <div class="cabinet-profile__email">{{ app.user.email }}</div>
+                </div>
+
+                {% set current_route = app.request.attributes.get('_route') %}
+                {% set is_game_route = current_route in ['cabinet_game_index', 'cabinet_game_show'] %}
+                <nav class="cabinet-nav">
+                    <a
+                        href="{{ path('cabinet_profile') }}"
+                        class="cabinet-nav__link {{ current_route == 'cabinet_profile' ? 'cabinet-nav__link--active' : '' }}"
+                    >
+                        <span class="cabinet-nav__icon">👤</span>
+                        Профиль
+                    </a>
+                    <a
+                        href="{{ path('cabinet_feed') }}"
+                        class="cabinet-nav__link {{ current_route == 'cabinet_feed' ? 'cabinet-nav__link--active' : '' }}"
+                    >
+                        <span class="cabinet-nav__icon">📰</span>
+                        Лента
+                    </a>
+                    <a
+                        href="{{ path('cabinet_game_index') }}"
+                        class="cabinet-nav__link {{ is_game_route ? 'cabinet-nav__link--active' : '' }}"
+                    >
+                        <span class="cabinet-nav__icon">🎮</span>
+                        Игры
+                    </a>
+                    <a
+                        href="{{ path('cabinet_settings') }}"
+                        class="cabinet-nav__link {{ current_route == 'cabinet_settings' ? 'cabinet-nav__link--active' : '' }}"
+                    >
+                        <span class="cabinet-nav__icon">⚙️</span>
+                        Настройки
+                    </a>
+                    <a href="{{ path('logout') }}" class="cabinet-nav__link cabinet-nav__link--logout">
+                        <span class="cabinet-nav__icon">🚪</span>
+                        Выход
+                    </a>
+                </nav>
+            </aside>
+
+            <main class="cabinet-content">
+                {% block body %}{% endblock %}
+            </main>
+        </div>
+
+        <footer class="cabinet-footer">
+            <div class="container cabinet-footer__inner">
+                <p class="cabinet-footer__brand">RetroGame — место встреч геймеров</p>
+                <nav class="cabinet-footer__links">
+                    <a href="{{ path('app.swagger_ui') }}" class="cabinet-footer__link">API</a>
+                    <a href="https://github.com/gjhonic/RetroGame" target="_blank" rel="noopener" class="cabinet-footer__link">GitHub</a>
+                </nav>
+            </div>
+        </footer>
+    </body>
+</html>

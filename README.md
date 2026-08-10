@@ -17,7 +17,10 @@
 
 ## 🚀 Быстрый старт
 
-Требования: PHP 8.4+, Composer, [Symfony CLI](https://symfony.com/download).
+Требования: PHP 8.4+, Composer, [Symfony CLI](https://symfony.com/download),
+Node.js 22+ (для сборки фронтенда и `npm run test` — `jsdom`, на котором
+работает Vitest, требует Node 22+; версия закреплена в `.nvmrc`, `nvm use`
+переключит автоматически).
 
 ```bash
 git clone git@github.com:gjhonic/RetroGame.git
@@ -26,9 +29,11 @@ composer install
 make server-start
 ```
 
-Приложение будет доступно на [http://127.0.0.1:8000](http://127.0.0.1:8000).
-Порт зафиксирован в `.symfony.local.yaml` — один и тот же независимо от того,
-запускаете вы сервер через `make server-start`, IDE или голым `symfony serve`.
+Приложение будет доступно на [http://127.0.0.1:8001](http://127.0.0.1:8001)
+(`make server-start` явно передаёт `--port=8001` — ключ `port` в
+`.symfony.local.yaml` Symfony CLI на практике не читает). При запуске
+голым `symfony serve`/через IDE указывайте порт так же явно:
+`symfony server:start --port=8001`.
 
 ## 🛠️ Команды
 

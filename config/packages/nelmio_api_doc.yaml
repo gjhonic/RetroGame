@@ -7,21 +7,39 @@ nelmio_api_doc:
         default:
             path_patterns:
                 - ^/api/games
+                - ^/api/takes
+                - ^/api/register
+                - ^/api/login
             documentation:
                 info:
                     title: 'RetroGame API — Публичная часть'
-                    description: 'Открытый JSON API без авторизации: каталог игр, фильтры, карточка игры. Используется Vue-компонентами публичных страниц.'
+                    description: >-
+                        Открытый JSON API без авторизации: каталог игр, фильтры, карточка игры, тэйки, регистрация,
+                        вход (выдача JWT-токена для /api/cabinet и /api/admin). Используется Vue-компонентами
+                        публичных страниц и мобильным приложением.
         cabinet:
             path_patterns:
                 - ^/api/cabinet
             documentation:
                 info:
                     title: 'RetroGame API — Личный кабинет'
-                    description: 'API для авторизованных пользователей (роль ROLE_USER и выше).'
+                    description: >-
+                        API для авторизованных пользователей (роль ROLE_USER и выше). Токен получается через
+                        POST /api/login (email+password) и передаётся в заголовке Authorization: Bearer <token>.
+            security:
+                bearerAuth:
+                    type: http
+                    scheme: bearer
         admin:
             path_patterns:
                 - ^/api/admin
             documentation:
                 info:
                     title: 'RetroGame API — Администрирование'
-                    description: 'API админ-панели: доступно ролям ROLE_MODERATOR и ROLE_ADMIN.'
+                    description: >-
+                        API админ-панели: доступно ролям ROLE_MODERATOR и ROLE_ADMIN. Токен получается через
+                        POST /api/login (email+password) и передаётся в заголовке Authorization: Bearer <token>.
+            security:
+                bearerAuth:
+                    type: http
+                    scheme: bearer

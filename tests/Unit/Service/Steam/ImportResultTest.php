@@ -12,13 +12,15 @@ class ImportResultTest extends TestCase
 {
     public function testCountByStatusCountsOnlyMatchingEntries(): void
     {
-        $success1 = new SteamGame(new Game('A', 'a'), 1);
+        $success1 = new SteamGame(1);
+        $success1->setGame(new Game('A', 'a'));
         $success1->markSuccess(['name' => 'A']);
 
-        $success2 = new SteamGame(new Game('B', 'b'), 2);
+        $success2 = new SteamGame(2);
+        $success2->setGame(new Game('B', 'b'));
         $success2->markSuccess(['name' => 'B']);
 
-        $failed = new SteamGame(new Game('C', 'c'), 3);
+        $failed = new SteamGame(3);
         $failed->markFailure('boom');
 
         $result = new ImportResult(steamGames: [$success1, $success2, $failed]);

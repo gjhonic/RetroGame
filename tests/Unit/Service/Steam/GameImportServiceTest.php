@@ -2,11 +2,13 @@
 
 namespace App\Tests\Unit\Service\Steam;
 
+use App\Entity\Dlc;
 use App\Entity\Enum\SteamGameStatus;
 use App\Entity\Game;
 use App\Entity\Interfaces\NamedEntityInterface;
 use App\Entity\SteamGame;
 use App\Entity\SteamImportCursor;
+use App\Repository\DlcRepository;
 use App\Repository\GameRepository;
 use App\Repository\SteamGameRepository;
 use App\Repository\SteamImportCursorRepository;
@@ -35,6 +37,7 @@ class GameImportServiceTest extends TestCase
     private SteamClient&MockObject $steamClient;
     private EntityManagerInterface&MockObject $entityManager;
     private GameRepository&MockObject $gameRepository;
+    private DlcRepository&MockObject $dlcRepository;
     private SteamGameRepository&MockObject $steamGameRepository;
     private SteamImportCursorRepository&MockObject $cursorRepository;
     private SluggerInterface&MockObject $slugger;
@@ -47,6 +50,9 @@ class GameImportServiceTest extends TestCase
         $this->steamClient = $this->createMock(SteamClient::class);
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->gameRepository = $this->createMock(GameRepository::class);
+        $this->dlcRepository = $this->createMock(DlcRepository::class);
+        $this->dlcRepository->method('findPendingBySteamAppId')->willReturn([]);
+        $this->dlcRepository->method('findOneBy')->willReturn(null);
         $this->steamGameRepository = $this->createMock(SteamGameRepository::class);
         $this->cursorRepository = $this->createMock(SteamImportCursorRepository::class);
         $this->cursorRepository->method('getOrCreate')->willReturn(new SteamImportCursor());
@@ -71,6 +77,7 @@ class GameImportServiceTest extends TestCase
             $this->steamClient,
             $this->entityManager,
             $this->gameRepository,
+            $this->dlcRepository,
             $this->steamGameRepository,
             $this->cursorRepository,
             $this->slugger,
@@ -120,20 +127,21 @@ class GameImportServiceTest extends TestCase
         self::assertSame(10, $steamGame->getSteamAppId());
         self::assertSame(1, $steamGame->getAttempts());
 
-        $game = $steamGame->getGame();
+        $game = self::requireGame($steamGame->getGame());
         self::assertSame('Half-Life', $game->getName());
         self::assertSame('half-life', $game->getSlug());
         self::assertSame('A sci-fi shooter', $game->getDescription());
         self::assertSame(96, $game->getMetacriticScore());
 
-        self::assertInstanceOf(Game::class, $persisted[0]);
-        self::assertInstanceOf(SteamGame::class, $persisted[1]);
+        self::assertInstanceOf(SteamGame::class, $persisted[0]);
+        self::assertInstanceOf(Game::class, $persisted[1]);
     }
 
     public function testImportNextBatchReusesExistingSteamGameWithoutPersisting(): void
     {
         $existingGame = new Game('Old Name', 'old-name');
-        $existingSteamGame = new SteamGame($existingGame, 20);
+        $existingSteamGame = new SteamGame(20);
+        $existingSteamGame->setGame($existingGame);
 
         $this->steamClient->method('fetchGameAppList')->willReturn([
             'apps' => [['appid' => 20, 'name' => 'Old Name']],
@@ -322,11 +330,11 @@ class GameImportServiceTest extends TestCase
         $this->slugger->method('slug')->willReturn(new UnicodeString('portal'));
         $this->gameRepository->method('findOneBy')
             ->willReturn(new Game('Portal (another edition)', 'portal'));
-        $this->steamClient->method('fetchAppDetails')->willReturn(null);
+        $this->steamClient->method('fetchAppDetails')->willReturn(['name' => 'Portal']);
 
         $result = $this->service->importNextBatch(5, 0, 1500);
 
-        self::assertSame('portal-50', $result->steamGames[0]->getGame()->getSlug());
+        self::assertSame('portal-50', self::requireGame($result->steamGames[0]->getGame())->getSlug());
     }
 
     public function testImportNextBatchFallsBackToAppIdWhenSluggerReturnsEmptyString(): void
@@ -338,11 +346,12 @@ class GameImportServiceTest extends TestCase
         ]);
         $this->steamGameRepository->method('findOneBySteamAppId')->willReturn(null);
         $this->slugger->method('slug')->willReturn(new UnicodeString(''));
-        $this->steamClient->method('fetchAppDetails')->willReturn(null);
+        $this->gameRepository->method('findOneBy')->willReturn(null);
+        $this->steamClient->method('fetchAppDetails')->willReturn(['name' => '???']);
 
         $result = $this->service->importNextBatch(5, 0, 1500);
 
-        self::assertSame('-60', $result->steamGames[0]->getGame()->getSlug());
+        self::assertSame('-60', self::requireGame($result->steamGames[0]->getGame())->getSlug());
     }
 
     public function testImportNextBatchStoresDownloadedCoverImagePath(): void
@@ -369,7 +378,10 @@ class GameImportServiceTest extends TestCase
 
         $result = $this->service->importNextBatch(5, 0, 1500);
 
-        self::assertSame('uploads/games/70.jpg', $result->steamGames[0]->getGame()->getCoverImagePath());
+        self::assertSame(
+            'uploads/games/70.jpg',
+            self::requireGame($result->steamGames[0]->getGame())->getCoverImagePath(),
+        );
     }
 
     public function testImportNextBatchLeavesCoverImagePathNullWhenNoHeaderImage(): void
@@ -393,7 +405,7 @@ class GameImportServiceTest extends TestCase
 
         $result = $this->service->importNextBatch(5, 0, 1500);
 
-        self::assertNull($result->steamGames[0]->getGame()->getCoverImagePath());
+        self::assertNull(self::requireGame($result->steamGames[0]->getGame())->getCoverImagePath());
     }
 
     public function testImportNextBatchExtractsDevelopersPublishersGenresPlatformsAndScreenshots(): void
@@ -425,7 +437,7 @@ class GameImportServiceTest extends TestCase
 
         $result = $this->service->importNextBatch(5, 0, 1500);
 
-        $game = $result->steamGames[0]->getGame();
+        $game = self::requireGame($result->steamGames[0]->getGame());
         self::assertSame(['Valve'], self::names($game->getDevelopers()->toArray()));
         self::assertSame(['Valve'], self::names($game->getPublishers()->toArray()));
         self::assertSame(['Экшены'], self::names($game->getGenres()->toArray()));
@@ -448,7 +460,7 @@ class GameImportServiceTest extends TestCase
 
         $result = $this->service->importNextBatch(5, 0, 1500);
 
-        $game = $result->steamGames[0]->getGame();
+        $game = self::requireGame($result->steamGames[0]->getGame());
         self::assertCount(0, $game->getDevelopers());
         self::assertCount(0, $game->getPublishers());
         self::assertCount(0, $game->getGenres());
@@ -475,8 +487,132 @@ class GameImportServiceTest extends TestCase
 
         $result = $this->service->importNextBatch(5, 0, 1500);
 
-        $game = $result->steamGames[0]->getGame();
+        $game = self::requireGame($result->steamGames[0]->getGame());
         self::assertSame(169229, $game->getPopularity());
+    }
+
+    public function testImportNextBatchCreatesDlcLinkedToExistingBaseGame(): void
+    {
+        $baseGame = new Game('Base Game', 'base-game');
+        $baseSteamGame = new SteamGame(900);
+        $baseSteamGame->setGame($baseGame);
+        $this->steamGameRepository->method('findOneBySteamAppId')->willReturnMap([
+            [900, $baseSteamGame],
+            [901, null],
+        ]);
+
+        $this->steamClient->method('fetchGameAppList')->willReturn([
+            'apps' => [['appid' => 901, 'name' => 'Base Game - Soundtrack DLC']],
+            'hasMore' => false,
+            'lastAppId' => 901,
+        ]);
+        $this->slugger->method('slug')->willReturn(new UnicodeString('base-game-soundtrack-dlc'));
+        $this->steamClient->method('fetchAppDetails')->willReturn([
+            'type' => 'dlc',
+            'name' => 'Base Game - Soundtrack DLC',
+            'fullgame' => ['appid' => '900', 'name' => 'Base Game'],
+        ]);
+
+        $result = $this->service->importNextBatch(5, 0, 1500);
+
+        $steamGame = $result->steamGames[0];
+        self::assertNull($steamGame->getGame());
+        $dlc = $steamGame->getDlc();
+        self::assertInstanceOf(Dlc::class, $dlc);
+        self::assertSame('Base Game - Soundtrack DLC', $dlc->getName());
+        self::assertSame($baseGame, $dlc->getGame());
+        self::assertNull($dlc->getPendingBaseGameSteamAppId());
+    }
+
+    public function testImportNextBatchStoresDlcAsPendingWhenBaseGameNotImportedYet(): void
+    {
+        $this->steamGameRepository->method('findOneBySteamAppId')->willReturn(null);
+        $this->steamClient->method('fetchGameAppList')->willReturn([
+            'apps' => [['appid' => 902, 'name' => 'Unknown Base - DLC']],
+            'hasMore' => false,
+            'lastAppId' => 902,
+        ]);
+        $this->slugger->method('slug')->willReturn(new UnicodeString('unknown-base-dlc'));
+        $this->steamClient->method('fetchAppDetails')->willReturn([
+            'type' => 'dlc',
+            'name' => 'Unknown Base - DLC',
+            'fullgame' => ['appid' => '999', 'name' => 'Unknown Base'],
+        ]);
+
+        $result = $this->service->importNextBatch(5, 0, 1500);
+
+        $dlc = $result->steamGames[0]->getDlc();
+        self::assertInstanceOf(Dlc::class, $dlc);
+        self::assertNull($dlc->getGame());
+        self::assertSame(999, $dlc->getPendingBaseGameSteamAppId());
+    }
+
+    public function testImportNextBatchRelinksPendingDlcsWhenBaseGameIsImported(): void
+    {
+        $pendingDlc = new Dlc('Old DLC', 'old-dlc');
+        $pendingDlc->setPendingBaseGameSteamAppId(950);
+        $this->dlcRepository = $this->createMock(DlcRepository::class);
+        $this->dlcRepository->method('findOneBy')->willReturn(null);
+        $this->dlcRepository->method('findPendingBySteamAppId')->willReturnMap([
+            [950, [$pendingDlc]],
+        ]);
+        $this->service = $this->newService();
+
+        $this->steamGameRepository->method('findOneBySteamAppId')->willReturn(null);
+        $this->steamClient->method('fetchGameAppList')->willReturn([
+            'apps' => [['appid' => 950, 'name' => 'Newly Imported Base']],
+            'hasMore' => false,
+            'lastAppId' => 950,
+        ]);
+        $this->slugger->method('slug')->willReturn(new UnicodeString('newly-imported-base'));
+        $this->gameRepository->method('findOneBy')->willReturn(null);
+        $this->steamClient->method('fetchAppDetails')->willReturn([
+            'type' => 'game',
+            'name' => 'Newly Imported Base',
+        ]);
+
+        $result = $this->service->importNextBatch(5, 0, 1500);
+
+        $game = self::requireGame($result->steamGames[0]->getGame());
+        self::assertSame($game, $pendingDlc->getGame());
+        self::assertNull($pendingDlc->getPendingBaseGameSteamAppId());
+    }
+
+    public function testImportNextBatchDoesNotCreateGameOrDlcForOtherTypes(): void
+    {
+        $this->steamGameRepository->method('findOneBySteamAppId')->willReturn(null);
+        $this->steamClient->method('fetchGameAppList')->willReturn([
+            'apps' => [['appid' => 903, 'name' => 'Some Trailer']],
+            'hasMore' => false,
+            'lastAppId' => 903,
+        ]);
+        $this->steamClient->method('fetchAppDetails')->willReturn([
+            'type' => 'movie',
+            'name' => 'Some Trailer',
+        ]);
+
+        $persisted = [];
+        $this->entityManager->method('persist')
+            ->willReturnCallback(function (object $entity) use (&$persisted): void {
+                $persisted[] = $entity;
+            });
+
+        $result = $this->service->importNextBatch(5, 0, 1500);
+
+        $steamGame = $result->steamGames[0];
+        self::assertSame(SteamGameStatus::Success, $steamGame->getStatus());
+        self::assertNull($steamGame->getGame());
+        self::assertNull($steamGame->getDlc());
+        self::assertCount(1, $persisted);
+        self::assertInstanceOf(SteamGame::class, $persisted[0]);
+    }
+
+    /** Сужает тип `?Game` до `Game` для PHPStan в сценариях, где успех гарантирован фикстурой теста. */
+    private static function requireGame(?Game $game): Game
+    {
+        assert($game instanceof Game);
+
+        return $game;
     }
 
     /**

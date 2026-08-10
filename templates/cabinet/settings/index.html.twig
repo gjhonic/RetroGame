@@ -1,0 +1,17 @@
+{% extends 'cabinet/base.html.twig' %}
+
+{% block title %}Настройки — RetroGame{% endblock %}
+
+{% block body %}
+    <div class="cabinet-welcome">
+        <h1 class="cabinet-welcome__title">Настройки</h1>
+        <p class="cabinet-welcome__subtitle">
+            Аватар и смена пароля. Уведомления и приватность появятся здесь позже.
+        </p>
+    </div>
+
+    <div class="cabinet-settings-sections">
+        <div {{ vue_component('Cabinet/AvatarUpload') }}></div>
+        <div {{ vue_component('Cabinet/PasswordChangeForm') }}></div>
+    </div>
+{% endblock %}

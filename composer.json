@@ -10,6 +10,7 @@
         "doctrine/doctrine-bundle": "^3.3.1",
         "doctrine/doctrine-migrations-bundle": "^4.0",
         "doctrine/orm": "^3.6.8",
+        "lexik/jwt-authentication-bundle": "^3.2",
         "nelmio/api-doc-bundle": "^5.11",
         "phpdocumentor/reflection-docblock": "^6.0.3",
         "phpstan/phpdoc-parser": "^2.3.3",

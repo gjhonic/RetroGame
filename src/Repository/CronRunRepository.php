@@ -104,6 +104,12 @@ class CronRunRepository extends ServiceEntityRepository
         return array_column($rows, 'command');
     }
 
+    /** Последний по времени старта запуск команды — для колонки в списке кронов. */
+    public function findLatest(string $command): ?CronRun
+    {
+        return $this->findOneBy(['command' => $command], ['startedAt' => 'DESC']);
+    }
+
     /**
      * Запуски, застрявшие в статусе "running" дольше собственного тайм-аута —
      * процесс, скорее всего, был убит и не успел записать своё завершение.

@@ -50,3 +50,15 @@ gamesCount; набор кейсов идентичен во всех трёх ф
 | `/{id}/log` отдаёт текст лога через `CronLogReader` с `Content-Type: text/plain` | `testLogReturnsPlainTextContent` |
 | `/{id}/log?download=1` добавляет `Content-Disposition: attachment` с именем файла | `testLogWithDownloadFlagSetsContentDisposition` |
 | `/{id}/log` без файла лога → `NotFoundHttpException` | `testLogThrowsNotFoundExceptionWhenLogFileMissing` |
+
+## CronApiControllerTest.php
+
+| Кейс | Метод теста |
+|---|---|
+| Список: перед выдачей вызывается `CronSyncService::sync()`, в ответе — `lastRun` по данным `CronRunRepository::findLatest()` | `testListSyncsAndReturnsCronsWithLastRun` |
+| Крон ещё ни разу не запускался — `lastRun: null` | `testListReturnsNullLastRunWhenCronNeverRan` |
+| Детали крона по `id` | `testShowReturnsCronDetail` |
+| Несуществующий `id` в `show()` → `NotFoundHttpException` | `testShowThrowsNotFoundExceptionForUnknownId` |
+| `PATCH` с корректным `#RRGGBB` — цвет сохраняется, `flush()` вызывается | `testUpdateColorSetsValidColorAndFlushes` |
+| `PATCH` с некорректным форматом цвета — `422` с ошибкой, `flush()` не вызывается | `testUpdateColorRejectsInvalidFormat` |
+| `PATCH` с несуществующим `id` → `NotFoundHttpException` | `testUpdateColorThrowsNotFoundExceptionForUnknownId` |

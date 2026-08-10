@@ -113,9 +113,30 @@ DATABASE_URL="postgresql://retrogame:пароль-из-шага-2@127.0.0.1:5432
 ADMIN_EMAIL=admin@your-domain.tld
 ADMIN_PASSWORD=длинный-случайный-пароль
 STEAM_API_KEY=ключ-с-https://steamcommunity.com/dev/apikey
+JWT_PASSPHRASE=сгенерируйте: php -r "echo bin2hex(random_bytes(32));"
 EOF
 chmod 600 /var/www/retrogame/shared/.env.local
 ```
+
+## 7.1. JWT-ключи для мобильного API — `shared/config/jwt`
+
+Пара ключей для подписи токенов (`lexik/jwt-authentication-bundle`) должна
+пережить релиз — генерируется один раз в `shared/` и симлинкается в каждый
+релиз `activate-release.sh`, аналогично `.env.local`:
+
+```bash
+mkdir -p /var/www/retrogame/shared/config/jwt
+JWT_PASSPHRASE=значение-из-shared/.env.local \
+    openssl genpkey -out /var/www/retrogame/shared/config/jwt/private.pem \
+    -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -pass env:JWT_PASSPHRASE
+JWT_PASSPHRASE=значение-из-shared/.env.local \
+    openssl pkey -in /var/www/retrogame/shared/config/jwt/private.pem \
+    -passin env:JWT_PASSPHRASE -out /var/www/retrogame/shared/config/jwt/public.pem -pubout
+chown -R retrogame:retrogame /var/www/retrogame/shared/config
+chmod 600 /var/www/retrogame/shared/config/jwt/private.pem
+```
+
+Без этого шага `activate-release.sh` откажется активировать первый релиз.
 
 ## 8. GitHub Secrets
 
