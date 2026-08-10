@@ -17,7 +17,10 @@
 
 ## 🚀 Быстрый старт
 
-Требования: PHP 8.4+, Composer, [Symfony CLI](https://symfony.com/download).
+Требования: PHP 8.4+, Composer, [Symfony CLI](https://symfony.com/download),
+Node.js 22+ (для сборки фронтенда и `npm run test` — `jsdom`, на котором
+работает Vitest, требует Node 22+; версия закреплена в `.nvmrc`, `nvm use`
+переключит автоматически).
 
 ```bash
 git clone git@github.com:gjhonic/RetroGame.git
