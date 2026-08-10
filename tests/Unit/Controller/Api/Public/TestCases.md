@@ -25,3 +25,14 @@
 | Валидный запрос → `201` с данными созданного пользователя | `testRegisterReturnsCreatedUserOnValidRequest` |
 | Невалидный email/пароль/ник → `422` с ошибками по каждому полю | `testRegisterReturnsValidationErrorsForInvalidPayload` |
 | Email уже занят (`EmailAlreadyRegisteredException` из сервиса) → `ConflictHttpException` (409 через `ApiExceptionListener`) | `testRegisterThrowsConflictWhenEmailAlreadyRegistered` |
+
+## TakeApiControllerTest.php
+
+| Кейс | Метод теста |
+|---|---|
+| Список тэйков: счётчики лайков/дизлайков/комментариев подмешиваются в каждый пункт | `testListReturnsItemsWithReactionAndCommentCounts` |
+| Фильтр `filters[game]` передаётся в репозиторий обрезанным от пробелов | `testListPassesGameFilterToRepository` |
+| Детали тэйка включают первую страницу комментариев и счётчики реакций | `testShowReturnsDetailWithComments` |
+| Несуществующий ID тэйка → `NotFoundHttpException` | `testShowThrowsNotFoundExceptionForUnknownId` |
+| Постраничные комментарии тэйка | `testCommentsReturnsPaginatedList` |
+| Комментарии несуществующего тэйка → `NotFoundHttpException` | `testCommentsThrowsNotFoundExceptionForUnknownTake` |

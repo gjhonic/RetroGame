@@ -14,3 +14,19 @@
 | Неверный текущий пароль (`InvalidCurrentPasswordException` из сервиса) → `422` с ошибкой по `currentPassword` | `testChangePasswordReturnsValidationErrorWhenCurrentPasswordIsInvalid` |
 | Валидный JPG 100×100 → `200`, сервис вызван | `testUploadAvatarReturnsUpdatedUserOnValidFile` |
 | Изображение больше 400×400 → `422` с ошибкой по `file`, сервис не вызывается | `testUploadAvatarReturnsValidationErrorWhenImageTooLarge` |
+
+## TakeApiControllerTest.php
+
+| Кейс | Метод теста |
+|---|---|
+| Валидный запрос на создание тэйка → `201`, сервис вызван | `testCreateReturnsCreatedTakeOnValidRequest` |
+| Текст длиннее 1000 символов → `422` с ошибкой по `text`, сервис не вызывается | `testCreateReturnsValidationErrorForTooLongText` |
+| Текст содержит HTML-теги → `422` с ошибкой по `text`, сервис не вызывается | `testCreateReturnsValidationErrorForHtmlInText` |
+| Игра не найдена (`GameNotFoundException` из сервиса) → `422` с ошибкой по `gameId` | `testCreateReturnsValidationErrorWhenGameNotFound` |
+| Валидный комментарий → `201`, сервис вызван | `testCreateCommentReturnsCreatedCommentOnValidRequest` |
+| Комментарий к несуществующему тэйку → `NotFoundHttpException`, сервис не вызывается | `testCreateCommentThrowsNotFoundExceptionForUnknownTake` |
+| Установка реакции (`like`) → `200` с обновлёнными счётчиками | `testSetReactionReturnsUpdatedCounts` |
+| Некорректный тип реакции → `422`, сервис не вызывается | `testSetReactionReturnsValidationErrorForInvalidType` |
+| Реакция на несуществующий тэйк → `NotFoundHttpException` | `testSetReactionThrowsNotFoundExceptionForUnknownTake` |
+| Снятие реакции → `200` с обновлёнными счётчиками и `type: null` | `testRemoveReactionReturnsUpdatedCounts` |
+| Снятие реакции с несуществующего тэйка → `NotFoundHttpException` | `testRemoveReactionThrowsNotFoundExceptionForUnknownTake` |
