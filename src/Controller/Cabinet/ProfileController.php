@@ -7,13 +7,13 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-/** Лента личного кабинета (главная страница) — тонкая Twig-обёртка, без данных из БД. */
+/** Профиль пользователя — тонкая Twig-обёртка, без данных из БД. */
 #[IsGranted('ROLE_USER')]
-class FeedController extends AbstractController
+class ProfileController extends AbstractController
 {
-    #[Route('/cabinet', name: 'cabinet_feed', methods: ['GET'])]
+    #[Route('/cabinet/profile', name: 'cabinet_profile', methods: ['GET'])]
     public function index(): Response
     {
-        return $this->render('cabinet/feed/index.html.twig');
+        return $this->render('cabinet/profile/index.html.twig');
     }
 }

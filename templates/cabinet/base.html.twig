@@ -20,61 +20,48 @@
     <body class="cabinet">
         <header class="site-header">
             <div class="container site-header__inner">
-                <a href="{{ path('app_game_index') }}" class="site-logo">
-                    <img src="{{ asset('favicon/favicon-64.png') }}" alt="" class="site-logo__icon">
-                    RetroGame
-                </a>
-                <nav class="site-nav">
-                    <a href="{{ path('app_game_index') }}" class="site-nav__link">Каталог</a>
-                    <a href="{{ path('cabinet_dashboard') }}" class="site-nav__link site-nav__link--active">Кабинет</a>
-                    {% if is_granted('ROLE_MODERATOR') %}
-                        <a href="{{ path('admin_dashboard') }}" class="site-nav__link">Админка</a>
-                    {% endif %}
-                    <a href="{{ path('logout') }}" class="site-nav__link">Выйти</a>
-                </nav>
+                <a href="{{ path('app_game_index') }}" class="site-logo">RetroGame</a>
             </div>
         </header>
 
         <div class="container cabinet-layout">
             <aside class="cabinet-sidebar">
                 <div class="cabinet-profile">
-                    <div class="cabinet-profile__avatar">{{ app.user.email|slice(0, 1)|upper }}</div>
+                    {% if app.user.avatarUrl %}
+                        <img src="{{ '/' ~ app.user.avatarUrl }}" alt="" class="cabinet-profile__avatar cabinet-profile__avatar--image">
+                    {% else %}
+                        <div class="cabinet-profile__avatar">{{ app.user.email|slice(0, 1)|upper }}</div>
+                    {% endif %}
                     <div class="cabinet-profile__email">{{ app.user.email }}</div>
                 </div>
 
+                {% set current_route = app.request.attributes.get('_route') %}
                 <nav class="cabinet-nav">
                     <a
-                        href="{{ path('cabinet_dashboard') }}"
-                        class="cabinet-nav__link {{ app.request.attributes.get('_route') == 'cabinet_dashboard' ? 'cabinet-nav__link--active' : '' }}"
+                        href="{{ path('cabinet_profile') }}"
+                        class="cabinet-nav__link {{ current_route == 'cabinet_profile' ? 'cabinet-nav__link--active' : '' }}"
                     >
-                        <span class="cabinet-nav__icon">🏠</span>
-                        Дашборд
-                    </a>
-                    <span class="cabinet-nav__link cabinet-nav__link--soon">
-                        <span class="cabinet-nav__icon">📝</span>
-                        Мои статьи
-                        <span class="badge-soon">скоро</span>
-                    </span>
-                    <span class="cabinet-nav__link cabinet-nav__link--soon">
-                        <span class="cabinet-nav__icon">⭐</span>
-                        Мои оценки
-                        <span class="badge-soon">скоро</span>
-                    </span>
-                    <span class="cabinet-nav__link cabinet-nav__link--soon">
-                        <span class="cabinet-nav__icon">🏆</span>
-                        Тир-листы
-                        <span class="badge-soon">скоро</span>
-                    </span>
-                    <span class="cabinet-nav__link cabinet-nav__link--soon">
-                        <span class="cabinet-nav__icon">📅</span>
-                        Календарь игр
-                        <span class="badge-soon">скоро</span>
-                    </span>
-                    <span class="cabinet-nav__link cabinet-nav__link--soon">
                         <span class="cabinet-nav__icon">👤</span>
                         Профиль
-                        <span class="badge-soon">скоро</span>
-                    </span>
+                    </a>
+                    <a
+                        href="{{ path('cabinet_feed') }}"
+                        class="cabinet-nav__link {{ current_route == 'cabinet_feed' ? 'cabinet-nav__link--active' : '' }}"
+                    >
+                        <span class="cabinet-nav__icon">📰</span>
+                        Лента
+                    </a>
+                    <a
+                        href="{{ path('cabinet_settings') }}"
+                        class="cabinet-nav__link {{ current_route == 'cabinet_settings' ? 'cabinet-nav__link--active' : '' }}"
+                    >
+                        <span class="cabinet-nav__icon">⚙️</span>
+                        Настройки
+                    </a>
+                    <a href="{{ path('logout') }}" class="cabinet-nav__link cabinet-nav__link--logout">
+                        <span class="cabinet-nav__icon">🚪</span>
+                        Выход
+                    </a>
                 </nav>
             </aside>
 
@@ -83,10 +70,13 @@
             </main>
         </div>
 
-        <footer class="site-footer">
-            <div class="container">
-                <p>RetroGame — некоммерческий справочник компьютерных игр.</p>
-                <p><a href="{{ path('app.swagger_ui') }}">API</a></p>
+        <footer class="cabinet-footer">
+            <div class="container cabinet-footer__inner">
+                <p class="cabinet-footer__brand">RetroGame — место встреч геймеров</p>
+                <nav class="cabinet-footer__links">
+                    <a href="{{ path('app.swagger_ui') }}" class="cabinet-footer__link">API</a>
+                    <a href="https://github.com/gjhonic/RetroGame" target="_blank" rel="noopener" class="cabinet-footer__link">GitHub</a>
+                </nav>
             </div>
         </footer>
     </body>

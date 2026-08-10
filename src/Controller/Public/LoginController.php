@@ -15,7 +15,7 @@ class LoginController extends AbstractController
     private const int BACKGROUND_ROWS = 6;
     private const int BACKGROUND_COVERS_PER_ROW = 18;
 
-    /** Форма логина. Если пользователь уже вошёл — сразу в админку. */
+    /** Форма логина. Если пользователь уже вошёл — сразу в личный кабинет. */
     #[Route('/login', name: 'login', methods: ['GET', 'POST'])]
     public function login(
         AuthenticationUtils $authenticationUtils,
@@ -23,7 +23,7 @@ class LoginController extends AbstractController
         #[CurrentUser] ?object $user,
     ): Response {
         if ($user !== null) {
-            return $this->redirectToRoute('admin_dashboard');
+            return $this->redirectToRoute('cabinet_feed');
         }
 
         // Каждому ряду фона — свой набор обложек, чтобы картинки по возможности не повторялись.

@@ -1,11 +1,74 @@
 /* Cabinet shell (templates/cabinet/base.html.twig) */
 
+.site-header {
+    border-bottom: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+}
+
+.site-header__inner {
+    display: flex;
+    align-items: center;
+    height: 64px;
+}
+
+.site-logo {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+/* Прижимает футер к низу страницы даже при малом объёме контента. */
+body.cabinet {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
 .cabinet-layout {
     display: grid;
     grid-template-columns: 260px 1fr;
     gap: 32px;
     align-items: start;
-    padding: 32px 0 64px;
+    padding-top: 32px;
+    padding-bottom: 64px;
+    flex: 1 0 auto;
+}
+
+.cabinet-footer {
+    flex: none;
+    background-color: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+}
+
+.cabinet-footer__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 20px 24px;
+}
+
+.cabinet-footer__brand {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+}
+
+.cabinet-footer__links {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.cabinet-footer__link {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    text-decoration: none;
+}
+
+.cabinet-footer__link:hover {
+    color: var(--color-text);
+    text-decoration: underline;
 }
 
 @media (max-width: 900px) {
@@ -53,6 +116,11 @@
     font-weight: 700;
 }
 
+.cabinet-profile__avatar--image {
+    object-fit: cover;
+    background: none;
+}
+
 .cabinet-profile__email {
     color: var(--color-text-muted);
     font-size: 0.85rem;
@@ -89,9 +157,15 @@ a.cabinet-nav__link:hover {
     box-shadow: inset 3px 0 0 var(--color-accent);
 }
 
-.cabinet-nav__link--soon {
-    cursor: default;
-    opacity: 0.55;
+.cabinet-nav__link--logout {
+    margin-top: 12px;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-border);
+}
+
+a.cabinet-nav__link--logout:hover {
+    color: var(--color-bad);
+    background-color: transparent;
 }
 
 .cabinet-nav__icon {
@@ -176,4 +250,155 @@ a.cabinet-nav__link:hover {
 .cabinet-card .badge-soon {
     margin-left: 0;
     align-self: flex-start;
+}
+
+.cabinet-settings-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.cabinet-panel {
+    padding: 24px;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+}
+
+.cabinet-panel__title {
+    margin: 0 0 20px;
+    font-size: 1.2rem;
+}
+
+/* Avatar upload (assets/vue/Cabinet/AvatarUpload.vue) */
+
+.avatar-upload {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.avatar-upload__preview {
+    flex: none;
+}
+
+.avatar-upload__image {
+    display: block;
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--color-border);
+}
+
+.avatar-upload__placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+    color: #fff;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.avatar-upload__controls {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.avatar-upload__hint {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+}
+
+.avatar-upload__success {
+    margin: 0;
+    color: var(--color-good);
+    font-size: 0.85rem;
+}
+
+.avatar-upload__input {
+    display: none;
+}
+
+/* Formы (профиль/настройки) — тот же стиль, что и на auth-страницах (см. public/login.css) */
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 360px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-field label {
+    font-size: 0.9375rem;
+    color: var(--color-text-muted);
+}
+
+.form-field input {
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-size: 1.0625rem;
+}
+
+.form-field input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+}
+
+.form-field__error {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--color-bad);
+}
+
+.btn {
+    padding: 12px 16px;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.btn--primary {
+    background-color: var(--color-accent);
+    color: #fff;
+}
+
+.btn--primary:hover:not(:disabled) {
+    background-color: var(--color-accent-hover);
+}
+
+.alert {
+    margin: 0 0 16px;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+}
+
+.alert--error {
+    background-color: rgba(224, 93, 93, 0.15);
+    color: var(--color-bad);
+    border: 1px solid rgba(224, 93, 93, 0.4);
 }

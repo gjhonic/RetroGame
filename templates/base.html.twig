@@ -34,7 +34,7 @@
                 <nav class="site-nav">
                     <a href="{{ path('app_game_index') }}" class="site-nav__link site-nav__link--active">Каталог</a>
                     {% if is_granted('ROLE_USER') %}
-                        <a href="{{ path('cabinet_dashboard') }}" class="site-nav__link">Кабинет</a>
+                        <a href="{{ path('cabinet_feed') }}" class="site-nav__link">Кабинет</a>
                         {% if is_granted('ROLE_MODERATOR') %}
                             <a href="{{ path('admin_dashboard') }}" class="site-nav__link">Админка</a>
                         {% endif %}
