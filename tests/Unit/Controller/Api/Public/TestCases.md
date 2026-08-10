@@ -17,3 +17,11 @@
 | Детали игры: разработчики/издатели/жанры/платформы возвращаются как массивы имён (`NamedEntityInterface::getName()`) | `testShowReturnsFullDetailWithRelatedEntityNames` |
 | `screenshotUrls` не заданы (`null` в сущности) → в ответе пустой массив, а не `null` | `testShowNormalizesMissingScreenshotUrlsToEmptyArray` |
 | Несуществующий slug → `NotFoundHttpException` | `testShowThrowsNotFoundExceptionForUnknownSlug` |
+
+## RegistrationApiControllerTest.php
+
+| Кейс | Метод теста |
+|---|---|
+| Валидный запрос → `201` с данными созданного пользователя | `testRegisterReturnsCreatedUserOnValidRequest` |
+| Невалидный email/пароль/ник → `422` с ошибками по каждому полю | `testRegisterReturnsValidationErrorsForInvalidPayload` |
+| Email уже занят (`EmailAlreadyRegisteredException` из сервиса) → `ConflictHttpException` (409 через `ApiExceptionListener`) | `testRegisterThrowsConflictWhenEmailAlreadyRegistered` |

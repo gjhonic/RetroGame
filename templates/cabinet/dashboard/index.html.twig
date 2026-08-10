@@ -1,0 +1,43 @@
+{% extends 'cabinet/base.html.twig' %}
+
+{% block title %}Личный кабинет — RetroGame{% endblock %}
+
+{% block body %}
+    <div class="cabinet-welcome">
+        <h1 class="cabinet-welcome__title">С возвращением, {{ app.user.email }} 👋</h1>
+        <p class="cabinet-welcome__subtitle">
+            Здесь будет ваш игровой уголок: статьи, оценки, тир-листы и календарь релизов.
+            Раздел в разработке — скоро тут появится жизнь.
+        </p>
+    </div>
+
+    <div class="cabinet-cards">
+        <div class="cabinet-card">
+            <div class="cabinet-card__icon">📝</div>
+            <h2 class="cabinet-card__title">Мои статьи</h2>
+            <p class="cabinet-card__text">Пишите обзоры и заметки об играх, делитесь опытом с сообществом.</p>
+            <span class="badge-soon">скоро</span>
+        </div>
+
+        <div class="cabinet-card">
+            <div class="cabinet-card__icon">⭐</div>
+            <h2 class="cabinet-card__title">Мои оценки</h2>
+            <p class="cabinet-card__text">Ставьте оценки играм и следите за своей игровой историей.</p>
+            <span class="badge-soon">скоро</span>
+        </div>
+
+        <div class="cabinet-card">
+            <div class="cabinet-card__icon">🏆</div>
+            <h2 class="cabinet-card__title">Тир-листы</h2>
+            <p class="cabinet-card__text">Составляйте собственные рейтинги игр по жанрам, платформам и настроению.</p>
+            <span class="badge-soon">скоро</span>
+        </div>
+
+        <div class="cabinet-card">
+            <div class="cabinet-card__icon">📅</div>
+            <h2 class="cabinet-card__title">Календарь игр</h2>
+            <p class="cabinet-card__text">Отслеживайте релизы и не пропускайте выход долгожданных игр.</p>
+            <span class="badge-soon">скоро</span>
+        </div>
+    </div>
+{% endblock %}

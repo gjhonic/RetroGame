@@ -33,3 +33,7 @@ Thumbs.db
 /public/build/
 /assets/vendor/
 ###< symfony/reprise ###
+
+###> lexik/jwt-authentication-bundle ###
+/config/jwt/*.pem
+###< lexik/jwt-authentication-bundle ###

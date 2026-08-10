@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}Личный кабинет — RetroGame{% endblock %}</title>
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon/favicon-32.png') }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon/favicon-16.png') }}">
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('favicon/apple-touch-icon.png') }}">
+        {% block stylesheets %}
+            {{ reprise_entry_link_tags('app') }}
+            <link rel="stylesheet" href="{{ asset('build/styles/common.css') }}">
+            <link rel="stylesheet" href="{{ asset('build/styles/cabinet/base.css') }}">
+        {% endblock %}
+
+        {% block javascripts %}
+            {{ reprise_entry_script_tags('app') }}
+        {% endblock %}
+    </head>
+    <body class="cabinet">
+        <header class="site-header">
+            <div class="container site-header__inner">
+                <a href="{{ path('app_game_index') }}" class="site-logo">
+                    <img src="{{ asset('favicon/favicon-64.png') }}" alt="" class="site-logo__icon">
+                    RetroGame
+                </a>
+                <nav class="site-nav">
+                    <a href="{{ path('app_game_index') }}" class="site-nav__link">Каталог</a>
+                    <a href="{{ path('cabinet_dashboard') }}" class="site-nav__link site-nav__link--active">Кабинет</a>
+                    {% if is_granted('ROLE_MODERATOR') %}
+                        <a href="{{ path('admin_dashboard') }}" class="site-nav__link">Админка</a>
+                    {% endif %}
+                    <a href="{{ path('logout') }}" class="site-nav__link">Выйти</a>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container cabinet-layout">
+            <aside class="cabinet-sidebar">
+                <div class="cabinet-profile">
+                    <div class="cabinet-profile__avatar">{{ app.user.email|slice(0, 1)|upper }}</div>
+                    <div class="cabinet-profile__email">{{ app.user.email }}</div>
+                </div>
+
+                <nav class="cabinet-nav">
+                    <a
+                        href="{{ path('cabinet_dashboard') }}"
+                        class="cabinet-nav__link {{ app.request.attributes.get('_route') == 'cabinet_dashboard' ? 'cabinet-nav__link--active' : '' }}"
+                    >
+                        <span class="cabinet-nav__icon">🏠</span>
+                        Дашборд
+                    </a>
+                    <span class="cabinet-nav__link cabinet-nav__link--soon">
+                        <span class="cabinet-nav__icon">📝</span>
+                        Мои статьи
+                        <span class="badge-soon">скоро</span>
+                    </span>
+                    <span class="cabinet-nav__link cabinet-nav__link--soon">
+                        <span class="cabinet-nav__icon">⭐</span>
+                        Мои оценки
+                        <span class="badge-soon">скоро</span>
+                    </span>
+                    <span class="cabinet-nav__link cabinet-nav__link--soon">
+                        <span class="cabinet-nav__icon">🏆</span>
+                        Тир-листы
+                        <span class="badge-soon">скоро</span>
+                    </span>
+                    <span class="cabinet-nav__link cabinet-nav__link--soon">
+                        <span class="cabinet-nav__icon">📅</span>
+                        Календарь игр
+                        <span class="badge-soon">скоро</span>
+                    </span>
+                    <span class="cabinet-nav__link cabinet-nav__link--soon">
+                        <span class="cabinet-nav__icon">👤</span>
+                        Профиль
+                        <span class="badge-soon">скоро</span>
+                    </span>
+                </nav>
+            </aside>
+
+            <main class="cabinet-content">
+                {% block body %}{% endblock %}
+            </main>
+        </div>
+
+        <footer class="site-footer">
+            <div class="container">
+                <p>RetroGame — некоммерческий справочник компьютерных игр.</p>
+                <p><a href="{{ path('app.swagger_ui') }}">API</a></p>
+            </div>
+        </footer>
+    </body>
+</html>

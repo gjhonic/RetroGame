@@ -15,17 +15,32 @@ security:
             # Ensure dev tools and static assets are always allowed
             pattern: ^/(_profiler|_wdt|assets|build)/
             security: false
+        api_login:
+            pattern: ^/api/login$
+            stateless: true
+            provider: app_user_provider
+            json_login:
+                check_path: /api/login
+                username_path: email
+                password_path: password
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure
         main:
             lazy: true
             provider: app_user_provider
             entry_point: App\Security\AuthenticationEntryPoint
             access_denied_handler: App\Security\AccessDeniedHandler
+            # Один firewall для веб-панели и /api/*: form_login аутентифицирует
+            # по сессионной cookie (Vue-виджеты админки/кабинета ходят через
+            # fetch() в той же сессии), jwt — по заголовку Authorization: Bearer
+            # (мобильное приложение). Оба аутентификатора активны одновременно.
             form_login:
                 login_path: login
                 check_path: login
                 default_target_path: admin_dashboard
                 username_parameter: email
                 password_parameter: password
+            jwt: ~
             logout:
                 path: logout
                 target: app_game_index
@@ -41,9 +56,12 @@ security:
     # Note: Only the *first* matching rule is applied
     access_control:
         - { path: ^/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/login$, roles: PUBLIC_ACCESS }
+        - { path: ^/api/register, roles: PUBLIC_ACCESS }
         - { path: ^/api/admin, roles: ROLE_MODERATOR }
         - { path: ^/api/cabinet, roles: ROLE_USER }
         - { path: ^/admin, roles: ROLE_MODERATOR }
+        - { path: ^/cabinet, roles: ROLE_USER }
 
 when@test:
     security:
