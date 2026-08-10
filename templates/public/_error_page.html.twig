@@ -1,0 +1,16 @@
+{#
+    Общая разметка для страниц ошибок (404/403).
+    Параметры: media_folder (подпапка public/media/<...>), title.
+#}
+<div class="container error-page">
+    {% set media = random_media(media_folder) %}
+    {% if media %}
+        {% if media ends with '.webm' %}
+            <video class="error-page__media" src="{{ asset(media) }}" autoplay loop muted playsinline></video>
+        {% else %}
+            <img class="error-page__media" src="{{ asset(media) }}" alt="">
+        {% endif %}
+    {% endif %}
+    <h1 class="error-page__title">{{ title }}</h1>
+    <a href="{{ path('app_game_index') }}" class="btn btn--primary">Вернуться в каталог</a>
+</div>

@@ -1,0 +1,12 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Страница не найдена — RetroGame{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/styles/public/error-page.css') }}">
+{% endblock %}
+
+{% block body %}
+    {{ include('public/_error_page.html.twig', { media_folder: '404', title: '404 — потеряли катридж' }) }}
+{% endblock %}
