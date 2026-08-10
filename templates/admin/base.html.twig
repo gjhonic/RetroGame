@@ -4,7 +4,9 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{% block title %}Админка — RetroGame{% endblock %}</title>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%22110%22 font-size=%22110%22>🎮</text></svg>">
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon/favicon-32.png') }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon/favicon-16.png') }}">
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('favicon/apple-touch-icon.png') }}">
         {% block stylesheets %}
             {{ reprise_entry_link_tags('admin') }}
             <link rel="stylesheet" href="{{ asset('build/styles/admin/base.css') }}">
@@ -18,7 +20,10 @@
     </head>
     <body>
         <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
-            <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6" href="{{ path('admin_dashboard') }}">🎮 RetroGame</a>
+            <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6" href="{{ path('admin_dashboard') }}">
+                <img src="{{ asset('favicon/favicon-64.png') }}" alt="" class="navbar-brand__icon">
+                RetroGame
+            </a>
             <button
                 class="navbar-toggler d-md-none collapsed"
                 type="button"
@@ -91,13 +96,27 @@
                         <h6 class="sidebar-heading d-flex align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
                             <span>Система</span>
                         </h6>
+                        {% set current_route = app.request.attributes.get('_route') %}
                         <ul class="nav flex-column">
                             <li class="nav-item">
                                 <a
-                                    class="nav-link {{ app.request.attributes.get('_route') starts with 'admin_cron_run_' ? 'active' : '' }}"
+                                    class="nav-link {{ current_route starts with 'admin_cron_' and not (current_route starts with 'admin_cron_run_') ? 'active' : '' }}"
+                                    href="{{ path('admin_cron_index') }}"
+                                >
+                                    🕐 Кроны
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a
+                                    class="nav-link {{ current_route starts with 'admin_cron_run_' ? 'active' : '' }}"
                                     href="{{ path('admin_cron_run_index') }}"
                                 >
-                                    ⏱️ Кроны
+                                    ⏱️ История запусков кронов
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ path('app.swagger_ui', {area: 'admin'}) }}" target="_blank">
+                                    📖 API
                                 </a>
                             </li>
                         </ul>

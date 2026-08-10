@@ -15,8 +15,17 @@
 }
 
 .site-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 1.25rem;
     font-weight: 700;
+}
+
+.site-logo__icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
 }
 
 .site-nav__link {

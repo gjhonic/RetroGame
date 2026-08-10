@@ -4,7 +4,9 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{% block title %}RetroGame{% endblock %}</title>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%22110%22 font-size=%22110%22>🎮</text></svg>">
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon/favicon-32.png') }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon/favicon-16.png') }}">
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('favicon/apple-touch-icon.png') }}">
         {% block stylesheets %}
             {{ reprise_entry_link_tags('app') }}
             <link rel="stylesheet" href="{{ asset('build/styles/common.css') }}">
@@ -25,11 +27,17 @@
     <body>
         <header class="site-header">
             <div class="container site-header__inner">
-                <a href="{{ path('app_game_index') }}" class="site-logo">🎮 RetroGame</a>
+                <a href="{{ path('app_game_index') }}" class="site-logo">
+                    <img src="{{ asset('favicon/favicon-64.png') }}" alt="" class="site-logo__icon">
+                    RetroGame
+                </a>
                 <nav class="site-nav">
                     <a href="{{ path('app_game_index') }}" class="site-nav__link site-nav__link--active">Каталог</a>
-                    {% if is_granted('ROLE_MODERATOR') %}
-                        <a href="{{ path('admin_dashboard') }}" class="site-nav__link">Админка</a>
+                    {% if is_granted('ROLE_USER') %}
+                        <a href="{{ path('cabinet_dashboard') }}" class="site-nav__link">Кабинет</a>
+                        {% if is_granted('ROLE_MODERATOR') %}
+                            <a href="{{ path('admin_dashboard') }}" class="site-nav__link">Админка</a>
+                        {% endif %}
                         <a href="{{ path('logout') }}" class="site-nav__link">Выйти</a>
                     {% else %}
                         <a href="{{ path('login') }}" class="site-nav__link">Войти</a>
@@ -45,6 +53,7 @@
         <footer class="site-footer">
             <div class="container">
                 <p>RetroGame — некоммерческий справочник компьютерных игр.</p>
+                <p><a href="{{ path('app.swagger_ui') }}">API</a></p>
             </div>
         </footer>
     </body>
