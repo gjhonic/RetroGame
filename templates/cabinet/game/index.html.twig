@@ -1,0 +1,12 @@
+{% extends 'cabinet/base.html.twig' %}
+
+{% block title %}Каталог игр — RetroGame{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/styles/public/game-index.css') }}">
+{% endblock %}
+
+{% block body %}
+    <div {{ vue_component('Cabinet/GameCatalog') }}></div>
+{% endblock %}

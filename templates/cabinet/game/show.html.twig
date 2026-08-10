@@ -1,0 +1,15 @@
+{% extends 'cabinet/base.html.twig' %}
+
+{% block title %}Игра — RetroGame{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/styles/public/game-show.css') }}">
+    <link rel="stylesheet" href="{{ asset('build/styles/cabinet/game-detail.css') }}">
+{% endblock %}
+
+{% block body %}
+    <a href="{{ path('cabinet_game_index') }}" class="back-link">← Назад в каталог</a>
+
+    <div {{ vue_component('Cabinet/GameDetail', { slug: slug }) }}></div>
+{% endblock %}
