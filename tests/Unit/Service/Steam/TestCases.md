@@ -33,6 +33,10 @@
 | Полный ответ Steam: developers/publishers/genres/platforms/screenshotUrls/releaseDate корректно переносятся в `Game` | `testImportNextBatchExtractsDevelopersPublishersGenresPlatformsAndScreenshots` |
 | Минимальный ответ Steam (только name): все новые поля остаются `null`, а не пустым массивом | `testImportNextBatchLeavesNewFieldsNullWhenAbsentFromResponse` |
 | Популярность: `recommendations.total` из ответа Steam переносится в `Game::popularity` | `testImportNextBatchExtractsPopularityFromRecommendationsTotal` |
+| `type=dlc` и базовая игра (`fullgame.appid`) уже импортирована: создаётся `Dlc`, сразу привязанная к `Game` | `testImportNextBatchCreatesDlcLinkedToExistingBaseGame` |
+| `type=dlc`, базовая игра ещё не импортирована: `Dlc.game` остаётся `null`, appid сохраняется в `pendingBaseGameSteamAppId` | `testImportNextBatchStoresDlcAsPendingWhenBaseGameNotImportedYet` |
+| Базовая игра импортирована после ранее сохранённого "ожидающего" DLC: `Dlc` доотвязывается автоматически | `testImportNextBatchRelinksPendingDlcsWhenBaseGameIsImported` |
+| `type` не `game`/`dlc` (например `movie`): ни `Game`, ни `Dlc` не создаются, персистится только `SteamGame` | `testImportNextBatchDoesNotCreateGameOrDlcForOtherTypes` |
 
 ## ImportResultTest.php
 

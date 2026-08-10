@@ -86,7 +86,7 @@ class ImportGamesCommand extends Command
         return Command::SUCCESS;
     }
 
-    /** Печатает одну игру: подробности при успехе, ошибку — при неудаче. */
+    /** Печатает одну запись: подробности при успехе (игра/DLC), ошибку — при неудаче. */
     private function printSteamGame(SymfonyStyle $io, SteamGame $steamGame): void
     {
         if ($steamGame->getStatus() !== SteamGameStatus::Success) {
@@ -100,13 +100,37 @@ class ImportGamesCommand extends Command
         }
 
         $game = $steamGame->getGame();
-        $io->writeln(sprintf('<info>%s</info> (Steam appid: %d)', $game->getName(), $steamGame->getSteamAppId()));
-        $io->listing([
-            sprintf('Slug: %s', $game->getSlug()),
-            sprintf('Metacritic: %s', $game->getMetacriticScore() ?? '—'),
-            sprintf('Обложка: %s', $game->getCoverImagePath() ?? 'не скачана'),
-            sprintf('Описание: %s', $this->truncate($game->getDescription())),
-        ]);
+        if ($game !== null) {
+            $io->writeln(sprintf('<info>%s</info> (Steam appid: %d)', $game->getName(), $steamGame->getSteamAppId()));
+            $io->listing([
+                sprintf('Slug: %s', $game->getSlug()),
+                sprintf('Metacritic: %s', $game->getMetacriticScore() ?? '—'),
+                sprintf('Обложка: %s', $game->getCoverImagePath() ?? 'не скачана'),
+                sprintf('Описание: %s', $this->truncate($game->getDescription())),
+            ]);
+
+            return;
+        }
+
+        $dlc = $steamGame->getDlc();
+        if ($dlc !== null) {
+            $io->writeln(sprintf(
+                '<info>%s</info> — DLC (Steam appid: %d)',
+                $dlc->getName(),
+                $steamGame->getSteamAppId(),
+            ));
+            $io->listing([
+                sprintf('Slug: %s', $dlc->getSlug()),
+                sprintf('Базовая игра: %s', $dlc->getGame()?->getName() ?? 'ещё не импортирована'),
+            ]);
+
+            return;
+        }
+
+        $io->writeln(sprintf(
+            '<comment>— appid %d: не игра и не DLC, пропущено</comment>',
+            $steamGame->getSteamAppId(),
+        ));
     }
 
     /** Обрезает текст до заданной длины, добавляя многоточие. */

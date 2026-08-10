@@ -3,13 +3,23 @@
 namespace App\Entity;
 
 use App\Entity\Interfaces\HasSteamDetailsInterface;
-use App\Repository\GameRepository;
+use App\Repository\DlcRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: GameRepository::class)]
-class Game implements HasSteamDetailsInterface
+/**
+ * DLC/дополнение к игре из Steam (appdetails.type === 'dlc').
+ *
+ * Отдельная от Game сущность (те же общие поля не через наследование, а
+ * через HasSteamDetailsInterface): DLC не должен смешиваться с базовыми
+ * играми в каталоге, но должен быть связан с базовой игрой (game). Игра
+ * может быть ещё не импортирована на момент импорта DLC — тогда game
+ * остаётся null, а appid базовой игры сохраняется в
+ * pendingBaseGameSteamAppId для доотвязки после её импорта.
+ */
+#[ORM\Entity(repositoryClass: DlcRepository::class)]
+class Dlc implements HasSteamDetailsInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -33,37 +43,38 @@ class Game implements HasSteamDetailsInterface
 
     /** @var Collection<int, Developer> */
     #[ORM\ManyToMany(targetEntity: Developer::class)]
-    #[ORM\JoinTable(name: 'game_developer')]
+    #[ORM\JoinTable(name: 'dlc_developer')]
     private Collection $developers;
 
     /** @var Collection<int, Publisher> */
     #[ORM\ManyToMany(targetEntity: Publisher::class)]
-    #[ORM\JoinTable(name: 'game_publisher')]
+    #[ORM\JoinTable(name: 'dlc_publisher')]
     private Collection $publishers;
 
     /** @var Collection<int, Genre> */
     #[ORM\ManyToMany(targetEntity: Genre::class)]
-    #[ORM\JoinTable(name: 'game_genre')]
+    #[ORM\JoinTable(name: 'dlc_genre')]
     private Collection $genres;
 
     /** @var Collection<int, Platform> */
     #[ORM\ManyToMany(targetEntity: Platform::class)]
-    #[ORM\JoinTable(name: 'game_platform')]
+    #[ORM\JoinTable(name: 'dlc_platform')]
     private Collection $platforms;
 
     /** @var array<int, string>|null */
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $screenshotUrls = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?float $rating = null;
+    #[ORM\ManyToOne(targetEntity: Game::class)]
+    #[ORM\JoinColumn(name: 'game_id', nullable: true)]
+    private ?Game $game = null;
 
+    /**
+     * Appid базовой игры в Steam (details.fullgame.appid), пока сама игра
+     * ещё не импортирована — используется для доотвязки задним числом.
+     */
     #[ORM\Column(nullable: true)]
-    private ?int $metacriticScore = null;
-
-    /** Число обзоров/рекомендаций в Steam (recommendations.total) — прокси-показатель популярности игры. */
-    #[ORM\Column(nullable: true)]
-    private ?int $popularity = null;
+    private ?int $pendingBaseGameSteamAppId = null;
 
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $createdAt;
@@ -71,7 +82,7 @@ class Game implements HasSteamDetailsInterface
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $updatedAt;
 
-    /** Создаёт игру с обязательными полями, остальное — через сеттеры. */
+    /** Создаёт DLC с обязательными полями, остальное — через сеттеры. */
     public function __construct(string $name, string $slug)
     {
         $this->name = $name;
@@ -84,19 +95,19 @@ class Game implements HasSteamDetailsInterface
         $this->updatedAt = new \DateTimeImmutable();
     }
 
-    /** Возвращает ID игры. */
+    /** Возвращает ID DLC. */
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    /** Возвращает название игры. */
+    /** Возвращает название DLC. */
     public function getName(): string
     {
         return $this->name;
     }
 
-    /** Задаёт название игры. */
+    /** Задаёт название DLC. */
     public function setName(string $name): static
     {
         $this->name = $name;
@@ -118,13 +129,13 @@ class Game implements HasSteamDetailsInterface
         return $this;
     }
 
-    /** Возвращает описание игры. */
+    /** Возвращает описание DLC. */
     public function getDescription(): ?string
     {
         return $this->description;
     }
 
-    /** Задаёт описание игры. */
+    /** Задаёт описание DLC. */
     public function setDescription(?string $description): static
     {
         $this->description = $description;
@@ -132,13 +143,13 @@ class Game implements HasSteamDetailsInterface
         return $this;
     }
 
-    /** Возвращает дату выхода игры. */
+    /** Возвращает дату выхода DLC. */
     public function getReleaseDate(): ?\DateTimeImmutable
     {
         return $this->releaseDate;
     }
 
-    /** Задаёт дату выхода игры. */
+    /** Задаёт дату выхода DLC. */
     public function setReleaseDate(?\DateTimeImmutable $releaseDate): static
     {
         $this->releaseDate = $releaseDate;
@@ -161,7 +172,7 @@ class Game implements HasSteamDetailsInterface
     }
 
     /**
-     * Возвращает разработчиков игры.
+     * Возвращает разработчиков DLC.
      *
      * @return Collection<int, Developer>
      */
@@ -181,7 +192,7 @@ class Game implements HasSteamDetailsInterface
     }
 
     /**
-     * Возвращает издателей игры.
+     * Возвращает издателей DLC.
      *
      * @return Collection<int, Publisher>
      */
@@ -201,7 +212,7 @@ class Game implements HasSteamDetailsInterface
     }
 
     /**
-     * Возвращает жанры игры.
+     * Возвращает жанры DLC.
      *
      * @return Collection<int, Genre>
      */
@@ -221,7 +232,7 @@ class Game implements HasSteamDetailsInterface
     }
 
     /**
-     * Возвращает платформы игры (Windows, macOS, Linux).
+     * Возвращает платформы DLC (Windows, macOS, Linux).
      *
      * @return Collection<int, Platform>
      */
@@ -262,44 +273,30 @@ class Game implements HasSteamDetailsInterface
         return $this;
     }
 
-    /** Возвращает рейтинг игры. */
-    public function getRating(): ?float
+    /** Возвращает базовую игру, к которой относится DLC (null — ещё не найдена). */
+    public function getGame(): ?Game
     {
-        return $this->rating;
+        return $this->game;
     }
 
-    /** Задаёт рейтинг игры. */
-    public function setRating(?float $rating): static
+    /** Задаёт базовую игру. */
+    public function setGame(?Game $game): static
     {
-        $this->rating = $rating;
+        $this->game = $game;
 
         return $this;
     }
 
-    /** Возвращает оценку Metacritic. */
-    public function getMetacriticScore(): ?int
+    /** Возвращает appid базовой игры, ожидающей импорта (null — базовая игра уже привязана или неизвестна). */
+    public function getPendingBaseGameSteamAppId(): ?int
     {
-        return $this->metacriticScore;
+        return $this->pendingBaseGameSteamAppId;
     }
 
-    /** Задаёт оценку Metacritic. */
-    public function setMetacriticScore(?int $metacriticScore): static
+    /** Задаёт appid базовой игры, ожидающей импорта. */
+    public function setPendingBaseGameSteamAppId(?int $pendingBaseGameSteamAppId): static
     {
-        $this->metacriticScore = $metacriticScore;
-
-        return $this;
-    }
-
-    /** Возвращает популярность игры (число обзоров/рекомендаций в Steam). */
-    public function getPopularity(): ?int
-    {
-        return $this->popularity;
-    }
-
-    /** Задаёт популярность игры. */
-    public function setPopularity(?int $popularity): static
-    {
-        $this->popularity = $popularity;
+        $this->pendingBaseGameSteamAppId = $pendingBaseGameSteamAppId;
 
         return $this;
     }

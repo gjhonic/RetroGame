@@ -3,11 +3,14 @@
 namespace App\Service\Steam;
 
 use App\Entity\Developer;
+use App\Entity\Dlc;
 use App\Entity\Game;
 use App\Entity\Genre;
+use App\Entity\Interfaces\HasSteamDetailsInterface;
 use App\Entity\Platform;
 use App\Entity\Publisher;
 use App\Entity\SteamGame;
+use App\Repository\DlcRepository;
 use App\Repository\GameRepository;
 use App\Repository\SteamGameRepository;
 use App\Repository\SteamImportCursorRepository;
@@ -18,9 +21,12 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
 /**
- * Вся логика импорта игр из Steam: постраничная загрузка каталога,
- * дозагрузка деталей по каждой игре, сохранение в Game/SteamGame
- * и фиксация неудачных попыток в SteamGame::status.
+ * Вся логика импорта данных из Steam: постраничная загрузка каталога,
+ * дозагрузка деталей по каждому appid и сохранение по типу (appdetails.type):
+ * 'game' → Game, 'dlc' → Dlc (со связью на базовую игру, если та уже
+ * импортирована), остальные типы (demo/mod/software/...) — только сырые
+ * данные в SteamGame::rawData, без Game/Dlc. Неудачные попытки загрузки
+ * фиксируются в SteamGame::status.
  */
 class GameImportService
 {
@@ -38,6 +44,7 @@ class GameImportService
         private readonly SteamClient $steamClient,
         private readonly EntityManagerInterface $entityManager,
         private readonly GameRepository $gameRepository,
+        private readonly DlcRepository $dlcRepository,
         private readonly SteamGameRepository $steamGameRepository,
         private readonly SteamImportCursorRepository $cursorRepository,
         private readonly SluggerInterface $slugger,
@@ -69,8 +76,8 @@ class GameImportService
         $steamGames = [];
 
         foreach ($apps as $i => $app) {
-            $steamGame = $this->findOrCreateSteamGame((int) $app['appid'], (string) $app['name']);
-            $steamGames[] = $this->fetchAndStore($steamGame);
+            $steamGame = $this->findOrCreateSteamGame((int) $app['appid']);
+            $steamGames[] = $this->fetchAndStore($steamGame, (string) $app['name']);
 
             if ($i !== array_key_last($apps)) {
                 $this->rateLimiter->delay($delayMs);
@@ -83,8 +90,8 @@ class GameImportService
         return new ImportResult(steamGames: $steamGames, hasMore: $page['hasMore'], lastAppId: $page['lastAppId']);
     }
 
-    /** Находит существующую запись по appid или создаёт новую пару Game+SteamGame. */
-    private function findOrCreateSteamGame(int $appId, string $name): SteamGame
+    /** Находит существующую запись по appid или создаёт новую (без Game/Dlc — тип пока неизвестен). */
+    private function findOrCreateSteamGame(int $appId): SteamGame
     {
         $steamGame = $this->steamGameRepository->findOneBySteamAppId($appId);
 
@@ -92,17 +99,18 @@ class GameImportService
             return $steamGame;
         }
 
-        $game = new Game($name, $this->buildUniqueSlug($name, $appId));
-        $steamGame = new SteamGame($game, $appId);
-
-        $this->entityManager->persist($game);
+        $steamGame = new SteamGame($appId);
         $this->entityManager->persist($steamGame);
 
         return $steamGame;
     }
 
-    /** Загружает детали игры и фиксирует результат (успех или ошибку) в БД. */
-    private function fetchAndStore(SteamGame $steamGame): SteamGame
+    /**
+     * Загружает детали приложения и фиксирует результат в БД: при успехе —
+     * в зависимости от appdetails.type сохраняет в Game, в Dlc или никуда
+     * (demo/mod/software/...), при неудаче — помечает попытку неудачной.
+     */
+    private function fetchAndStore(SteamGame $steamGame, string $fallbackName): SteamGame
     {
         $errorMessage = null;
 
@@ -117,7 +125,12 @@ class GameImportService
             $steamGame->markFailure($errorMessage ?? 'Steam appdetails: данные недоступны (success=false)');
         } else {
             $steamGame->markSuccess($details);
-            $this->applyDetailsToGame($steamGame->getGame(), $details, $steamGame->getSteamAppId());
+
+            match ((string) ($details['type'] ?? 'game')) {
+                'game' => $this->applyGame($steamGame, $details, $fallbackName),
+                'dlc' => $this->applyDlc($steamGame, $details, $fallbackName),
+                default => null,
+            };
         }
 
         $this->entityManager->flush();
@@ -126,24 +139,24 @@ class GameImportService
     }
 
     /**
-     * Переносит поля из ответа Steam appdetails в базовую сущность Game
-     * и скачивает обложку в public/uploads/games.
+     * Находит/создаёт Game для этой Steam-записи, переносит в неё общие поля
+     * и Game-специфичные (metacritic, popularity), затем доотвязывает DLC,
+     * ожидавшие импорта именно этой игры.
      *
      * @param array<string, mixed> $details
      */
-    private function applyDetailsToGame(Game $game, array $details, int $steamAppId): void
+    private function applyGame(SteamGame $steamGame, array $details, string $fallbackName): void
     {
-        if (isset($details['name'])) {
-            $game->setName((string) $details['name']);
+        $game = $steamGame->getGame();
+
+        if ($game === null) {
+            $slug = $this->buildUniqueSlug($fallbackName, $steamGame->getSteamAppId(), $this->gameRepository);
+            $game = new Game($fallbackName, $slug);
+            $this->entityManager->persist($game);
+            $steamGame->setGame($game);
         }
 
-        $game->setDescription($this->nullableString($details['short_description'] ?? null));
-        $game->setReleaseDate($this->releaseDateParser->parse($details['release_date']['date'] ?? null));
-
-        $coverImageUrl = $this->nullableString($details['header_image'] ?? null);
-        $game->setCoverImagePath(
-            $coverImageUrl === null ? null : $this->imageDownloader->downloadCover($coverImageUrl, $steamAppId),
-        );
+        $this->applyCommonDetails($game, $details, $steamGame->getSteamAppId());
 
         $metacriticScore = $details['metacritic']['score'] ?? null;
         $game->setMetacriticScore($metacriticScore === null ? null : (int) $metacriticScore);
@@ -151,29 +164,93 @@ class GameImportService
         $popularity = $details['recommendations']['total'] ?? null;
         $game->setPopularity($popularity === null ? null : (int) $popularity);
 
-        $game->getDevelopers()->clear();
+        $this->relinkPendingDlcs($game, $steamGame->getSteamAppId());
+    }
+
+    /**
+     * Находит/создаёт Dlc для этой Steam-записи, переносит в неё общие поля
+     * и связывает с базовой игрой (details.fullgame.appid), если та уже
+     * импортирована — иначе запоминает appid для доотвязки позже.
+     *
+     * @param array<string, mixed> $details
+     */
+    private function applyDlc(SteamGame $steamGame, array $details, string $fallbackName): void
+    {
+        $dlc = $steamGame->getDlc();
+
+        if ($dlc === null) {
+            $slug = $this->buildUniqueSlug($fallbackName, $steamGame->getSteamAppId(), $this->dlcRepository);
+            $dlc = new Dlc($fallbackName, $slug);
+            $this->entityManager->persist($dlc);
+            $steamGame->setDlc($dlc);
+        }
+
+        $this->applyCommonDetails($dlc, $details, $steamGame->getSteamAppId());
+
+        $baseGameAppId = $details['fullgame']['appid'] ?? null;
+        $baseGameAppId = $baseGameAppId === null ? null : (int) $baseGameAppId;
+        $baseGame = $baseGameAppId === null
+            ? null
+            : $this->steamGameRepository->findOneBySteamAppId($baseGameAppId)?->getGame();
+
+        if ($baseGame !== null) {
+            $dlc->setGame($baseGame)->setPendingBaseGameSteamAppId(null);
+        } else {
+            $dlc->setPendingBaseGameSteamAppId($baseGameAppId);
+        }
+    }
+
+    /** Привязывает базовую игру к DLC, которые её ждали (pendingBaseGameSteamAppId). */
+    private function relinkPendingDlcs(Game $game, int $steamAppId): void
+    {
+        foreach ($this->dlcRepository->findPendingBySteamAppId($steamAppId) as $dlc) {
+            $dlc->setGame($game)->setPendingBaseGameSteamAppId(null);
+        }
+    }
+
+    /**
+     * Переносит общие поля из ответа Steam appdetails в Game/Dlc и скачивает
+     * обложку в public/uploads/games.
+     *
+     * @param array<string, mixed> $details
+     */
+    private function applyCommonDetails(HasSteamDetailsInterface $entity, array $details, int $steamAppId): void
+    {
+        if (isset($details['name'])) {
+            $entity->setName((string) $details['name']);
+        }
+
+        $entity->setDescription($this->nullableString($details['short_description'] ?? null));
+        $entity->setReleaseDate($this->releaseDateParser->parse($details['release_date']['date'] ?? null));
+
+        $coverImageUrl = $this->nullableString($details['header_image'] ?? null);
+        $entity->setCoverImagePath(
+            $coverImageUrl === null ? null : $this->imageDownloader->downloadCover($coverImageUrl, $steamAppId),
+        );
+
+        $entity->getDevelopers()->clear();
         foreach ($this->stringList($details['developers'] ?? null) as $name) {
-            $game->addDeveloper($this->findOrCreateNamed(Developer::class, $name));
+            $entity->addDeveloper($this->findOrCreateNamed(Developer::class, $name));
         }
 
-        $game->getPublishers()->clear();
+        $entity->getPublishers()->clear();
         foreach ($this->stringList($details['publishers'] ?? null) as $name) {
-            $game->addPublisher($this->findOrCreateNamed(Publisher::class, $name));
+            $entity->addPublisher($this->findOrCreateNamed(Publisher::class, $name));
         }
 
-        $game->getGenres()->clear();
+        $entity->getGenres()->clear();
         foreach ($this->pluckDescriptions($details['genres'] ?? null) as $name) {
-            $game->addGenre($this->findOrCreateNamed(Genre::class, $name));
+            $entity->addGenre($this->findOrCreateNamed(Genre::class, $name));
         }
 
-        $game->getPlatforms()->clear();
+        $entity->getPlatforms()->clear();
         foreach ($this->enabledPlatforms($details['platforms'] ?? null) as $name) {
-            $game->addPlatform($this->findOrCreateNamed(Platform::class, $name));
+            $entity->addPlatform($this->findOrCreateNamed(Platform::class, $name));
         }
 
-        $game->setScreenshotUrls($this->pluckUrls($details['screenshots'] ?? null));
+        $entity->setScreenshotUrls($this->pluckUrls($details['screenshots'] ?? null));
 
-        $game->touch();
+        $entity->touch();
     }
 
     /**
@@ -280,12 +357,15 @@ class GameImportService
         return $platforms;
     }
 
-    /** Строит slug по названию, при коллизии добавляет appid. */
-    private function buildUniqueSlug(string $name, int $steamAppId): string
+    /**
+     * Строит slug по названию, при коллизии добавляет appid. $repository —
+     * GameRepository или DlcRepository, у slug'а каждого свой неймспейс уникальности.
+     */
+    private function buildUniqueSlug(string $name, int $steamAppId, GameRepository|DlcRepository $repository): string
     {
         $base = strtolower((string) $this->slugger->slug($name));
 
-        if ($base === '' || $this->gameRepository->findOneBy(['slug' => $base]) !== null) {
+        if ($base === '' || $repository->findOneBy(['slug' => $base]) !== null) {
             return $base . '-' . $steamAppId;
         }
 
