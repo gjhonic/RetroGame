@@ -43,3 +43,12 @@ nelmio_api_doc:
                 bearerAuth:
                     type: http
                     scheme: bearer
+        score_die_again:
+            path_patterns:
+                - ^/api/score-die-again
+            documentation:
+                info:
+                    title: 'RetroGame API — DIE//AGAIN: таблица лидеров'
+                    description: >-
+                        Открытый JSON API без авторизации: приём результатов раундов и таблица лидеров игры
+                        DIE//AGAIN (внешний проект, использующий RetroGame как хранилище своего лидерборда).
