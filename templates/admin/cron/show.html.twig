@@ -1,0 +1,10 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Крон — Админка — RetroGame{% endblock %}
+{% block admin_title %}Крон{% endblock %}
+
+{% block body %}
+    <a href="{{ path('admin_cron_index') }}" class="d-inline-block mb-3 link-secondary">← Назад к списку кронов</a>
+
+    <div {{ vue_component('Admin/CronDetail', { id: id }) }}></div>
+{% endblock %}

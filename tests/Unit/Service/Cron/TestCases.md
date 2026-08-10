@@ -10,3 +10,18 @@
 | Лог-файл существует — возвращается его содержимое | `testReadReturnsFileContentWhenLogExists` |
 | У запуска нет `logPath` — возвращается `null` | `testReadReturnsNullWhenRunHasNoLogPath` |
 | `logPath` задан, но файла на диске нет — возвращается `null` | `testReadReturnsNullWhenLogFileIsMissing` |
+
+## CronMapperTest.php
+
+| Кейс | Метод теста |
+|---|---|
+| `toListItem` без последнего запуска — `lastRun: null` | `testToListItemWithoutLastRun` |
+| `toListItem` с последним запуском — статус/время запуска в `lastRun` | `testToListItemWithLastRun` |
+| `toDetail` — id/command/color/createdAt | `testToDetail` |
+
+## CronSyncServiceTest.php
+
+| Кейс | Метод теста |
+|---|---|
+| Обнаруженные команды, отсутствующие в справочнике, персистятся и сохраняются одним `flush()` | `testSyncPersistsOnlyCommandsMissingFromRepository` |
+| Все обнаруженные команды уже есть в справочнике — `persist()`/`flush()` не вызываются | `testSyncDoesNothingWhenAllCommandsAlreadyKnown` |
