@@ -66,6 +66,12 @@
                         <span class="cabinet-nav__icon">⚙️</span>
                         Настройки
                     </a>
+                    {% if is_granted('ROLE_MODERATOR') %}
+                        <a href="{{ path('admin_dashboard') }}" class="cabinet-nav__link">
+                            <span class="cabinet-nav__icon">🛠️</span>
+                            Админка
+                        </a>
+                    {% endif %}
                     <a href="{{ path('logout') }}" class="cabinet-nav__link cabinet-nav__link--logout">
                         <span class="cabinet-nav__icon">🚪</span>
                         Выход

@@ -1,0 +1,10 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Steam-игра — Админка — RetroGame{% endblock %}
+{% block admin_title %}Steam-игра{% endblock %}
+
+{% block body %}
+    <a href="{{ path('admin_steam_game_index') }}" class="d-inline-block mb-3 link-secondary">← Назад к списку Steam-игр</a>
+
+    <div {{ vue_component('Admin/SteamGameDetail', { id: id }) }}></div>
+{% endblock %}

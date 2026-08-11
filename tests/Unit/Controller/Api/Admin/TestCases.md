@@ -15,6 +15,17 @@
 | Детали игры по `id`: разработчики/жанры возвращаются как массивы имён | `testShowReturnsFullDetailWithRelatedEntityNames` |
 | Несуществующий `id` → `NotFoundHttpException` | `testShowThrowsNotFoundExceptionForUnknownId` |
 
+## SteamGameApiControllerTest.php
+
+| Кейс | Метод теста |
+|---|---|
+| Список Steam-записей: страница по умолчанию (сортировка `steamAppId ASC`, `perPage=25`), название/обложка связанной игры в ответе | `testListReturnsPageWithDefaultSortingAndPagination` |
+| `filters[...]`/`sortBy`/`sortDir`/`perPage` из query передаются в репозиторий (значения фильтров триммятся, неизвестные ключи фильтров отбрасываются) | `testListPassesFiltersAndSortingToRepository` |
+| Неизвестный `sortBy` → сортировка по `steamAppId`; `perPage` вне диапазона клампится до максимума | `testListFallsBackToSteamAppIdSortingForUnknownSortByAndClampsPerPage` |
+| Запрошенная страница выходит за `totalPages`: значение клампится до последней доступной | `testListClampsRequestedPageToTotalPages` |
+| Детали записи по `id`: ссылка на игру (`gameId`/`gameName`) и `rawData` возвращаются как есть | `testShowReturnsFullDetailWithGameLinkAndRawData` |
+| Несуществующий `id` → `NotFoundHttpException` | `testShowThrowsNotFoundExceptionForUnknownId` |
+
 ## GenreApiControllerTest.php / DeveloperApiControllerTest.php / PublisherApiControllerTest.php
 
 Справочники (жанры/разработчики/издатели) устроены одинаково — id, name,
