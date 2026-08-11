@@ -46,6 +46,22 @@ ln -sfn "$SHARED_DIR/config/jwt" "$RELEASE_DIR/config/jwt"
 rm -rf "$RELEASE_DIR/public/uploads"
 ln -sfn "$SHARED_DIR/public/uploads" "$RELEASE_DIR/public/uploads"
 
+# Проверка, что JWT_PASSPHRASE реально расшифровывает лежащий в shared/ приватный
+# ключ — одного наличия файлов (проверка выше) недостаточно: если passphrase не
+# совпадает с ключом, /api/login падает с 500 только в рантайме на первом логине,
+# а не на этапе деплоя. Проверяем до переключения symlink `current`, чтобы битый
+# релиз не подменил рабочий.
+JWT_PASSPHRASE="$(grep -m1 '^JWT_PASSPHRASE=' "$SHARED_DIR/.env.local" | cut -d= -f2-)"
+if [ -z "$JWT_PASSPHRASE" ]; then
+    echo "JWT_PASSPHRASE пуст в $SHARED_DIR/.env.local — /api/login будет отдавать 500." >&2
+    exit 1
+fi
+if ! JWT_PASSPHRASE="$JWT_PASSPHRASE" openssl pkey -in "$SHARED_DIR/config/jwt/private.pem" \
+    -passin env:JWT_PASSPHRASE -noout -check >/dev/null 2>&1; then
+    echo "JWT_PASSPHRASE не подходит к $SHARED_DIR/config/jwt/private.pem — ключ и пароль рассинхронизированы." >&2
+    exit 1
+fi
+
 # --- Прод-приготовления ---
 cd "$RELEASE_DIR"
 
