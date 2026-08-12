@@ -36,3 +36,24 @@
 | Несуществующий ID тэйка → `NotFoundHttpException` | `testShowThrowsNotFoundExceptionForUnknownId` |
 | Постраничные комментарии тэйка | `testCommentsReturnsPaginatedList` |
 | Комментарии несуществующего тэйка → `NotFoundHttpException` | `testCommentsThrowsNotFoundExceptionForUnknownTake` |
+
+## OurGameApiControllerTest.php
+
+Используется `Public/OurGameList.vue`/`Public/OurGameDetail.vue` — отдельной
+кабинетной страницы/API для своих игр нет, ссылка "Наши игры" в сайдбаре
+кабинета ведёт на публичную витрину (аналогично `GameApiController`).
+
+| Кейс | Метод теста |
+|---|---|
+| Список отдаёт опубликованные игры из `OurGameRepository::findPublishedForPublic()` | `testListReturnsPublishedGamesFromRepository` |
+| Детали игры по slug опубликованной игры | `testShowReturnsGameDetailForPublishedSlug` |
+| Slug не найден или игра не опубликована → `NotFoundHttpException` | `testShowThrowsNotFoundExceptionWhenGameNotFoundOrNotPublished` |
+
+## OurGamePostApiControllerTest.php
+
+| Кейс | Метод теста |
+|---|---|
+| Список: только опубликованные посты, страница по умолчанию (`postedAt DESC`, `perPage=20`) | `testListReturnsPublishedPostsWithDefaultPagination` |
+| Фильтр `filters[game]` передаётся в репозиторий | `testListPassesGameFilterToRepository` |
+| Детали опубликованного поста по `id` | `testShowReturnsPublishedPostDetail` |
+| Пост не найден или не опубликован → `NotFoundHttpException` | `testShowThrowsNotFoundExceptionForUnpublishedOrMissingPost` |

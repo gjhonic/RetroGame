@@ -1,0 +1,8 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Посты об играх — Админка — RetroGame{% endblock %}
+{% block admin_title %}Посты об играх{% endblock %}
+
+{% block body %}
+    <div {{ vue_component('Admin/OurGamePostList') }}></div>
+{% endblock %}

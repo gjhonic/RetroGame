@@ -7,6 +7,8 @@ nelmio_api_doc:
         default:
             path_patterns:
                 - ^/api/games
+                - ^/api/our-games
+                - ^/api/our-game-posts
                 - ^/api/takes
                 - ^/api/register
                 - ^/api/login
@@ -14,9 +16,10 @@ nelmio_api_doc:
                 info:
                     title: 'RetroGame API — Публичная часть'
                     description: >-
-                        Открытый JSON API без авторизации: каталог игр, фильтры, карточка игры, тэйки, регистрация,
-                        вход (выдача JWT-токена для /api/cabinet и /api/admin). Используется Vue-компонентами
-                        публичных страниц и мобильным приложением.
+                        Открытый JSON API без авторизации: каталог игр, фильтры, карточка игры, свои игры
+                        собственной разработки и посты о них, тэйки, регистрация, вход (выдача JWT-токена для
+                        /api/cabinet и /api/admin). Используется Vue-компонентами публичных страниц и мобильным
+                        приложением.
         cabinet:
             path_patterns:
                 - ^/api/cabinet

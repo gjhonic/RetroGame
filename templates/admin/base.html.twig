@@ -55,6 +55,29 @@
                             </li>
                         </ul>
 
+                        {% set our_game_route = app.request.attributes.get('_route') %}
+                        <h6 class="sidebar-heading d-flex align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
+                            <span>Наши игры</span>
+                        </h6>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a
+                                    class="nav-link {{ our_game_route starts with 'admin_our_game_' and not (our_game_route starts with 'admin_our_game_post_') ? 'active' : '' }}"
+                                    href="{{ path('admin_our_game_index') }}"
+                                >
+                                    🚀 Наши игры
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a
+                                    class="nav-link {{ our_game_route starts with 'admin_our_game_post_' ? 'active' : '' }}"
+                                    href="{{ path('admin_our_game_post_index') }}"
+                                >
+                                    📰 Посты об играх
+                                </a>
+                            </li>
+                        </ul>
+
                         <h6 class="sidebar-heading d-flex align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
                             <span>База данных</span>
                         </h6>
@@ -97,6 +120,20 @@
                                     href="{{ path('admin_publisher_index') }}"
                                 >
                                     🏢 Издатели
+                                </a>
+                            </li>
+                        </ul>
+
+                        <h6 class="sidebar-heading d-flex align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
+                            <span>Пользователи</span>
+                        </h6>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a
+                                    class="nav-link {{ app.request.attributes.get('_route') starts with 'admin_user_' ? 'active' : '' }}"
+                                    href="{{ path('admin_user_index') }}"
+                                >
+                                    👤 Пользователи
                                 </a>
                             </li>
                         </ul>

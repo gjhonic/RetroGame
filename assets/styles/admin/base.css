@@ -71,6 +71,41 @@
     object-fit: cover;
 }
 
+/* Свои игры (Admin/OurGameList, Admin/OurGameShow, Admin/OurGameEdit) — обложка 500×280, баннер 1000×370 */
+
+.our-game-cover-thumb {
+    width: 200px;
+    aspect-ratio: 500 / 280;
+    object-fit: cover;
+}
+
+.our-game-cover {
+    width: 100%;
+    aspect-ratio: 500 / 280;
+    object-fit: cover;
+}
+
+.our-game-banner {
+    width: 100%;
+    aspect-ratio: 1000 / 370;
+    object-fit: cover;
+}
+
+/* Посты об играх (Admin/OurGamePostList, Admin/OurGamePostShow, Admin/OurGamePostEdit) — вертикальная картинка 300×400 */
+
+.our-game-post-image-thumb {
+    width: 90px;
+    aspect-ratio: 300 / 400;
+    object-fit: cover;
+}
+
+.our-game-post-image {
+    width: 100%;
+    max-width: 300px;
+    aspect-ratio: 300 / 400;
+    object-fit: cover;
+}
+
 /* Дашборд (assets/vue/Admin/Dashboard.vue) — иконки в карточках статистики */
 
 .stat-icon {
