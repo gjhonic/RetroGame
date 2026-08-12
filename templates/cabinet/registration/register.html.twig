@@ -9,11 +9,12 @@
 
 {% block body %}
     {% if coverImageRows %}
+        {# Без loading="lazy" — см. templates/cabinet/login/login.html.twig. #}
         <div class="auth-bg" aria-hidden="true">
             {% for row in coverImageRows %}
                 <div class="auth-bg__row">
                     {% for path in row|merge(row) %}
-                        <img src="{{ '/' ~ path }}" alt="" loading="lazy">
+                        <img src="{{ '/' ~ path }}" alt="">
                     {% endfor %}
                 </div>
             {% endfor %}

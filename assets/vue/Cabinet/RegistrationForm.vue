@@ -1,9 +1,8 @@
 <template>
     <template v-if="success">
         <h1 class="auth-card__title">Готово!</h1>
-        <p class="auth-card__subtitle">
-            Аккаунт создан. Теперь можно <a :href="loginUrl">войти</a>.
-        </p>
+        <p class="auth-card__subtitle">Аккаунт создан.</p>
+        <a :href="loginUrl" class="btn btn--primary auth-card__cta">Войти</a>
     </template>
 
     <template v-else>

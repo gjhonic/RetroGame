@@ -3,9 +3,11 @@
 namespace App\Tests\Unit\Controller\Api\Public;
 
 use App\Controller\Api\Public\TakeApiController;
+use App\Entity\Enum\TakeReactionType;
 use App\Entity\Game;
 use App\Entity\Take;
 use App\Entity\TakeComment;
+use App\Entity\TakeReaction;
 use App\Entity\User;
 use App\Repository\TakeCommentRepository;
 use App\Repository\TakeReactionRepository;
@@ -66,6 +68,7 @@ class TakeApiControllerTest extends TestCase
             $this->takeReactionRepository,
             $this->takeCommentRepository,
             $this->takeMapper,
+            null,
         );
         $data = json_decode((string) $response->getContent(), true);
 
@@ -91,7 +94,35 @@ class TakeApiControllerTest extends TestCase
             $this->takeReactionRepository,
             $this->takeCommentRepository,
             $this->takeMapper,
+            null,
         );
+    }
+
+    public function testListIncludesMyReactionForCurrentUser(): void
+    {
+        $take = $this->makeTake();
+        $user = new User('viewer@retrogame.local', 'hash');
+
+        $this->takeRepository->method('countForPublicList')->willReturn(1);
+        $this->takeRepository->method('findForPublicList')->willReturn([$take]);
+        $this->takeReactionRepository->method('countByTypeForTakes')->willReturn([0 => ['like' => 1, 'dislike' => 0]]);
+        $this->takeReactionRepository->expects($this->once())
+            ->method('findTypesForTakesAndUser')
+            ->with([0], $user)
+            ->willReturn([0 => 'like']);
+        $this->takeCommentRepository->method('countForTake')->willReturn(0);
+
+        $response = $this->controller->list(
+            new Request(),
+            $this->takeRepository,
+            $this->takeReactionRepository,
+            $this->takeCommentRepository,
+            $this->takeMapper,
+            $user,
+        );
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertSame('like', $data['items'][0]['myReaction']);
     }
 
     public function testShowReturnsDetailWithComments(): void
@@ -109,12 +140,41 @@ class TakeApiControllerTest extends TestCase
             $this->takeReactionRepository,
             $this->takeCommentRepository,
             $this->takeMapper,
+            null,
         );
         $data = json_decode((string) $response->getContent(), true);
 
         self::assertSame(5, $data['likeCount']);
         self::assertCount(1, $data['comments']);
         self::assertSame('Totally agree!', $data['comments'][0]['text']);
+        self::assertNull($data['myReaction']);
+    }
+
+    public function testShowIncludesMyReactionForCurrentUser(): void
+    {
+        $take = $this->makeTake();
+        $user = new User('viewer@retrogame.local', 'hash');
+        $reaction = new TakeReaction($take, $user, TakeReactionType::Dislike);
+
+        $this->takeRepository->method('find')->willReturn($take);
+        $this->takeReactionRepository->method('countByTypeForTake')->willReturn(['like' => 0, 'dislike' => 1]);
+        $this->takeCommentRepository->method('findForTake')->willReturn([]);
+        $this->takeReactionRepository->expects($this->once())
+            ->method('findOneByTakeAndUser')
+            ->with($take, $user)
+            ->willReturn($reaction);
+
+        $response = $this->controller->show(
+            1,
+            $this->takeRepository,
+            $this->takeReactionRepository,
+            $this->takeCommentRepository,
+            $this->takeMapper,
+            $user,
+        );
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertSame('dislike', $data['myReaction']);
     }
 
     public function testShowThrowsNotFoundExceptionForUnknownId(): void
@@ -129,6 +189,7 @@ class TakeApiControllerTest extends TestCase
             $this->takeReactionRepository,
             $this->takeCommentRepository,
             $this->takeMapper,
+            null,
         );
     }
 

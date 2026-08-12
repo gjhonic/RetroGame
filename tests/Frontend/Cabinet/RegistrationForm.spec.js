@@ -15,7 +15,7 @@ beforeEach(() => {
     installFetchMock();
 });
 
-describe('Public/RegistrationForm', () => {
+describe('Cabinet/RegistrationForm', () => {
     it('отправляет данные формы на /api/register и показывает успех при 201', async () => {
         mockFetchOnce({ id: 1, email: 'gjhonic@example.test' }, { status: 201 });
         const wrapper = mount(RegistrationForm);
@@ -32,7 +32,10 @@ describe('Public/RegistrationForm', () => {
             }),
         });
         expect(wrapper.text()).toContain('Готово!');
-        expect(wrapper.find('a[href="/login"]').exists()).toBe(true);
+
+        const loginButton = wrapper.get('a[href="/login"]');
+        expect(loginButton.classes()).toContain('btn--primary');
+        expect(loginButton.text()).toBe('Войти');
     });
 
     it('показывает ошибки по полям при 422', async () => {

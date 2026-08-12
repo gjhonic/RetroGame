@@ -27,6 +27,36 @@ class TakeReactionRepository extends ServiceEntityRepository
     }
 
     /**
+     * Реакции текущего пользователя на список тэйков одним запросом (без N+1).
+     *
+     * @param array<int, int> $takeIds
+     *
+     * @return array<int, string> takeId => 'like'|'dislike'
+     */
+    public function findTypesForTakesAndUser(array $takeIds, User $user): array
+    {
+        if ($takeIds === []) {
+            return [];
+        }
+
+        $rows = $this->createQueryBuilder('r')
+            ->select('IDENTITY(r.take) AS takeId', 'r.type AS type')
+            ->andWhere('r.take IN (:takeIds)')
+            ->andWhere('r.user = :user')
+            ->setParameter('takeIds', $takeIds)
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getResult();
+
+        $types = [];
+        foreach ($rows as $row) {
+            $types[(int) $row['takeId']] = $row['type']->value;
+        }
+
+        return $types;
+    }
+
+    /**
      * Счётчики лайков/дизлайков одного тэйка.
      *
      * @return array{like: int, dislike: int}

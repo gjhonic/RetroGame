@@ -21,8 +21,11 @@
         <header class="site-header">
             <div class="container site-header__inner">
                 <a href="{{ path('app_game_index') }}" class="site-logo">RetroGame</a>
+                <label for="cabinet-menu-toggle" class="cabinet-menu-toggle" aria-label="Открыть меню">☰</label>
             </div>
         </header>
+
+        <input type="checkbox" id="cabinet-menu-toggle" class="cabinet-menu-toggle-checkbox">
 
         <div class="container cabinet-layout">
             <aside class="cabinet-sidebar">

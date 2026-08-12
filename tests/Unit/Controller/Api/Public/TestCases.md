@@ -32,7 +32,9 @@
 |---|---|
 | Список тэйков: счётчики лайков/дизлайков/комментариев подмешиваются в каждый пункт | `testListReturnsItemsWithReactionAndCommentCounts` |
 | Фильтр `filters[game]` передаётся в репозиторий обрезанным от пробелов | `testListPassesGameFilterToRepository` |
-| Детали тэйка включают первую страницу комментариев и счётчики реакций | `testShowReturnsDetailWithComments` |
+| Авторизованный пользователь: `myReaction` подмешивается из `findTypesForTakesAndUser` | `testListIncludesMyReactionForCurrentUser` |
+| Детали тэйка включают первую страницу комментариев и счётчики реакций (`myReaction: null` для гостя) | `testShowReturnsDetailWithComments` |
+| Авторизованный пользователь: `myReaction` тэйка берётся из `findOneByTakeAndUser` | `testShowIncludesMyReactionForCurrentUser` |
 | Несуществующий ID тэйка → `NotFoundHttpException` | `testShowThrowsNotFoundExceptionForUnknownId` |
 | Постраничные комментарии тэйка | `testCommentsReturnsPaginatedList` |
 | Комментарии несуществующего тэйка → `NotFoundHttpException` | `testCommentsThrowsNotFoundExceptionForUnknownTake` |

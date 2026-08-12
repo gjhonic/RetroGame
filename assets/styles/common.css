@@ -148,6 +148,18 @@ a {
     color: var(--color-text-muted);
 }
 
+@media (max-width: 600px) {
+    .pagination {
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+
+    .pagination__link {
+        padding: 6px 10px;
+        font-size: 0.9rem;
+    }
+}
+
 /* Кнопки (используются и на публичных страницах, и в кабинете) */
 
 .btn {

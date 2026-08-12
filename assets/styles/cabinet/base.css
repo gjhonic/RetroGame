@@ -16,6 +16,37 @@
     font-weight: 700;
 }
 
+/* Мобильное меню — чекбокс вместо JS, см. templates/cabinet/base.html.twig */
+
+.cabinet-menu-toggle {
+    display: none;
+    margin-left: auto;
+    padding: 8px;
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--color-text);
+}
+
+.cabinet-menu-toggle-checkbox {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .cabinet-menu-toggle {
+        display: block;
+    }
+
+    .cabinet-sidebar {
+        display: none;
+    }
+
+    .cabinet-menu-toggle-checkbox:checked ~ .cabinet-layout .cabinet-sidebar {
+        display: block;
+        margin-bottom: 24px;
+    }
+}
+
 /* Прижимает футер к низу страницы даже при малом объёме контента. */
 body.cabinet {
     display: flex;

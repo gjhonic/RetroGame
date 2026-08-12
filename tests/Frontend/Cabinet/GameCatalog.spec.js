@@ -129,6 +129,24 @@ describe('Cabinet/GameCatalog', () => {
         expect(wrapper.find('.pagination__link--active').text()).toBe('50');
     });
 
+    it('на мобильных экранах (max-width: 600px) показывает компактную пагинацию', async () => {
+        const originalMatchMedia = window.matchMedia;
+        window.matchMedia = (query) => ({
+            matches: query === '(max-width: 600px)',
+            addEventListener: () => {},
+            removeEventListener: () => {},
+        });
+
+        const wrapper = mountCatalog(pageResponse({ page: 50, total: 1000, totalPages: 100 }));
+        await flushPromises();
+
+        const numberButtons = wrapper.findAll('.pagination__link').slice(1, -1);
+        expect(numberButtons.map((b) => b.text())).toEqual(['1', '50', '100']);
+        expect(wrapper.findAll('.pagination__ellipsis')).toHaveLength(2);
+
+        window.matchMedia = originalMatchMedia;
+    });
+
     it('клик по номеру страницы переходит на неё', async () => {
         const wrapper = mountCatalog(pageResponse({ page: 1, total: 1000, totalPages: 100 }));
         await flushPromises();

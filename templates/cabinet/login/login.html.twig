@@ -9,11 +9,14 @@
 
 {% block body %}
     {% if coverImageRows %}
+        {# Без loading="lazy": ленту сразу сдвигает CSS-анимация, на узких экранах в исходной
+           области видимости остаётся мало картинок — ленивая загрузка не всегда успевала
+           сработать до отрисовки, из-за чего фон на мобильных иногда не показывался. #}
         <div class="auth-bg" aria-hidden="true">
             {% for row in coverImageRows %}
                 <div class="auth-bg__row">
                     {% for path in row|merge(row) %}
-                        <img src="{{ '/' ~ path }}" alt="" loading="lazy">
+                        <img src="{{ '/' ~ path }}" alt="">
                     {% endfor %}
                 </div>
             {% endfor %}

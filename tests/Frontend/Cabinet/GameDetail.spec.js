@@ -28,10 +28,18 @@ const sampleTake = {
     likeCount: 3,
     dislikeCount: 0,
     commentCount: 1,
+    myReaction: null,
+};
+
+const sampleComment = {
+    id: 100,
+    text: 'Согласен на все сто.',
+    createdAt: '2026-08-11T09:00:00+00:00',
+    author: { id: 6, nickname: 'fan42' },
 };
 
 function takesResponse(overrides = {}) {
-    return { items: [sampleTake], total: 1, page: 1, totalPages: 1, ...overrides };
+    return { items: [{ ...sampleTake }], total: 1, page: 1, totalPages: 1, ...overrides };
 }
 
 /** onMounted грузит сначала игру (/api/games/{slug}), потом тэйки (/api/takes?filters[game]=...). */
@@ -114,5 +122,103 @@ describe('Cabinet/GameDetail — анонимный посетитель', () =>
         const loginLink = wrapper.get('.game-takes__header a');
         expect(loginLink.attributes('href')).toBe('/login');
         expect(loginLink.text()).toContain('Войдите');
+    });
+
+    it('кнопки лайк/дизлайк отключены для анонимного посетителя', async () => {
+        const wrapper = mountGameDetail(sampleGame, takesResponse(), { isAuthenticated: false });
+        await flushPromises();
+
+        const [likeButton, dislikeButton] = wrapper.findAll('.take-reaction');
+        expect(likeButton.attributes('disabled')).toBeDefined();
+        expect(dislikeButton.attributes('disabled')).toBeDefined();
+    });
+});
+
+describe('Cabinet/GameDetail — реакции на тэйк', () => {
+    it('клик по лайку отправляет PUT и обновляет счётчики/подсветку', async () => {
+        const wrapper = mountGameDetail();
+        await flushPromises();
+
+        mockFetchOnce({ type: 'like', likeCount: 4, dislikeCount: 0 });
+        const [likeButton] = wrapper.findAll('.take-reaction');
+        await likeButton.trigger('click');
+        await flushPromises();
+
+        expect(global.fetch).toHaveBeenLastCalledWith('/api/cabinet/takes/10/reaction', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'like' }),
+        });
+        expect(likeButton.classes()).toContain('take-reaction--active');
+        expect(wrapper.text()).toContain('👍 4');
+    });
+
+    it('повторный клик по уже активной реакции снимает её через DELETE', async () => {
+        const wrapper = mountGameDetail(sampleGame, takesResponse({ items: [{ ...sampleTake, myReaction: 'like' }] }));
+        await flushPromises();
+
+        mockFetchOnce({ type: null, likeCount: 2, dislikeCount: 0 });
+        const [likeButton] = wrapper.findAll('.take-reaction');
+        await likeButton.trigger('click');
+        await flushPromises();
+
+        expect(global.fetch).toHaveBeenLastCalledWith('/api/cabinet/takes/10/reaction', {
+            method: 'DELETE',
+            headers: undefined,
+            body: undefined,
+        });
+        expect(likeButton.classes()).not.toContain('take-reaction--active');
+    });
+});
+
+describe('Cabinet/GameDetail — комментарии к тэйку', () => {
+    it('клик по счётчику комментариев подгружает и показывает список', async () => {
+        const wrapper = mountGameDetail();
+        await flushPromises();
+
+        mockFetchOnce({ items: [sampleComment], total: 1, page: 1, totalPages: 1 });
+        const [, , commentsButton] = wrapper.findAll('.take-reaction');
+        await commentsButton.trigger('click');
+        await flushPromises();
+
+        expect(global.fetch).toHaveBeenLastCalledWith('/api/takes/10/comments');
+        expect(wrapper.text()).toContain('Согласен на все сто.');
+        expect(wrapper.text()).toContain('fan42');
+    });
+
+    it('отправка нового комментария добавляет его в список и увеличивает счётчик', async () => {
+        const wrapper = mountGameDetail();
+        await flushPromises();
+
+        mockFetchOnce({ items: [], total: 0, page: 1, totalPages: 1 });
+        const [, , commentsButton] = wrapper.findAll('.take-reaction');
+        await commentsButton.trigger('click');
+        await flushPromises();
+
+        mockFetchOnce(sampleComment, { status: 201 });
+        await wrapper.get('.take-comment-form textarea').setValue('Согласен на все сто.');
+        await wrapper.get('.take-comment-form').trigger('submit');
+        await flushPromises();
+
+        expect(global.fetch).toHaveBeenLastCalledWith('/api/cabinet/takes/10/comments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: 'Согласен на все сто.' }),
+        });
+        expect(wrapper.text()).toContain('Согласен на все сто.');
+        expect(wrapper.text()).toContain('💬 2');
+    });
+
+    it('анонимному посетителю вместо формы комментария показывается ссылка на вход', async () => {
+        const wrapper = mountGameDetail(sampleGame, takesResponse(), { isAuthenticated: false });
+        await flushPromises();
+
+        mockFetchOnce({ items: [], total: 0, page: 1, totalPages: 1 });
+        const [, , commentsButton] = wrapper.findAll('.take-reaction');
+        await commentsButton.trigger('click');
+        await flushPromises();
+
+        expect(wrapper.find('.take-comment-form').exists()).toBe(false);
+        expect(wrapper.get('.take-comments__login-link').attributes('href')).toBe('/login');
     });
 });

@@ -136,6 +136,11 @@
     border: 1px solid rgba(224, 93, 93, 0.4);
 }
 
+.auth-card__cta {
+    display: block;
+    text-align: center;
+}
+
 .auth-card__footer {
     margin: 20px 0 0;
     font-size: 0.875rem;
