@@ -79,9 +79,7 @@
                 <div v-else-if="timelineRuns.length === 0" class="text-muted py-4">
                     За выбранный период запусков не было.
                 </div>
-                <div v-else :style="{ height: timelineChartHeight }">
-                    <Bar ref="timelineChartEl" :data="timelineData" :options="timelineOptions" />
-                </div>
+                <div v-show="!timelineLoading && timelineRuns.length > 0" ref="timelineEl" class="cron-timeline"></div>
             </div>
         </div>
 
@@ -115,7 +113,16 @@
                     <tbody>
                         <tr v-for="row in table.getRowModel().rows" :key="row.id">
                             <td v-for="cell in row.getVisibleCells()" :key="cell.id">
-                                <template v-if="cell.column.id === 'status'">
+                                <template v-if="cell.column.id === 'command'">
+                                    <span
+                                        v-if="row.original.cronColor"
+                                        class="d-inline-block rounded-circle me-1"
+                                        :style="{ width: '10px', height: '10px', backgroundColor: row.original.cronColor }"
+                                    ></span>
+                                    {{ row.original.cronName || row.original.command }}
+                                </template>
+
+                                <template v-else-if="cell.column.id === 'status'">
                                     <span class="badge" :class="statusBadgeClass(row.original.status)">
                                         {{ statusLabel(row.original.status) }}
                                     </span>
@@ -207,25 +214,34 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { useVueTable, getCoreRowModel } from '@tanstack/vue-table';
 import Modal from 'bootstrap/js/dist/modal';
-import { Bar } from 'vue-chartjs';
-import {
-    Chart as ChartJS,
-    Title,
-    Tooltip,
-    Legend,
-    BarElement,
-    LinearScale,
-    CategoryScale,
-} from 'chart.js';
-import zoomPlugin from 'chartjs-plugin-zoom';
-
-ChartJS.register(Title, Tooltip, Legend, BarElement, LinearScale, CategoryScale, zoomPlugin);
+import { DataSet, Timeline } from 'vis-timeline/standalone';
+import 'vis-timeline/styles/vis-timeline-graph2d.min.css';
 
 const STATUS_LABELS = { success: 'Успешно', failed: 'Ошибка', running: 'Выполняется' };
 const STATUS_COLORS = { success: '#198754', failed: '#dc3545', running: '#6c757d' };
+
+// vis-timeline санитизирует HTML-строки в content (вырезает style/class) — строим
+// DOM-узел напрямую, чтобы получить цветной маркер и заодно не думать об экранировании.
+function buildGroupLabel(run) {
+    const wrapper = document.createElement('span');
+    wrapper.className = 'd-inline-flex align-items-center gap-1';
+
+    if (run.cronColor) {
+        const dot = document.createElement('span');
+        dot.className = 'd-inline-block rounded-circle';
+        dot.style.width = '8px';
+        dot.style.height = '8px';
+        dot.style.backgroundColor = run.cronColor;
+        wrapper.appendChild(dot);
+    }
+
+    wrapper.appendChild(document.createTextNode(run.cronName || run.command));
+
+    return wrapper;
+}
 
 const columnLabels = {
     command: 'Команда',
@@ -344,107 +360,72 @@ const statCards = computed(() => {
     ];
 });
 
-// Одна строка (категория Y) на команду — все её запуски рисуются на этой же
-// строке своими отдельными плавающими барами, а не размазываются по разным строкам.
-const timelineCommands = computed(() => [...new Set(timelineRuns.value.map((run) => run.command))].sort());
+const timelineEl = ref(null);
+const timelineItems = new DataSet();
+const timelineGroups = new DataSet();
+let timelineInstance = null;
 
-const timelineChartHeight = computed(() => `${Math.max(120, timelineCommands.value.length * 70)}px`);
+function initTimeline() {
+    timelineInstance = new Timeline(timelineEl.value, timelineItems, timelineGroups, {
+        stack: false,
+        selectable: false,
+        zoomMin: 60 * 1000,
+        zoomable: true,
+        moveable: true,
+        margin: { item: 10, axis: 10 },
+        tooltip: { followMouse: true, overflowMethod: 'cap' },
+    });
+    updateTimelineWindow();
+}
 
-const timelineChartEl = ref(null);
+// Одна строка (группа) на команду — все её запуски рисуются на этой строке
+// отдельными отрезками, а не размазываются по разным строкам.
+function updateTimelineData() {
+    const groupsByCommand = new Map();
+    for (const run of timelineRuns.value) {
+        if (!groupsByCommand.has(run.command)) {
+            groupsByCommand.set(run.command, { id: run.command, content: buildGroupLabel(run) });
+        }
+    }
 
-const timelineData = computed(() => {
-    const labels = timelineCommands.value;
+    timelineGroups.clear();
+    timelineGroups.add([...groupsByCommand.values()]);
 
-    // grouped:false — иначе Chart.js делит высоту строки между несколькими
-    // датасетами на одной категории вместо того, чтобы рисовать их все в полный рост.
-    const datasets = timelineRuns.value.map((run) => ({
-        label: run.command,
-        data: labels.map((label) => (label === run.command
-            ? [new Date(run.startedAt).getTime(), run.finishedAt ? new Date(run.finishedAt).getTime() : Date.now()]
-            : null)),
-        backgroundColor: STATUS_COLORS[run.status] ?? '#6c757d',
-        borderRadius: 4,
-        minBarLength: 4,
-        barPercentage: 0.5,
-        categoryPercentage: 0.8,
-        grouped: false,
+    timelineItems.clear();
+    timelineItems.add(timelineRuns.value.map((run) => {
+        const color = STATUS_COLORS[run.status] ?? '#6c757d';
+
+        return {
+            id: run.id,
+            group: run.command,
+            start: new Date(run.startedAt),
+            end: run.finishedAt ? new Date(run.finishedAt) : new Date(),
+            content: '',
+            title: `${formatDuration(run.durationMs)} — ${new Date(run.startedAt).toLocaleString('ru-RU')}`,
+            style: `background-color: ${color}; border-color: ${color};`,
+        };
     }));
+}
 
-    return { labels, datasets };
-});
+// Таймлайн по умолчанию показывает выбранный в фильтре диапазон дат целиком
+// (даже если запусков в нём мало) — иначе непонятно, за какой период смотрим.
+function updateTimelineWindow() {
+    if (timelineInstance === null) {
+        return;
+    }
 
-// Ось X всегда показывает выбранный в фильтре диапазон дат целиком (даже если
-// запусков в нём мало) — иначе непонятно, за какой период вообще смотрим.
-const timelineBounds = computed(() => {
     const from = parseDatetimeLocal(filters.dateFrom);
     const to = parseDatetimeLocal(filters.dateTo);
 
     if (from && to) {
-        return { min: from.getTime(), max: to.getTime() };
+        timelineInstance.setWindow(from, to, { animation: false });
+    } else {
+        timelineInstance.fit({ animation: false });
     }
-
-    const starts = timelineRuns.value.map((run) => new Date(run.startedAt).getTime());
-    const ends = timelineRuns.value.map((run) => (run.finishedAt ? new Date(run.finishedAt).getTime() : Date.now()));
-
-    if (starts.length === 0) {
-        return { min: Date.now() - 3600_000, max: Date.now() };
-    }
-
-    const min = Math.min(...starts);
-    const max = Math.max(...ends);
-    const padding = Math.max((max - min) * 0.05, 60_000);
-
-    return { min: min - padding, max: max + padding };
-});
-
-const timelineOptions = computed(() => ({
-    indexAxis: 'y',
-    responsive: true,
-    maintainAspectRatio: false,
-    // beginAtZero по умолчанию true у bar-графиков — со значениями в epoch-мс
-    // (~10^12) это растягивало ось от нуля и схлопывало все бары в точку.
-    // interaction: 'nearest' — иначе при нескольких датасетах на одной строке
-    // (см. timelineData) подсказка пытается показать и соседние пустые (null) бары.
-    interaction: { mode: 'nearest', intersect: true },
-    plugins: {
-        legend: { display: false },
-        tooltip: {
-            callbacks: {
-                title: (items) => items[0]?.dataset.label ?? '',
-                label: (context) => {
-                    const [start, end] = context.raw;
-                    return `${formatDuration(end - start)} (${new Date(start).toLocaleString('ru-RU')})`;
-                },
-            },
-        },
-        zoom: {
-            limits: {
-                x: { min: timelineBounds.value.min, max: timelineBounds.value.max },
-            },
-            pan: { enabled: true, mode: 'x' },
-            zoom: {
-                wheel: { enabled: true },
-                pinch: { enabled: true },
-                mode: 'x',
-            },
-        },
-    },
-    scales: {
-        x: {
-            type: 'linear',
-            beginAtZero: false,
-            min: timelineBounds.value.min,
-            max: timelineBounds.value.max,
-            ticks: {
-                callback: (value) => new Date(value).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-            },
-        },
-        y: { grid: { display: false } },
-    },
-}));
+}
 
 function resetTimelineZoom() {
-    timelineChartEl.value?.chart?.resetZoom();
+    updateTimelineWindow();
 }
 
 function downloadLogUrl(id) {
@@ -615,11 +596,21 @@ watch(pageSize, () => {
     loadRuns();
 });
 
+watch(timelineRuns, () => {
+    updateTimelineData();
+    updateTimelineWindow();
+});
+
 onMounted(async () => {
     logModal = new Modal(logModalEl.value);
+    initTimeline();
     loadCommands();
     loadTimeline();
     await loadRuns();
+});
+
+onBeforeUnmount(() => {
+    timelineInstance?.destroy();
 });
 </script>
 
@@ -627,6 +618,10 @@ onMounted(async () => {
 .stat-icon {
     width: 48px;
     height: 48px;
+}
+
+.cron-timeline {
+    min-height: 120px;
 }
 
 .cron-log-content {

@@ -8,7 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * Справочник кронов, обнаруженных по атрибуту #[AsTrackedCron] на классах
  * Command (см. App\Cron\CronDiscoveryService) — хранит только то, что нельзя
- * получить из кода: настраиваемый пользователем цвет для графика.
+ * получить из кода: настраиваемое пользователем название и цвет для графика.
  */
 #[ORM\Entity(repositoryClass: CronRepository::class)]
 class Cron
@@ -21,6 +21,10 @@ class Cron
     /** Имя команды (Command::getName()), например "app:games:import". */
     #[ORM\Column(length: 255, unique: true)]
     private string $command;
+
+    /** Человекочитаемое название, заданное пользователем (по умолчанию показывается command). */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $name = null;
 
     /** Цвет для графика в формате #RRGGBB. */
     #[ORM\Column(length: 7, nullable: true)]
@@ -47,6 +51,18 @@ class Cron
     public function getCommand(): string
     {
         return $this->command;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(?string $name): static
+    {
+        $this->name = $name;
+
+        return $this->touch();
     }
 
     public function getColor(): ?string

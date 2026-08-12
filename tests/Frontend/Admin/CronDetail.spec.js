@@ -65,4 +65,23 @@ describe('Admin/CronDetail', () => {
         expect(options.method).toBe('PATCH');
         expect(JSON.parse(options.body)).toEqual({ color: '#dc3545' });
     });
+
+    it('отправляет PATCH с названием по потере фокуса поля', async () => {
+        mockFetchOnce(sampleCron);
+        mockFetchOnce(sampleRuns);
+        const wrapper = mount(CronDetail, { props: { id: 1 } });
+        await flushPromises();
+        await flushPromises();
+
+        mockFetchOnce({ ...sampleCron, name: 'Импорт игр из Steam' });
+        await wrapper.get('input[type="text"]').setValue('Импорт игр из Steam');
+        await wrapper.get('input[type="text"]').trigger('blur');
+        await flushPromises();
+
+        const [url, options] = global.fetch.mock.calls[2];
+        expect(url).toBe('/api/admin/crons/1');
+        expect(options.method).toBe('PATCH');
+        expect(JSON.parse(options.body)).toEqual({ name: 'Импорт игр из Steam' });
+        expect(wrapper.text()).toContain('Импорт игр из Steam');
+    });
 });

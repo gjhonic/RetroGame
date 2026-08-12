@@ -21,10 +21,12 @@ class CronMapperTest extends TestCase
     {
         $cron = new Cron('app:games:import');
         $cron->setColor('#198754');
+        $cron->setName('Импорт игр из Steam');
 
         $item = $this->mapper->toListItem($cron, null);
 
         self::assertSame('app:games:import', $item['command']);
+        self::assertSame('Импорт игр из Steam', $item['name']);
         self::assertSame('#198754', $item['color']);
         self::assertNull($item['lastRun']);
     }
@@ -48,6 +50,7 @@ class CronMapperTest extends TestCase
         $detail = $this->mapper->toDetail($cron);
 
         self::assertSame('app:games:import', $detail['command']);
+        self::assertNull($detail['name']);
         self::assertNull($detail['color']);
         self::assertSame($cron->getCreatedAt()->format(\DateTimeInterface::ATOM), $detail['createdAt']);
     }

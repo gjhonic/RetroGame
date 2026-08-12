@@ -2,6 +2,8 @@
 
 namespace App\Controller\Api\Admin;
 
+use App\Entity\CronRun;
+use App\Repository\CronRepository;
 use App\Repository\CronRunRepository;
 use App\Service\Cron\CronLogReader;
 use App\Service\Cron\CronRunMapper;
@@ -49,8 +51,12 @@ class CronRunApiController extends AbstractController
     )]
     #[OA\Parameter(name: 'sortDir', in: 'query', schema: new OA\Schema(type: 'string', default: 'desc'))]
     #[OA\Response(response: 200, description: 'Страница списка запусков с постраничной навигацией')]
-    public function list(Request $request, CronRunRepository $cronRunRepository, CronRunMapper $mapper): JsonResponse
-    {
+    public function list(
+        Request $request,
+        CronRunRepository $cronRunRepository,
+        CronRepository $cronRepository,
+        CronRunMapper $mapper,
+    ): JsonResponse {
         $perPage = max(1, min(self::MAX_PER_PAGE, $request->query->getInt('perPage', self::DEFAULT_PER_PAGE)));
 
         $rawFilters = $request->query->all('filters');
@@ -85,8 +91,13 @@ class CronRunApiController extends AbstractController
             ($page - 1) * $perPage,
         );
 
+        $cronsByCommand = $cronRepository->findAllIndexedByCommand();
+        $toListItem = static function (CronRun $run) use ($mapper, $cronsByCommand): array {
+            return $mapper->toListItem($run, $cronsByCommand[$run->getCommand()] ?? null);
+        };
+
         return $this->json([
-            'items' => array_map($mapper->toListItem(...), $runs),
+            'items' => array_map($toListItem, $runs),
             'total' => $total,
             'page' => $page,
             'totalPages' => $totalPages,
@@ -119,6 +130,7 @@ class CronRunApiController extends AbstractController
     public function timeline(
         Request $request,
         CronRunRepository $cronRunRepository,
+        CronRepository $cronRepository,
         CronRunMapper $mapper,
     ): JsonResponse {
         $dateFromRaw = $request->query->getString('dateFrom', '');
@@ -129,8 +141,12 @@ class CronRunApiController extends AbstractController
         $dateTo = $dateToRaw !== '' ? new \DateTimeImmutable($dateToRaw) : new \DateTimeImmutable();
 
         $runs = $cronRunRepository->findForTimeline($dateFrom, $dateTo);
+        $cronsByCommand = $cronRepository->findAllIndexedByCommand();
+        $toListItem = static function (CronRun $run) use ($mapper, $cronsByCommand): array {
+            return $mapper->toListItem($run, $cronsByCommand[$run->getCommand()] ?? null);
+        };
 
-        return $this->json(['items' => array_map($mapper->toListItem(...), $runs)]);
+        return $this->json(['items' => array_map($toListItem, $runs)]);
     }
 
     /** Подробности одного запуска. */
@@ -138,15 +154,19 @@ class CronRunApiController extends AbstractController
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
     #[OA\Response(response: 200, description: 'Подробности запуска')]
     #[OA\Response(response: 404, description: 'Запуск не найден')]
-    public function show(int $id, CronRunRepository $cronRunRepository, CronRunMapper $mapper): JsonResponse
-    {
+    public function show(
+        int $id,
+        CronRunRepository $cronRunRepository,
+        CronRepository $cronRepository,
+        CronRunMapper $mapper,
+    ): JsonResponse {
         $cronRun = $cronRunRepository->find($id);
 
         if ($cronRun === null) {
             throw $this->createNotFoundException('Запуск не найден.');
         }
 
-        return $this->json($mapper->toDetail($cronRun));
+        return $this->json($mapper->toDetail($cronRun, $cronRepository->findOneByCommand($cronRun->getCommand())));
     }
 
     /** Полный текст лог-файла запуска — при ?download=1 отдаётся как файл для скачивания. */

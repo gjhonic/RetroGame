@@ -29,13 +29,24 @@
                                 <a :href="`/admin/crons/${row.original.id}`">{{ row.original.command }}</a>
                             </template>
 
+                            <template v-else-if="cell.column.id === 'name'">
+                                <input
+                                    type="text"
+                                    class="form-control form-control-sm"
+                                    :value="row.original.name ?? ''"
+                                    placeholder="Название крона"
+                                    @keyup.enter="$event.target.blur()"
+                                    @blur="updateCron(row.original, { name: $event.target.value.trim() || null })"
+                                >
+                            </template>
+
                             <template v-else-if="cell.column.id === 'color'">
                                 <input
                                     type="color"
                                     class="form-control form-control-color"
                                     :value="row.original.color ?? '#6c757d'"
                                     title="Цвет для графика"
-                                    @change="updateColor(row.original, $event.target.value)"
+                                    @change="updateCron(row.original, { color: $event.target.value })"
                                 >
                             </template>
 
@@ -64,6 +75,7 @@ const STATUS_LABELS = { success: 'Успешно', failed: 'Ошибка', runni
 
 const columnLabels = {
     command: 'Команда',
+    name: 'Название',
     color: 'Цвет',
     lastRun: 'Последний запуск',
 };
@@ -74,6 +86,7 @@ const error = ref(null);
 
 const columns = [
     { id: 'command', accessorKey: 'command' },
+    { id: 'name', accessorKey: 'name' },
     { id: 'color', accessorKey: 'color' },
     { id: 'lastRun', accessorKey: 'lastRun' },
 ];
@@ -125,20 +138,19 @@ async function loadCrons() {
     }
 }
 
-async function updateColor(cron, color) {
+async function updateCron(cron, patch) {
     try {
         const response = await fetch(`/api/admin/crons/${cron.id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ color }),
+            body: JSON.stringify(patch),
         });
 
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
 
-        const updated = await response.json();
-        cron.color = updated.color;
+        Object.assign(cron, await response.json());
     } catch (e) {
         error.value = e.message;
     }

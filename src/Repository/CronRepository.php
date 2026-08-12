@@ -29,4 +29,21 @@ class CronRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * Все кроны в виде словаря command => Cron — используется, чтобы подмешать
+     * настроенные пользователем name/color к записям CronRun (связи в БД нет,
+     * см. App\Entity\CronRun) без запроса на каждую строку истории запусков.
+     *
+     * @return array<string, Cron>
+     */
+    public function findAllIndexedByCommand(): array
+    {
+        $indexed = [];
+        foreach ($this->findAllOrderedByCommand() as $cron) {
+            $indexed[$cron->getCommand()] = $cron;
+        }
+
+        return $indexed;
+    }
 }
