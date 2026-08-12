@@ -1,0 +1,8 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Пользователи — Админка — RetroGame{% endblock %}
+{% block admin_title %}Пользователи{% endblock %}
+
+{% block body %}
+    <div {{ vue_component('Admin/UserList', { isAdmin: is_granted('ROLE_ADMIN') }) }}></div>
+{% endblock %}

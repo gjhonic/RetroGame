@@ -17,11 +17,20 @@
 | Email свободен: создаётся User с захешированным паролем и ником | `testRegisterCreatesUserWithHashedPassword` |
 | Email уже занят: бросается `EmailAlreadyRegisteredException`, пользователь не сохраняется | `testRegisterThrowsWhenEmailAlreadyRegistered` |
 
+## ModeratorCreationServiceTest.php
+
+| Кейс | Метод теста |
+|---|---|
+| Email свободен: создаётся User с ролью `ROLE_MODERATOR`, захешированным паролем и ником | `testCreateCreatesUserWithModeratorRoleAndHashedPassword` |
+| Email уже занят: бросается `EmailAlreadyRegisteredException`, пользователь не сохраняется | `testCreateThrowsWhenEmailAlreadyRegistered` |
+
 ## UserMapperTest.php
 
 | Кейс | Метод теста |
 |---|---|
 | Маппинг публичных полей, пароль в ответ не попадает | `testToPublicMapsFieldsWithoutPassword` |
+| `toAdminListItem` — email/nickname/role/lastLoginAt, пароль в ответ не попадает | `testToAdminListItemMapsFieldsWithoutPassword` |
+| `toDetail` расширяет `toAdminListItem` полями avatarUrl/updatedAt | `testToDetailExtendsAdminListItemWithAvatarAndUpdatedAt` |
 
 ## ChangePasswordServiceTest.php
 
