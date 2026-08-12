@@ -58,65 +58,7 @@
     font-size: 0.85rem;
 }
 
-/* Модальное окно (assets/vue/Cabinet/TakeCreateModal.vue) */
-
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    background-color: rgba(0, 0, 0, 0.6);
-    z-index: 1000;
-}
-
-.modal-window {
-    width: 100%;
-    max-width: 480px;
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-}
-
-.modal-window__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--color-border);
-}
-
-.modal-window__title {
-    margin: 0;
-    font-size: 1.2rem;
-}
-
-.modal-window__close {
-    background: none;
-    border: none;
-    color: var(--color-text-muted);
-    font-size: 1.1rem;
-    cursor: pointer;
-}
-
-.modal-window__close:hover {
-    color: var(--color-text);
-}
-
-.modal-window__body {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding: 24px;
-}
-
-.modal-window__footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-}
+/* Форма (assets/vue/Cabinet/TakeCreateModal.vue) — сам .modal-overlay/.modal-window* теперь в common.css */
 
 .form-field textarea {
     padding: 12px 14px;
@@ -139,14 +81,4 @@
     color: var(--color-text-muted);
     font-size: 0.8rem;
     text-align: right;
-}
-
-.btn--secondary {
-    background-color: transparent;
-    border: 1px solid var(--color-border);
-    color: var(--color-text);
-}
-
-.btn--secondary:hover:not(:disabled) {
-    background-color: var(--color-surface-hover);
 }

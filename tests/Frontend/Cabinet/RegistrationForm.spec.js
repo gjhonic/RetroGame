@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
-import RegistrationForm from '../../../assets/vue/Public/RegistrationForm.vue';
+import RegistrationForm from '../../../assets/vue/Cabinet/RegistrationForm.vue';
 import { installFetchMock, mockFetchOnce, mockFetchRejectOnce } from '../support/mockFetch.js';
 
 async function fillAndSubmit(wrapper, { nickname = 'Gjhonic', email = 'gjhonic@example.test', password = 'password123' } = {}) {

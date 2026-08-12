@@ -81,7 +81,7 @@
 
     <template v-else>
         <div class="game-grid">
-            <a v-for="game in games" :key="game.id" :href="`/cabinet/games/${game.slug}`" class="game-card">
+            <a v-for="game in games" :key="game.id" :href="`/games/${game.slug}`" class="game-card">
                 <img
                     v-if="game.coverImageUrl"
                     class="game-card__cover"

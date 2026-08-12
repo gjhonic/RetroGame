@@ -95,7 +95,13 @@
         <div class="game-takes">
             <div class="game-takes__header">
                 <h2 class="game-detail__subtitle">Тэйки</h2>
-                <button type="button" class="btn btn--primary" @click="modalOpen = true">+ Добавить тэйк</button>
+                <button
+                    v-if="props.isAuthenticated"
+                    type="button"
+                    class="btn btn--primary"
+                    @click="modalOpen = true"
+                >+ Добавить тэйк</button>
+                <a v-else href="/login" class="btn btn--secondary">Войдите, чтобы оставить тэйк</a>
             </div>
 
             <div v-if="takesLoading" class="empty-state">
@@ -144,6 +150,7 @@ import TakeCreateModal from './TakeCreateModal.vue';
 
 const props = defineProps({
     slug: { type: String, required: true },
+    isAuthenticated: { type: Boolean, default: false },
 });
 
 const game = ref(null);

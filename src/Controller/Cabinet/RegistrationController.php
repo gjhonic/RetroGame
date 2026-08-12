@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Controller\Public;
+namespace App\Controller\Cabinet;
 
 use App\Repository\GameRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -27,7 +27,7 @@ class RegistrationController extends AbstractController
             self::BACKGROUND_ROWS * self::BACKGROUND_COVERS_PER_ROW,
         );
 
-        return $this->render('public/registration/register.html.twig', [
+        return $this->render('cabinet/registration/register.html.twig', [
             'coverImageRows' => array_chunk($coverImagePaths, self::BACKGROUND_COVERS_PER_ROW),
         ]);
     }

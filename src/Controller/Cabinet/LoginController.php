@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Controller\Public;
+namespace App\Controller\Cabinet;
 
 use App\Repository\GameRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -31,7 +31,7 @@ class LoginController extends AbstractController
             self::BACKGROUND_ROWS * self::BACKGROUND_COVERS_PER_ROW,
         );
 
-        return $this->render('public/login/login.html.twig', [
+        return $this->render('cabinet/login/login.html.twig', [
             'last_username' => $authenticationUtils->getLastUsername(),
             'error' => $authenticationUtils->getLastAuthenticationError(),
             'coverImageRows' => array_chunk($coverImagePaths, self::BACKGROUND_COVERS_PER_ROW),

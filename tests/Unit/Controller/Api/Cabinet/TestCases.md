@@ -30,3 +30,9 @@
 | Реакция на несуществующий тэйк → `NotFoundHttpException` | `testSetReactionThrowsNotFoundExceptionForUnknownTake` |
 | Снятие реакции → `200` с обновлёнными счётчиками и `type: null` | `testRemoveReactionReturnsUpdatedCounts` |
 | Снятие реакции с несуществующего тэйка → `NotFoundHttpException` | `testRemoveReactionThrowsNotFoundExceptionForUnknownTake` |
+
+Своих игр (`OurGame`) здесь больше нет — отдельной кабинетной страницы для
+них нет, ссылка "Наши игры" в сайдбаре кабинета ведёт на публичную витрину
+`/our-games` (данные не зависят от пользователя, по аналогии с тем, как
+каталог обычных игр не имеет отдельного кабинетного API —
+см. `Api/Public/OurGameApiControllerTest`).

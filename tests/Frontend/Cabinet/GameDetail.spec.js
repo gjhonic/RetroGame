@@ -35,11 +35,11 @@ function takesResponse(overrides = {}) {
 }
 
 /** onMounted грузит сначала игру (/api/games/{slug}), потом тэйки (/api/takes?filters[game]=...). */
-function mountGameDetail(gameResponse = sampleGame, takesResp = takesResponse()) {
+function mountGameDetail(gameResponse = sampleGame, takesResp = takesResponse(), props = {}) {
     mockFetchOnce(gameResponse);
     mockFetchOnce(takesResp);
 
-    return mount(GameDetail, { props: { slug: 'half-life' } });
+    return mount(GameDetail, { props: { slug: 'half-life', isAuthenticated: true, ...props } });
 }
 
 beforeEach(() => {
@@ -102,5 +102,17 @@ describe('Cabinet/GameDetail', () => {
 
         expect(wrapper.find('.modal-overlay').exists()).toBe(false);
         expect(wrapper.text()).toContain('Новый тэйк');
+    });
+});
+
+describe('Cabinet/GameDetail — анонимный посетитель', () => {
+    it('без isAuthenticated кнопка "Добавить тэйк" скрыта, вместо неё ссылка на вход', async () => {
+        const wrapper = mountGameDetail(sampleGame, takesResponse(), { isAuthenticated: false });
+        await flushPromises();
+
+        expect(wrapper.find('.game-takes__header .btn--primary').exists()).toBe(false);
+        const loginLink = wrapper.get('.game-takes__header a');
+        expect(loginLink.attributes('href')).toBe('/login');
+        expect(loginLink.text()).toContain('Войдите');
     });
 });
