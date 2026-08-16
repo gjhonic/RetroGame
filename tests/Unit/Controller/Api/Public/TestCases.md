@@ -59,3 +59,19 @@
 | Фильтр `filters[game]` передаётся в репозиторий | `testListPassesGameFilterToRepository` |
 | Детали опубликованного поста по `id` | `testShowReturnsPublishedPostDetail` |
 | Пост не найден или не опубликован → `NotFoundHttpException` | `testShowThrowsNotFoundExceptionForUnpublishedOrMissingPost` |
+
+## ScoreDieAgainApiControllerTest.php
+
+Таблица лидеров внешней игры DIE//AGAIN (`/our-games/die-again`) — RetroGame
+используется только как хранилище результатов, своей игровой логики тут нет.
+
+| Кейс | Метод теста |
+|---|---|
+| Таблица лидеров: постраничная навигация, сортировка по умолчанию (`kills`, `DESC`) | `testListReturnsItemsWithPaginationAndDefaultSort` |
+| Запрошенная страница выходит за `totalPages` → клампится до последней доступной | `testListClampsRequestedPageToTotalPages` |
+| Параметры `sortBy`/`sortDir` передаются в репозиторий | `testListPassesCustomSortToRepository` |
+| Валидный запрос → `201` с сохранённым результатом | `testCreateReturnsCreatedScoreOnValidRequest` |
+| Пустой ник → `422` | `testCreateReturnsValidationErrorForBlankNickname` |
+| HTML-теги в нике → `422` | `testCreateReturnsValidationErrorForHtmlInNickname` |
+| Отрицательное количество убийств → `422` | `testCreateReturnsValidationErrorForNegativeKills` |
+| Невалидное тело запроса (не JSON) → `400` | `testCreateReturnsBadRequestForInvalidJsonBody` |

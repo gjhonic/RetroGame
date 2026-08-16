@@ -155,3 +155,19 @@ gamesCount; набор кейсов идентичен во всех трёх ф
 | `PATCH` с нестроковым `name` — `422` с ошибкой, `flush()` не вызывается | `testUpdateRejectsNonStringName` |
 | `PATCH` одновременно с `name` и `color` — оба поля сохраняются | `testUpdateSetsNameAndColorTogether` |
 | `PATCH` с несуществующим `id` → `NotFoundHttpException` | `testUpdateThrowsNotFoundExceptionForUnknownId` |
+
+## ScoreDieAgainApiControllerTest.php
+
+Админский список/сброс таблицы лидеров DIE//AGAIN (`score_die_again`) —
+переиспользует `ScoreDieAgainRepository`/`ScoreDieAgainMapper` из публичного
+API (`Api/Public/ScoreDieAgainApiControllerTest`), но с `perPage`-пагинацией
+(как у `DeveloperApiController`) вместо фиксированного `PER_PAGE`, плюс
+`DELETE` для полной очистки таблицы.
+
+| Кейс | Метод теста |
+|---|---|
+| Список: страница по умолчанию (сортировка `kills DESC`, `perPage=25`) | `testListReturnsPageWithDefaultSortingAndPagination` |
+| `sortBy`/`sortDir`/`perPage` из query передаются в репозиторий | `testListPassesSortingAndPerPageToRepository` |
+| `perPage` вне диапазона клампится до максимума (100) | `testListClampsPerPageToMax` |
+| Запрошенная страница выходит за `totalPages` → клампится до последней доступной | `testListClampsRequestedPageToTotalPages` |
+| `DELETE` — удаляет все результаты через `ScoreDieAgainRepository::deleteAll()`, возвращает `{deleted: N}` | `testResetDeletesAllResultsAndReturnsDeletedCount` |
