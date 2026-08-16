@@ -9,6 +9,7 @@ use App\Entity\Take;
 use App\Entity\TakeComment;
 use App\Entity\TakeReaction;
 use App\Entity\User;
+use App\Repository\TakeCommentRepository;
 use App\Repository\TakeReactionRepository;
 use App\Repository\TakeRepository;
 use App\Service\Take\CreateTakeCommentService;
@@ -42,6 +43,7 @@ class TakeApiControllerTest extends TestCase
     private TakeReactionService&MockObject $takeReactionService;
     private TakeReactionRepository&MockObject $takeReactionRepository;
     private TakeRepository&MockObject $takeRepository;
+    private TakeCommentRepository&MockObject $takeCommentRepository;
     private TakeMapper $takeMapper;
     private TakeApiController $controller;
     private SerializerInterface $serializer;
@@ -55,6 +57,7 @@ class TakeApiControllerTest extends TestCase
         $this->takeReactionService = $this->createMock(TakeReactionService::class);
         $this->takeReactionRepository = $this->createMock(TakeReactionRepository::class);
         $this->takeRepository = $this->createMock(TakeRepository::class);
+        $this->takeCommentRepository = $this->createMock(TakeCommentRepository::class);
         $this->takeMapper = new TakeMapper();
 
         $this->controller = new TakeApiController();
@@ -68,6 +71,81 @@ class TakeApiControllerTest extends TestCase
     private function validator(): ValidatorInterface
     {
         return Validation::createValidatorBuilder()->enableAttributeMapping()->getValidator();
+    }
+
+    public function testListReturnsAuthorTakesWithReactionAndCommentCounts(): void
+    {
+        $this->takeRepository->method('countForAuthor')->willReturn(1);
+        $this->takeRepository->expects($this->once())
+            ->method('findForAuthor')
+            ->with($this->user, null, 20, 0)
+            ->willReturn([$this->take]);
+        $this->takeReactionRepository->method('countByTypeForTakes')->willReturn([0 => ['like' => 2, 'dislike' => 0]]);
+        $this->takeReactionRepository->method('findTypesForTakesAndUser')->willReturn([0 => 'like']);
+        $this->takeCommentRepository->method('countForTake')->willReturn(1);
+
+        $response = $this->controller->list(
+            new Request(),
+            $this->takeRepository,
+            $this->takeReactionRepository,
+            $this->takeCommentRepository,
+            $this->takeMapper,
+            $this->user,
+        );
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertSame(1, $data['total']);
+        self::assertSame(2, $data['items'][0]['likeCount']);
+        self::assertSame(1, $data['items'][0]['commentCount']);
+        self::assertSame('like', $data['items'][0]['myReaction']);
+    }
+
+    public function testListPassesSinceFilterAsDateTimeToRepository(): void
+    {
+        $this->takeRepository->method('countForAuthor')->willReturn(0);
+        $this->takeRepository->expects($this->once())
+            ->method('findForAuthor')
+            ->with(
+                $this->user,
+                self::callback(static fn ($since) => $since instanceof \DateTimeImmutable
+                    && $since->format('Y-m-d') === '2026-08-05'),
+                20,
+                0,
+            )
+            ->willReturn([]);
+        $this->takeReactionRepository->method('countByTypeForTakes')->willReturn([]);
+        $this->takeReactionRepository->method('findTypesForTakesAndUser')->willReturn([]);
+
+        $request = new Request(['since' => '2026-08-05T00:00:00+00:00']);
+        $this->controller->list(
+            $request,
+            $this->takeRepository,
+            $this->takeReactionRepository,
+            $this->takeCommentRepository,
+            $this->takeMapper,
+            $this->user,
+        );
+    }
+
+    public function testListIgnoresInvalidSinceFilter(): void
+    {
+        $this->takeRepository->method('countForAuthor')->willReturn(0);
+        $this->takeRepository->expects($this->once())
+            ->method('findForAuthor')
+            ->with($this->user, null, 20, 0)
+            ->willReturn([]);
+        $this->takeReactionRepository->method('countByTypeForTakes')->willReturn([]);
+        $this->takeReactionRepository->method('findTypesForTakesAndUser')->willReturn([]);
+
+        $request = new Request(['since' => 'not-a-date']);
+        $this->controller->list(
+            $request,
+            $this->takeRepository,
+            $this->takeReactionRepository,
+            $this->takeCommentRepository,
+            $this->takeMapper,
+            $this->user,
+        );
     }
 
     public function testCreateReturnsCreatedTakeOnValidRequest(): void

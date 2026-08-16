@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Take;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
@@ -55,6 +56,43 @@ class TakeRepository extends ServiceEntityRepository
         $this->applyPublicFilters($qb, $filters);
 
         return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
+     * Одна страница личной ленты автора: опционально не раньше $since, новые тэйки сначала.
+     *
+     * @return array<int, Take>
+     */
+    public function findForAuthor(User $author, ?\DateTimeImmutable $since, int $limit, int $offset): array
+    {
+        $qb = $this->createAuthorQueryBuilder($author, $since)
+            ->addOrderBy('t.createdAt', 'DESC')
+            ->addOrderBy('t.id', 'DESC')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset);
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /** Количество тэйков автора, подходящих под фильтр $since (для расчёта страниц). */
+    public function countForAuthor(User $author, ?\DateTimeImmutable $since): int
+    {
+        $qb = $this->createAuthorQueryBuilder($author, $since)->select('COUNT(t.id)');
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    private function createAuthorQueryBuilder(User $author, ?\DateTimeImmutable $since): QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('t')
+            ->andWhere('t.author = :author')
+            ->setParameter('author', $author);
+
+        if ($since !== null) {
+            $qb->andWhere('t.createdAt >= :since')->setParameter('since', $since);
+        }
+
+        return $qb;
     }
 
     /**

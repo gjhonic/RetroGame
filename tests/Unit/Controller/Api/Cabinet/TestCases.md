@@ -42,6 +42,9 @@
 
 | Кейс | Метод теста |
 |---|---|
+| Список своих тэйков: счётчики лайков/дизлайков/комментариев и `myReaction` подмешиваются | `testListReturnsAuthorTakesWithReactionAndCommentCounts` |
+| Параметр `since` парсится в `DateTimeImmutable` и передаётся в репозиторий | `testListPassesSinceFilterAsDateTimeToRepository` |
+| Некорректный `since` → фильтр игнорируется (`null` передаётся в репозиторий) | `testListIgnoresInvalidSinceFilter` |
 | Валидный запрос на создание тэйка → `201`, сервис вызван | `testCreateReturnsCreatedTakeOnValidRequest` |
 | Текст длиннее 1000 символов → `422` с ошибкой по `text`, сервис не вызывается | `testCreateReturnsValidationErrorForTooLongText` |
 | Текст содержит HTML-теги → `422` с ошибкой по `text`, сервис не вызывается | `testCreateReturnsValidationErrorForHtmlInText` |

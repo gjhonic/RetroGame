@@ -7,6 +7,7 @@ use App\Dto\Take\CreateTakeRequest;
 use App\Dto\Take\SetTakeReactionRequest;
 use App\Entity\Enum\TakeReactionType;
 use App\Entity\User;
+use App\Repository\TakeCommentRepository;
 use App\Repository\TakeReactionRepository;
 use App\Repository\TakeRepository;
 use App\Service\Take\CreateTakeCommentService;
@@ -31,6 +32,80 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 #[OA\Tag(name: 'Cabinet/Takes')]
 class TakeApiController extends AbstractController
 {
+    private const int PER_PAGE = 20;
+
+    /** Лента своих тэйков (все игры), опционально не раньше даты $since. */
+    #[Route('', name: 'app_api_cabinet_take_list', methods: ['GET'])]
+    #[OA\Parameter(
+        name: 'page',
+        description: 'Номер страницы (по умолчанию 1)',
+        in: 'query',
+        schema: new OA\Schema(type: 'integer', default: 1),
+    )]
+    #[OA\Parameter(
+        name: 'since',
+        description: 'Не показывать тэйки старше этой даты (ISO 8601)',
+        in: 'query',
+        schema: new OA\Schema(type: 'string', format: 'date-time'),
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Список своих тэйков с постраничной навигацией',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'items', type: 'array', items: new OA\Items(type: 'object')),
+                new OA\Property(property: 'total', type: 'integer'),
+                new OA\Property(property: 'page', type: 'integer'),
+                new OA\Property(property: 'totalPages', type: 'integer'),
+            ],
+            type: 'object',
+        ),
+    )]
+    public function list(
+        Request $request,
+        TakeRepository $takeRepository,
+        TakeReactionRepository $takeReactionRepository,
+        TakeCommentRepository $takeCommentRepository,
+        TakeMapper $takeMapper,
+        #[CurrentUser] User $user,
+    ): JsonResponse {
+        $since = null;
+        $sinceParam = $request->query->getString('since', '');
+        if ($sinceParam !== '') {
+            try {
+                $since = new \DateTimeImmutable($sinceParam);
+            } catch (\Exception) {
+                $since = null;
+            }
+        }
+
+        $total = $takeRepository->countForAuthor($user, $since);
+        $totalPages = max(1, (int) ceil($total / self::PER_PAGE));
+        $page = min(max(1, $request->query->getInt('page', 1)), $totalPages);
+
+        $takes = $takeRepository->findForAuthor($user, $since, self::PER_PAGE, ($page - 1) * self::PER_PAGE);
+
+        $takeIds = array_map(static fn ($take): int => (int) $take->getId(), $takes);
+        $reactionCounts = $takeReactionRepository->countByTypeForTakes($takeIds);
+        $myReactions = $takeReactionRepository->findTypesForTakesAndUser($takeIds, $user);
+
+        return $this->json([
+            'items' => array_map(
+                static fn ($take) => $takeMapper->toListItem(
+                    $take,
+                    $reactionCounts[(int) $take->getId()]['like'],
+                    $reactionCounts[(int) $take->getId()]['dislike'],
+                    $takeCommentRepository->countForTake($take),
+                    $myReactions[(int) $take->getId()] ?? null,
+                ),
+                $takes,
+            ),
+            'total' => $total,
+            'page' => $page,
+            'totalPages' => $totalPages,
+        ]);
+    }
+
     /** Создать тэйк об игре. */
     #[Route('', name: 'app_api_cabinet_take_create', methods: ['POST'])]
     #[OA\RequestBody(content: new OA\JsonContent(
