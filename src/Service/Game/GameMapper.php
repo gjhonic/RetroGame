@@ -8,6 +8,25 @@ use App\Entity\Interfaces\NamedEntityInterface;
 /** Маппинг сущности Game в массивы для JSON API. */
 class GameMapper
 {
+    /**
+     * Жанры, которые полностью скрываются из публичной части сайта (каталог,
+     * фильтры, страница игры) — вне зависимости от того, что ввёл пользователь
+     * в фильтр. В админке такие игры по-прежнему видны.
+     */
+    public const array HIDDEN_PUBLIC_GENRE_NAMES = ['Сексуальный контент'];
+
+    /** Скрыта ли игра от публичной части сайта по жанру (см. HIDDEN_PUBLIC_GENRE_NAMES). */
+    public function isHiddenFromPublic(Game $game): bool
+    {
+        foreach ($game->getGenres() as $genre) {
+            if (\in_array($genre->getName(), self::HIDDEN_PUBLIC_GENRE_NAMES, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /** @return array<string, mixed> */
     public function toListItem(Game $game): array
     {
@@ -41,8 +60,14 @@ class GameMapper
     }
 
     /** @return array<string, mixed> */
-    public function toDetail(Game $game): array
-    {
+    public function toDetail(
+        Game $game,
+        int $likeCount = 0,
+        int $dislikeCount = 0,
+        ?string $myReaction = null,
+        bool $myFavorite = false,
+        ?string $myStatus = null,
+    ): array {
         return [
             'id' => $game->getId(),
             'name' => $game->getName(),
@@ -58,6 +83,11 @@ class GameMapper
             'publishers' => $this->names($game->getPublishers()->toArray()),
             'genres' => $this->names($game->getGenres()->toArray()),
             'platforms' => $this->names($game->getPlatforms()->toArray()),
+            'likeCount' => $likeCount,
+            'dislikeCount' => $dislikeCount,
+            'myReaction' => $myReaction,
+            'myFavorite' => $myFavorite,
+            'myStatus' => $myStatus,
         ];
     }
 

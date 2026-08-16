@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Game;
+use App\Service\Game\GameMapper;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
@@ -175,6 +176,8 @@ class GameRepository extends ServiceEntityRepository
      */
     private function applyPublicFilters(QueryBuilder $qb, array $filters): void
     {
+        $this->excludeHiddenPublicGenres($qb);
+
         // LOWER() с обеих сторон — LIKE в PostgreSQL по умолчанию регистрозависим.
         if (($filters['name'] ?? '') !== '') {
             $qb->andWhere('LOWER(g.name) LIKE LOWER(:filterName)')
@@ -206,6 +209,19 @@ class GameRepository extends ServiceEntityRepository
                 new \DateTimeImmutable(((int) $filters['releaseYearTo'] + 1) . '-01-01'),
             );
         }
+    }
+
+    /** Исключает из публичной выборки игры, у которых есть один из HIDDEN_PUBLIC_GENRE_NAMES. */
+    private function excludeHiddenPublicGenres(QueryBuilder $qb): void
+    {
+        $subQb = $this->getEntityManager()->createQueryBuilder()
+            ->select('hg.id')
+            ->from(Game::class, 'hg')
+            ->join('hg.genres', 'hgg')
+            ->where('hgg.name IN (:hiddenGenreNames)');
+
+        $qb->andWhere($qb->expr()->notIn('g.id', $subQb->getDQL()))
+            ->setParameter('hiddenGenreNames', GameMapper::HIDDEN_PUBLIC_GENRE_NAMES);
     }
 
     /**

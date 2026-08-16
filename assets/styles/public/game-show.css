@@ -169,3 +169,135 @@
 .lightbox__nav--next {
     right: 16px;
 }
+
+/* Карусель скриншотов на странице игры (в отличие от .screenshot-grid у "своих игр") */
+
+.screenshot-carousel {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.screenshot-carousel__main {
+    display: block;
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: none;
+    cursor: pointer;
+}
+
+.screenshot-carousel__main img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    display: block;
+}
+
+.screenshot-carousel__nav {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.screenshot-carousel__nav:hover {
+    border-color: var(--color-accent);
+}
+
+.screenshot-carousel__dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.screenshot-carousel__dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background-color: var(--color-border);
+    cursor: pointer;
+}
+
+.screenshot-carousel__dot--active {
+    background-color: var(--color-accent);
+}
+
+/* Лайк/дизлайк, избранное и статус прохождения игры — под каруселью скриншотов */
+
+.game-actions {
+    margin-top: 24px;
+}
+
+.game-actions__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.game-actions__favorite {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    background-color: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.game-actions__favorite:hover:not(:disabled) {
+    border-color: var(--color-accent);
+    color: var(--color-text);
+}
+
+.game-actions__favorite:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.game-actions__favorite--active {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.game-actions__status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.game-actions__status select {
+    padding: 4px 8px;
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-size: 0.85rem;
+}
+
+.game-actions__login-link {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: var(--color-accent);
+}

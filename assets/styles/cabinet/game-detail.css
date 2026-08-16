@@ -41,6 +41,10 @@
     font-weight: 600;
 }
 
+a.take-card__author:hover {
+    text-decoration: underline;
+}
+
 .take-card__date {
     color: var(--color-text-muted);
 }

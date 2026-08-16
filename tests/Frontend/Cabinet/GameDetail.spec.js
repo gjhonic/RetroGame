@@ -17,6 +17,11 @@ const sampleGame = {
     genres: ['Экшены'],
     platforms: ['Windows'],
     screenshotUrls: [],
+    likeCount: 2,
+    dislikeCount: 0,
+    myReaction: null,
+    myFavorite: false,
+    myStatus: null,
 };
 
 const sampleTake = {
@@ -40,6 +45,11 @@ const sampleComment = {
 
 function takesResponse(overrides = {}) {
     return { items: [{ ...sampleTake }], total: 1, page: 1, totalPages: 1, ...overrides };
+}
+
+/** Реакции конкретного тэйка (в отличие от реакций самой игры над каруселью). */
+function takeCardReactions(wrapper) {
+    return wrapper.get('.take-card').findAll('.take-reaction');
 }
 
 /** onMounted грузит сначала игру (/api/games/{slug}), потом тэйки (/api/takes?filters[game]=...). */
@@ -78,6 +88,28 @@ describe('Cabinet/GameDetail', () => {
         expect(global.fetch).toHaveBeenCalledWith('/api/takes?filters%5Bgame%5D=1');
         expect(wrapper.text()).toContain('Лучшее, во что я играл.');
         expect(wrapper.text()).toContain('player1');
+    });
+
+    it('ник автора тэйка ссылается на его публичный профиль', async () => {
+        const wrapper = mountGameDetail();
+        await flushPromises();
+
+        const authorLink = wrapper.get('.take-card__author');
+        expect(authorLink.element.tagName).toBe('A');
+        expect(authorLink.attributes('href')).toBe('/profile/player1');
+        expect(authorLink.text()).toBe('player1');
+    });
+
+    it('без ника автор тэйка отображается как "Игрок" без ссылки', async () => {
+        const wrapper = mountGameDetail(
+            sampleGame,
+            takesResponse({ items: [{ ...sampleTake, author: { id: 5, nickname: null } }] }),
+        );
+        await flushPromises();
+
+        const author = wrapper.get('.take-card__author');
+        expect(author.element.tagName).toBe('SPAN');
+        expect(author.text()).toBe('Игрок');
     });
 
     it('показывает пустое состояние, если тэйков ещё нет', async () => {
@@ -124,11 +156,11 @@ describe('Cabinet/GameDetail — анонимный посетитель', () =>
         expect(loginLink.text()).toContain('Войдите');
     });
 
-    it('кнопки лайк/дизлайк отключены для анонимного посетителя', async () => {
+    it('кнопки лайк/дизлайк тэйка отключены для анонимного посетителя', async () => {
         const wrapper = mountGameDetail(sampleGame, takesResponse(), { isAuthenticated: false });
         await flushPromises();
 
-        const [likeButton, dislikeButton] = wrapper.findAll('.take-reaction');
+        const [likeButton, dislikeButton] = takeCardReactions(wrapper);
         expect(likeButton.attributes('disabled')).toBeDefined();
         expect(dislikeButton.attributes('disabled')).toBeDefined();
     });
@@ -140,7 +172,7 @@ describe('Cabinet/GameDetail — реакции на тэйк', () => {
         await flushPromises();
 
         mockFetchOnce({ type: 'like', likeCount: 4, dislikeCount: 0 });
-        const [likeButton] = wrapper.findAll('.take-reaction');
+        const [likeButton] = takeCardReactions(wrapper);
         await likeButton.trigger('click');
         await flushPromises();
 
@@ -158,7 +190,7 @@ describe('Cabinet/GameDetail — реакции на тэйк', () => {
         await flushPromises();
 
         mockFetchOnce({ type: null, likeCount: 2, dislikeCount: 0 });
-        const [likeButton] = wrapper.findAll('.take-reaction');
+        const [likeButton] = takeCardReactions(wrapper);
         await likeButton.trigger('click');
         await flushPromises();
 
@@ -177,7 +209,7 @@ describe('Cabinet/GameDetail — комментарии к тэйку', () => {
         await flushPromises();
 
         mockFetchOnce({ items: [sampleComment], total: 1, page: 1, totalPages: 1 });
-        const [, , commentsButton] = wrapper.findAll('.take-reaction');
+        const [, , commentsButton] = takeCardReactions(wrapper);
         await commentsButton.trigger('click');
         await flushPromises();
 
@@ -191,7 +223,7 @@ describe('Cabinet/GameDetail — комментарии к тэйку', () => {
         await flushPromises();
 
         mockFetchOnce({ items: [], total: 0, page: 1, totalPages: 1 });
-        const [, , commentsButton] = wrapper.findAll('.take-reaction');
+        const [, , commentsButton] = takeCardReactions(wrapper);
         await commentsButton.trigger('click');
         await flushPromises();
 
@@ -214,11 +246,161 @@ describe('Cabinet/GameDetail — комментарии к тэйку', () => {
         await flushPromises();
 
         mockFetchOnce({ items: [], total: 0, page: 1, totalPages: 1 });
-        const [, , commentsButton] = wrapper.findAll('.take-reaction');
+        const [, , commentsButton] = takeCardReactions(wrapper);
         await commentsButton.trigger('click');
         await flushPromises();
 
         expect(wrapper.find('.take-comment-form').exists()).toBe(false);
         expect(wrapper.get('.take-comments__login-link').attributes('href')).toBe('/login');
+    });
+});
+
+describe('Cabinet/GameDetail — карусель скриншотов', () => {
+    const gameWithScreenshots = {
+        ...sampleGame,
+        screenshotUrls: ['/a.jpg', '/b.jpg', '/c.jpg'],
+    };
+
+    it('показывает первый скриншот и переключает вперёд/назад стрелками', async () => {
+        const wrapper = mountGameDetail(gameWithScreenshots);
+        await flushPromises();
+
+        expect(wrapper.get('.screenshot-carousel__main img').attributes('src')).toBe('/a.jpg');
+
+        await wrapper.get('.screenshot-carousel__nav--next').trigger('click');
+        expect(wrapper.get('.screenshot-carousel__main img').attributes('src')).toBe('/b.jpg');
+
+        await wrapper.get('.screenshot-carousel__nav--prev').trigger('click');
+        expect(wrapper.get('.screenshot-carousel__main img').attributes('src')).toBe('/a.jpg');
+    });
+
+    it('клик по точке-индикатору переключает на соответствующий скриншот', async () => {
+        const wrapper = mountGameDetail(gameWithScreenshots);
+        await flushPromises();
+
+        const dots = wrapper.findAll('.screenshot-carousel__dot');
+        expect(dots).toHaveLength(3);
+
+        await dots[2].trigger('click');
+
+        expect(wrapper.get('.screenshot-carousel__main img').attributes('src')).toBe('/c.jpg');
+        expect(dots[2].classes()).toContain('screenshot-carousel__dot--active');
+    });
+
+    it('клик по главному изображению открывает полноэкранный просмотр', async () => {
+        const wrapper = mountGameDetail(gameWithScreenshots);
+        await flushPromises();
+
+        await wrapper.get('.screenshot-carousel__main').trigger('click');
+
+        expect(wrapper.find('.lightbox--open').exists()).toBe(true);
+    });
+
+    it('для одного скриншота стрелки и точки не показываются', async () => {
+        const wrapper = mountGameDetail({ ...sampleGame, screenshotUrls: ['/only.jpg'] });
+        await flushPromises();
+
+        expect(wrapper.find('.screenshot-carousel__nav').exists()).toBe(false);
+        expect(wrapper.find('.screenshot-carousel__dots').exists()).toBe(false);
+    });
+});
+
+describe('Cabinet/GameDetail — лайк/дизлайк/избранное/статус игры', () => {
+    function gameReactionButtons(wrapper) {
+        return wrapper.get('.game-actions').findAll('.take-reaction');
+    }
+
+    it('клик по лайку игры отправляет PUT и обновляет счётчики/подсветку', async () => {
+        const wrapper = mountGameDetail();
+        await flushPromises();
+
+        mockFetchOnce({ type: 'like', likeCount: 3, dislikeCount: 0 });
+        const [likeButton] = gameReactionButtons(wrapper);
+        await likeButton.trigger('click');
+        await flushPromises();
+
+        expect(global.fetch).toHaveBeenLastCalledWith('/api/cabinet/games/half-life/reaction', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'like' }),
+        });
+        expect(likeButton.classes()).toContain('take-reaction--active');
+        expect(wrapper.get('.game-actions').text()).toContain('👍 3');
+    });
+
+    it('повторный клик по активной реакции игры снимает её через DELETE', async () => {
+        const wrapper = mountGameDetail({ ...sampleGame, myReaction: 'like' });
+        await flushPromises();
+
+        mockFetchOnce({ type: null, likeCount: 1, dislikeCount: 0 });
+        const [likeButton] = gameReactionButtons(wrapper);
+        await likeButton.trigger('click');
+        await flushPromises();
+
+        expect(global.fetch).toHaveBeenLastCalledWith('/api/cabinet/games/half-life/reaction', {
+            method: 'DELETE',
+            headers: undefined,
+            body: undefined,
+        });
+        expect(likeButton.classes()).not.toContain('take-reaction--active');
+    });
+
+    it('клик по избранному добавляет и убирает игру из избранного', async () => {
+        const wrapper = mountGameDetail();
+        await flushPromises();
+
+        mockFetchOnce({ favorite: true });
+        const favoriteButton = wrapper.get('.game-actions__favorite');
+        await favoriteButton.trigger('click');
+        await flushPromises();
+
+        expect(global.fetch).toHaveBeenLastCalledWith('/api/cabinet/games/half-life/favorite', { method: 'PUT' });
+        expect(favoriteButton.classes()).toContain('game-actions__favorite--active');
+        expect(favoriteButton.text()).toContain('В избранном');
+
+        mockFetchOnce({ favorite: false });
+        await favoriteButton.trigger('click');
+        await flushPromises();
+
+        expect(global.fetch).toHaveBeenLastCalledWith('/api/cabinet/games/half-life/favorite', { method: 'DELETE' });
+        expect(favoriteButton.classes()).not.toContain('game-actions__favorite--active');
+    });
+
+    it('выбор статуса прохождения отправляет PUT с новым значением', async () => {
+        const wrapper = mountGameDetail();
+        await flushPromises();
+
+        mockFetchOnce({ status: 'in_progress' });
+        await wrapper.get('#playthroughStatus').setValue('in_progress');
+        await flushPromises();
+
+        expect(global.fetch).toHaveBeenLastCalledWith('/api/cabinet/games/half-life/status', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'in_progress' }),
+        });
+    });
+
+    it('сброс статуса на "не указан" отправляет DELETE', async () => {
+        const wrapper = mountGameDetail({ ...sampleGame, myStatus: 'planned' });
+        await flushPromises();
+
+        mockFetchOnce({ status: null });
+        await wrapper.get('#playthroughStatus').setValue('');
+        await flushPromises();
+
+        expect(global.fetch).toHaveBeenLastCalledWith('/api/cabinet/games/half-life/status', { method: 'DELETE' });
+    });
+
+    it('для анонимного посетителя кнопки/select отключены и показана ссылка на вход', async () => {
+        const wrapper = mountGameDetail(sampleGame, takesResponse(), { isAuthenticated: false });
+        await flushPromises();
+
+        const [likeButton, dislikeButton] = gameReactionButtons(wrapper);
+        expect(likeButton.attributes('disabled')).toBeDefined();
+        expect(dislikeButton.attributes('disabled')).toBeDefined();
+        expect(wrapper.get('.game-actions__favorite').attributes('disabled')).toBeDefined();
+        expect(wrapper.get('#playthroughStatus').attributes('disabled')).toBeDefined();
+        expect(wrapper.get('.game-actions__login-link').attributes('href')).toBe('/login');
     });
 });

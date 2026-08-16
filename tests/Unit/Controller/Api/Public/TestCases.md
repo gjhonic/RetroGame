@@ -13,10 +13,13 @@
 | Фильтры (`name`/`genre`/`releaseYearFrom`) и сортировка передаются в репозиторий обрезанными от пробелов, неизвестный ключ фильтра игнорируется | `testListPassesFiltersAndSortingToRepository` |
 | Неизвестное поле/направление сортировки → используется сортировка по умолчанию (`popularity`, `DESC`) | `testListFallsBackToDefaultSortForUnknownSortField` |
 | Справочник фильтров: жанры/платформы (id+name) и диапазон годов выхода | `testFiltersReturnsGenresPlatformsAndReleaseYearRange` |
+| Жанр "Сексуальный контент" не попадает в справочник фильтров (`GameMapper::HIDDEN_PUBLIC_GENRE_NAMES`) | `testFiltersExcludesHiddenPublicGenre` |
 | Нет игр с известной датой выхода → диапазон годов `null` | `testFiltersReturnsNullReleaseYearRangeWhenNoGamesHaveReleaseDate` |
-| Детали игры: разработчики/издатели/жанры/платформы возвращаются как массивы имён (`NamedEntityInterface::getName()`) | `testShowReturnsFullDetailWithRelatedEntityNames` |
+| Детали игры: разработчики/издатели/жанры/платформы возвращаются как массивы имён (`NamedEntityInterface::getName()`), счётчики лайков/дизлайков, для гостя `myReaction/myFavorite/myStatus` пустые | `testShowReturnsFullDetailWithRelatedEntityNames` |
 | `screenshotUrls` не заданы (`null` в сущности) → в ответе пустой массив, а не `null` | `testShowNormalizesMissingScreenshotUrlsToEmptyArray` |
+| Авторизованный пользователь: `myReaction`/`myFavorite`/`myStatus` подмешиваются из соответствующих репозиториев | `testShowIncludesCurrentUserReactionFavoriteAndStatus` |
 | Несуществующий slug → `NotFoundHttpException` | `testShowThrowsNotFoundExceptionForUnknownSlug` |
+| Игра с жанром "Сексуальный контент" → `NotFoundHttpException` (скрыта из публичной части) | `testShowThrowsNotFoundExceptionForGameWithHiddenGenre` |
 
 ## RegistrationApiControllerTest.php
 
