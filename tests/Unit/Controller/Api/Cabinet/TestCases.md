@@ -14,6 +14,29 @@
 | Неверный текущий пароль (`InvalidCurrentPasswordException` из сервиса) → `422` с ошибкой по `currentPassword` | `testChangePasswordReturnsValidationErrorWhenCurrentPasswordIsInvalid` |
 | Валидный JPG 100×100 → `200`, сервис вызван | `testUploadAvatarReturnsUpdatedUserOnValidFile` |
 | Изображение больше 400×400 → `422` с ошибкой по `file`, сервис не вызывается | `testUploadAvatarReturnsValidationErrorWhenImageTooLarge` |
+| `PATCH /privacy` с `isProfilePublic: true` → `200`, сервис вызван с DTO | `testUpdatePrivacyMakesProfilePublic` |
+| `PATCH /privacy` с невалидным JSON → `400`, сервис не вызывается | `testUpdatePrivacyReturnsBadRequestForInvalidJsonBody` |
+| `PATCH /nickname` — ник сохранён, `200` | `testUpdateNicknameSetsNewNickname` |
+| `PATCH /nickname` короче 2 символов → `422` с ошибкой по `nickname`, сервис не вызывается | `testUpdateNicknameReturnsValidationErrorForTooShortNickname` |
+| `PATCH /nickname` уже занят (`NicknameAlreadyTakenException` из сервиса) → `422` с ошибкой по `nickname` | `testUpdateNicknameReturnsValidationErrorWhenAlreadyTaken` |
+
+`/favorites` и `/games?status=` (собственный список любимых игр/статусов)
+убраны из этого контроллера — с переездом "своего профиля" на
+`/profile/{nickname}` (см. `Api\Public\ProfileApiController`) они стали
+мёртвым кодом, `Cabinet/Profile.vue` их больше не вызывает.
+
+## UserFollowApiControllerTest.php
+
+Подписка на другого пользователя по нику (кнопка "Подписаться" на
+`/profile/{nickname}`) — `PUT`/`DELETE /api/cabinet/users/{nickname}/follow`.
+
+| Кейс | Метод теста |
+|---|---|
+| Подписка → `200` с `isFollowing: true` и счётчиком подписчиков | `testFollowReturnsUpdatedFollowStateAndCount` |
+| Ник не найден → `NotFoundHttpException`, сервис не вызывается | `testFollowThrowsNotFoundExceptionForUnknownNickname` |
+| Подписка на самого себя (`CannotFollowSelfException` из сервиса) → `400` | `testFollowReturnsBadRequestWhenFollowingSelf` |
+| Отписка → `200` с `isFollowing: false` и счётчиком подписчиков | `testUnfollowReturnsUpdatedFollowStateAndCount` |
+| Отписка от несуществующего ника → `NotFoundHttpException` | `testUnfollowThrowsNotFoundExceptionForUnknownNickname` |
 
 ## TakeApiControllerTest.php
 

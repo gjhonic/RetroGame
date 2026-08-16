@@ -25,6 +25,12 @@ class UserRepository extends ServiceEntityRepository
         return $this->findOneBy(['email' => $email]);
     }
 
+    /** Ищет пользователя по нику (для публичного профиля `/profile/{nickname}`). */
+    public function findOneByNickname(string $nickname): ?User
+    {
+        return $this->findOneBy(['nickname' => $nickname]);
+    }
+
     /**
      * Одна страница пользователей для таблицы в админке: фильтры по колонкам,
      * сортировка и постраничная навигация — всё на стороне БД. Связей у User нет,

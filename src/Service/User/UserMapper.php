@@ -17,6 +17,46 @@ class UserMapper
             'avatarUrl' => $user->getAvatarUrl(),
             'role' => $user->getRole()->value,
             'createdAt' => $user->getCreatedAt()->format('Y-m-d\TH:i:sP'),
+            'isProfilePublic' => $user->isProfilePublic(),
+        ];
+    }
+
+    /**
+     * Данные для публичной страницы профиля (`/profile/{nickname}`) — без email.
+     * `$isFollowing` — `null`, если смотрящий не авторизован или смотрит свой профиль
+     * (кнопка "Подписаться" в этих случаях не показывается).
+     *
+     * @return array<string, mixed>
+     */
+    public function toPublicProfile(
+        User $user,
+        int $followersCount,
+        int $followingCount,
+        bool $isOwnProfile,
+        ?bool $isFollowing,
+    ): array {
+        return [
+            'nickname' => $user->getNickname(),
+            'avatarUrl' => $user->getAvatarUrl(),
+            'createdAt' => $user->getCreatedAt()->format('Y-m-d\TH:i:sP'),
+            'followersCount' => $followersCount,
+            'followingCount' => $followingCount,
+            'isOwnProfile' => $isOwnProfile,
+            'isFollowing' => $isFollowing,
+        ];
+    }
+
+    /**
+     * Краткая карточка пользователя для списков (например, подписчиков) — только
+     * ник и аватар, без email.
+     *
+     * @return array<string, mixed>
+     */
+    public function toProfileSummary(User $user): array
+    {
+        return [
+            'nickname' => $user->getNickname(),
+            'avatarUrl' => $user->getAvatarUrl(),
         ];
     }
 

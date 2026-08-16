@@ -46,8 +46,8 @@
                 <nav class="cabinet-nav">
                     {% if is_granted('ROLE_USER') %}
                         <a
-                            href="{{ path('cabinet_profile') }}"
-                            class="cabinet-nav__link {{ current_route == 'cabinet_profile' ? 'cabinet-nav__link--active' : '' }}"
+                            href="{{ app.user.nickname ? path('public_profile_show', {nickname: app.user.nickname}) : path('cabinet_settings') }}"
+                            class="cabinet-nav__link {{ current_route == 'public_profile_show' and app.request.attributes.get('nickname') == app.user.nickname ? 'cabinet-nav__link--active' : '' }}"
                         >
                             <span class="cabinet-nav__icon">👤</span>
                             Профиль

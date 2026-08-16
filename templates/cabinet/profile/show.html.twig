@@ -1,0 +1,7 @@
+{% extends 'cabinet/base.html.twig' %}
+
+{% block title %}{{ nickname }} — Профиль — RetroGame{% endblock %}
+
+{% block body %}
+    <div {{ vue_component('Cabinet/Profile', { nickname: nickname, isAuthenticated: is_granted('ROLE_USER') }) }}></div>
+{% endblock %}

@@ -21,7 +21,49 @@ class UserMapperTest extends TestCase
         self::assertSame('Player One', $data['nickname']);
         self::assertSame('https://example.test/avatar.png', $data['avatarUrl']);
         self::assertSame('ROLE_USER', $data['role']);
+        self::assertFalse($data['isProfilePublic']);
         self::assertArrayNotHasKey('password', $data);
+    }
+
+    public function testToPublicIncludesProfileVisibility(): void
+    {
+        $user = (new User('player@retrogame.local', 'hashed-password'))->setIsProfilePublic(true);
+
+        $data = (new UserMapper())->toPublic($user);
+
+        self::assertTrue($data['isProfilePublic']);
+    }
+
+    public function testToPublicProfileMapsNicknameAvatarAndCreatedAtWithoutEmail(): void
+    {
+        $user = (new User('player@retrogame.local', 'hashed-password'))
+            ->setNickname('Player One')
+            ->setAvatarUrl('https://example.test/avatar.png');
+
+        $data = (new UserMapper())->toPublicProfile($user, 3, 7, false, true);
+
+        self::assertSame('Player One', $data['nickname']);
+        self::assertSame('https://example.test/avatar.png', $data['avatarUrl']);
+        self::assertSame(3, $data['followersCount']);
+        self::assertSame(7, $data['followingCount']);
+        self::assertFalse($data['isOwnProfile']);
+        self::assertTrue($data['isFollowing']);
+        self::assertArrayNotHasKey('email', $data);
+        self::assertArrayNotHasKey('id', $data);
+    }
+
+    public function testToProfileSummaryMapsNicknameAndAvatarOnly(): void
+    {
+        $user = (new User('follower@retrogame.local', 'hashed-password'))
+            ->setNickname('Follower One')
+            ->setAvatarUrl('https://example.test/avatar.png');
+
+        $data = (new UserMapper())->toProfileSummary($user);
+
+        self::assertSame([
+            'nickname' => 'Follower One',
+            'avatarUrl' => 'https://example.test/avatar.png',
+        ], $data);
     }
 
     public function testToAdminListItemMapsFieldsWithoutPassword(): void

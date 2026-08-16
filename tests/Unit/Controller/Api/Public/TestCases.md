@@ -78,3 +78,27 @@
 | HTML-теги в нике → `422` | `testCreateReturnsValidationErrorForHtmlInNickname` |
 | Отрицательное количество убийств → `422` | `testCreateReturnsValidationErrorForNegativeKills` |
 | Невалидное тело запроса (не JSON) → `400` | `testCreateReturnsBadRequestForInvalidJsonBody` |
+
+## ProfileApiControllerTest.php
+
+Публичный профиль `/profile/{nickname}` — виден только если владелец открыл
+его в настройках приватности (или смотрит сам владелец), иначе
+`ProfileVisibilityService` бросает `ProfileNotFoundException`, здесь просто
+проверяется её перехват и превращение в `NotFoundHttpException`; сама логика
+видимости — в `tests/Unit/Service/User/ProfileVisibilityServiceTest.php`.
+
+| Кейс | Метод теста |
+|---|---|
+| Профиль виден → публичные данные (без email), `followersCount`, `followingCount`, `isOwnProfile: false`, `isFollowing: null` для гостя | `testShowReturnsPublicProfileForVisibleUser` |
+| Профиль не виден → `NotFoundHttpException` | `testShowThrowsNotFoundExceptionWhenProfileIsNotVisible` |
+| Смотрит сам владелец → `isOwnProfile: true`, `isFollowing: null`, в `UserFollowRepository::findOneByFollowerAndFollowed` не ходим | `testShowMarksOwnProfileAndDoesNotExposeFollowState` |
+| Смотрит другой авторизованный пользователь → `isFollowing` берётся из `UserFollowRepository` | `testShowIncludesIsFollowingForAuthorizedViewer` |
+| Список подписчиков видимого профиля (только nickname/avatarUrl, без email) | `testFollowersReturnsPageOfFollowerSummaries` |
+| Список подписчиков невидимого профиля → `NotFoundHttpException`, репозиторий не вызывается | `testFollowersThrowsNotFoundExceptionWhenProfileIsNotVisible` |
+| Список подписок (на кого подписан) видимого профиля (только nickname/avatarUrl, без email) | `testFollowingReturnsPageOfFollowedSummaries` |
+| Список подписок невидимого профиля → `NotFoundHttpException`, репозиторий не вызывается | `testFollowingThrowsNotFoundExceptionWhenProfileIsNotVisible` |
+| Любимые игры видимого профиля | `testFavoritesReturnsPageForVisibleUser` |
+| Любимые игры невидимого профиля → `NotFoundHttpException`, репозиторий не вызывается | `testFavoritesThrowsNotFoundExceptionWhenProfileIsNotVisible` |
+| Игры со статусом `in_progress` видимого профиля | `testGamesByStatusReturnsPageForValidStatus` |
+| Без `status` → `400`, репозиторий не вызывается | `testGamesByStatusReturnsBadRequestForMissingStatus` |
+| Игры невидимого профиля → `NotFoundHttpException` | `testGamesByStatusThrowsNotFoundExceptionWhenProfileIsNotVisible` |
