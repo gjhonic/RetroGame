@@ -139,11 +139,17 @@
                 </table>
             </div>
         </div>
+
+        <div v-if="game.slug === 'die-again'" class="mt-4">
+            <h3 class="h5 mb-2">Таблица лидеров DIE//AGAIN</h3>
+            <ScoreDieAgainList />
+        </div>
     </template>
 </template>
 
 <script setup>
 import { onMounted, ref } from 'vue';
+import ScoreDieAgainList from './ScoreDieAgainList.vue';
 
 const PLATFORM_LABELS = { windows: 'Windows', macos: 'macOS', linux: 'Linux', android: 'Android', web: 'Web' };
 const STATUS_LABELS = { draft: 'Черновик', published: 'Опубликовано' };

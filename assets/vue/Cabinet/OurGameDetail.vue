@@ -107,6 +107,13 @@
 
         <p v-if="game.description" class="our-game-detail__description">{{ game.description }}</p>
 
+        <button
+            v-if="props.slug === 'die-again'"
+            type="button"
+            class="btn btn--secondary our-game-detail__leaderboard-button"
+            @click="openLeaderboard"
+        >🏆 Смотреть таблицу лидеров</button>
+
         <div class="our-game-posts">
             <h2 class="our-game-detail__subtitle">Посты</h2>
 
@@ -170,6 +177,68 @@
                 </div>
             </div>
         </div>
+
+        <div v-if="leaderboardOpen" class="modal-overlay" @click.self="closeLeaderboard">
+            <div class="modal-window our-game-leaderboard-modal">
+                <div class="modal-window__header">
+                    <h3 class="modal-window__title">Таблица лидеров DIE//AGAIN</h3>
+                    <button type="button" class="modal-window__close" aria-label="Закрыть" @click="closeLeaderboard">
+                        ✕
+                    </button>
+                </div>
+                <div class="modal-window__body">
+                    <div v-if="leaderboardLoading" class="empty-state">
+                        <div class="empty-state__icon">⏳</div>
+                        <p>Загружаем таблицу лидеров…</p>
+                    </div>
+                    <div v-else-if="leaderboardError" class="empty-state">
+                        <div class="empty-state__icon">⚠️</div>
+                        <p>Не удалось загрузить таблицу лидеров: {{ leaderboardError }}</p>
+                    </div>
+                    <template v-else>
+                        <div v-if="leaderboard.length === 0" class="empty-state">
+                            <div class="empty-state__icon">🏆</div>
+                            <p>Пока нет результатов.</p>
+                        </div>
+
+                        <div v-else class="leaderboard-table-wrapper">
+                            <table class="leaderboard-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Игрок</th>
+                                        <th>Уровень</th>
+                                        <th>Выжил</th>
+                                        <th>Убийства</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(score, index) in leaderboard" :key="score.id">
+                                        <td>{{ index + 1 }}</td>
+                                        <td>{{ score.nickname }}</td>
+                                        <td>{{ score.level }}</td>
+                                        <td>{{ formatDuration(score.survivedSeconds) }}</td>
+                                        <td>{{ score.kills }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div v-if="leaderboardHasMore" class="leaderboard-load-more">
+                            <p v-if="leaderboardLoadMoreError" class="take-comments__status">
+                                Не удалось загрузить ещё результаты: {{ leaderboardLoadMoreError }}
+                            </p>
+                            <button
+                                type="button"
+                                class="btn btn--secondary"
+                                :disabled="leaderboardLoadingMore"
+                                @click="loadMoreLeaderboard"
+                            >{{ leaderboardLoadingMore ? 'Загружаем…' : 'Загрузить ещё' }}</button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -210,6 +279,15 @@ const selectedPost = ref(null);
 const selectedPostLoading = ref(false);
 const selectedPostError = ref(null);
 
+const leaderboardOpen = ref(false);
+const leaderboard = ref([]);
+const leaderboardLoading = ref(false);
+const leaderboardLoadingMore = ref(false);
+const leaderboardError = ref(null);
+const leaderboardLoadMoreError = ref(null);
+const leaderboardPage = ref(0);
+const leaderboardHasMore = ref(false);
+
 const bannerUrl = computed(() => game.value?.bannerImageUrl || game.value?.coverImageUrl || null);
 
 const releaseDateFormatted = computed(() => formatDate(game.value?.releaseDate));
@@ -235,6 +313,13 @@ function platformLabel(platform) {
 
 function postTypeLabel(type) {
     return POST_TYPE_LABELS[type] ?? type;
+}
+
+function formatDuration(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+
+    return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
 }
 
 function openLightbox(index) {
@@ -263,6 +348,12 @@ function prevImage() {
 }
 
 function onKeydown(event) {
+    if (event.key === 'Escape' && leaderboardOpen.value) {
+        closeLeaderboard();
+
+        return;
+    }
+
     if (event.key === 'Escape' && selectedPost.value) {
         closePost();
 
@@ -325,6 +416,54 @@ async function openPost(post) {
 
 function closePost() {
     selectedPost.value = null;
+}
+
+async function fetchLeaderboardPage() {
+    const nextPage = leaderboardPage.value + 1;
+    const response = await fetch(`/api/score-die-again?page=${nextPage}`);
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    leaderboard.value.push(...data.items);
+    leaderboardPage.value = nextPage;
+    leaderboardHasMore.value = nextPage < data.totalPages;
+}
+
+async function openLeaderboard() {
+    leaderboardOpen.value = true;
+    leaderboard.value = [];
+    leaderboardPage.value = 0;
+    leaderboardHasMore.value = false;
+    leaderboardLoading.value = true;
+    leaderboardError.value = null;
+
+    try {
+        await fetchLeaderboardPage();
+    } catch (e) {
+        leaderboardError.value = e.message;
+    } finally {
+        leaderboardLoading.value = false;
+    }
+}
+
+async function loadMoreLeaderboard() {
+    leaderboardLoadingMore.value = true;
+    leaderboardLoadMoreError.value = null;
+
+    try {
+        await fetchLeaderboardPage();
+    } catch (e) {
+        leaderboardLoadMoreError.value = e.message;
+    } finally {
+        leaderboardLoadingMore.value = false;
+    }
+}
+
+function closeLeaderboard() {
+    leaderboardOpen.value = false;
 }
 
 onMounted(async () => {

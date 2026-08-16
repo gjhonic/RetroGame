@@ -178,3 +178,129 @@ describe('OurGameDetail — посты', () => {
         expect(wrapper.find('.modal-overlay').exists()).toBe(false);
     });
 });
+
+describe('OurGameDetail — таблица лидеров DIE//AGAIN', () => {
+    it('кнопка "Смотреть таблицу лидеров" видна только для игры die-again', async () => {
+        const wrapper = await mountDetail();
+
+        expect(wrapper.find('.our-game-detail__leaderboard-button').exists()).toBe(true);
+    });
+
+    it('для других игр кнопки таблицы лидеров нет', async () => {
+        mockFetchOnce({ ...sampleGame, slug: 'other-game' });
+        mockFetchOnce({ items: [], total: 0, page: 1, totalPages: 1 });
+        const wrapper = mount(OurGameDetail, { props: { slug: 'other-game' } });
+        await flushPromises();
+        await flushPromises();
+
+        expect(wrapper.find('.our-game-detail__leaderboard-button').exists()).toBe(false);
+    });
+
+    it('клик по кнопке запрашивает первую страницу /api/score-die-again и показывает таблицу', async () => {
+        const wrapper = await mountDetail();
+
+        mockFetchOnce({
+            items: [
+                { id: 1, nickname: 'Player1', level: 5, survivedSeconds: 125, kills: 40 },
+                { id: 2, nickname: 'Player2', level: 3, survivedSeconds: 80, kills: 20 },
+            ],
+            total: 2,
+            page: 1,
+            totalPages: 1,
+        });
+        await wrapper.get('.our-game-detail__leaderboard-button').trigger('click');
+        await flushPromises();
+
+        expect(global.fetch).toHaveBeenNthCalledWith(3, '/api/score-die-again?page=1');
+        expect(wrapper.find('.our-game-leaderboard-modal').exists()).toBe(true);
+        expect(wrapper.get('.modal-window__title').text()).toBe('Таблица лидеров DIE//AGAIN');
+
+        const rows = wrapper.findAll('.leaderboard-table tbody tr');
+        expect(rows).toHaveLength(2);
+        expect(rows[0].text()).toContain('Player1');
+        expect(rows[0].text()).toContain('2:05');
+        expect(rows[0].text()).toContain('40');
+        expect(wrapper.find('.leaderboard-load-more').exists()).toBe(false);
+    });
+
+    it('при нескольких страницах показывает "Загрузить ещё", клик подгружает следующую страницу', async () => {
+        const wrapper = await mountDetail();
+
+        mockFetchOnce({
+            items: [{ id: 1, nickname: 'Player1', level: 5, survivedSeconds: 125, kills: 40 }],
+            total: 11,
+            page: 1,
+            totalPages: 2,
+        });
+        await wrapper.get('.our-game-detail__leaderboard-button').trigger('click');
+        await flushPromises();
+
+        expect(wrapper.findAll('.leaderboard-table tbody tr')).toHaveLength(1);
+        expect(wrapper.find('.leaderboard-load-more button').exists()).toBe(true);
+
+        mockFetchOnce({
+            items: [{ id: 2, nickname: 'Player2', level: 3, survivedSeconds: 80, kills: 20 }],
+            total: 11,
+            page: 2,
+            totalPages: 2,
+        });
+        await wrapper.get('.leaderboard-load-more button').trigger('click');
+        await flushPromises();
+
+        expect(global.fetch).toHaveBeenLastCalledWith('/api/score-die-again?page=2');
+        expect(wrapper.findAll('.leaderboard-table tbody tr')).toHaveLength(2);
+        expect(wrapper.find('.leaderboard-load-more button').exists()).toBe(false);
+    });
+
+    it('ошибка при "Загрузить ещё" не скрывает уже показанные результаты', async () => {
+        const wrapper = await mountDetail();
+
+        mockFetchOnce({
+            items: [{ id: 1, nickname: 'Player1', level: 5, survivedSeconds: 125, kills: 40 }],
+            total: 11,
+            page: 1,
+            totalPages: 2,
+        });
+        await wrapper.get('.our-game-detail__leaderboard-button').trigger('click');
+        await flushPromises();
+
+        mockFetchRejectOnce('network error');
+        await wrapper.get('.leaderboard-load-more button').trigger('click');
+        await flushPromises();
+
+        expect(wrapper.findAll('.leaderboard-table tbody tr')).toHaveLength(1);
+        expect(wrapper.text()).toContain('Не удалось загрузить ещё результаты');
+    });
+
+    it('показывает пустое состояние, если результатов ещё нет', async () => {
+        const wrapper = await mountDetail();
+
+        mockFetchOnce({ items: [], total: 0, page: 1, totalPages: 1 });
+        await wrapper.get('.our-game-detail__leaderboard-button').trigger('click');
+        await flushPromises();
+
+        expect(wrapper.text()).toContain('Пока нет результатов.');
+    });
+
+    it('показывает ошибку при неудачном запросе таблицы лидеров', async () => {
+        const wrapper = await mountDetail();
+
+        mockFetchRejectOnce('network error');
+        await wrapper.get('.our-game-detail__leaderboard-button').trigger('click');
+        await flushPromises();
+
+        expect(wrapper.text()).toContain('Не удалось загрузить таблицу лидеров');
+    });
+
+    it('закрывает модалку лидеров по клику на крестик', async () => {
+        const wrapper = await mountDetail();
+
+        mockFetchOnce({ items: [], total: 0, page: 1, totalPages: 1 });
+        await wrapper.get('.our-game-detail__leaderboard-button').trigger('click');
+        await flushPromises();
+
+        await wrapper.get('.our-game-leaderboard-modal .modal-window__close').trigger('click');
+
+        expect(wrapper.find('.our-game-leaderboard-modal').exists()).toBe(false);
+    });
+});

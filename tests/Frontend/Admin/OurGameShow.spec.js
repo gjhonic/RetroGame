@@ -26,6 +26,9 @@ const sampleGame = {
 async function mountShow(game = sampleGame, posts = []) {
     mockFetchOnce(game);
     mockFetchOnce({ items: posts, total: posts.length, page: 1, totalPages: 1 });
+    if (game.slug === 'die-again') {
+        mockFetchOnce({ items: [], total: 0, page: 1, totalPages: 1 });
+    }
     const wrapper = mount(OurGameShow, { props: { id: 1 } });
     await flushPromises();
     await flushPromises();
@@ -119,6 +122,22 @@ describe('OurGameShow — удаление игры', () => {
         await wrapper.get('button.btn-outline-danger').trigger('click');
         await flushPromises();
 
+        expect(global.fetch).toHaveBeenCalledTimes(3);
+    });
+});
+
+describe('OurGameShow — таблица лидеров DIE//AGAIN', () => {
+    it('для игры die-again показывает таблицу лидеров', async () => {
+        const wrapper = await mountShow();
+
+        expect(wrapper.text()).toContain('Таблица лидеров DIE//AGAIN');
+        expect(global.fetch).toHaveBeenNthCalledWith(3, '/api/admin/score-die-again?page=1&perPage=25');
+    });
+
+    it('для других игр таблицы лидеров нет', async () => {
+        const wrapper = await mountShow({ ...sampleGame, slug: 'other-game' });
+
+        expect(wrapper.text()).not.toContain('Таблица лидеров DIE//AGAIN');
         expect(global.fetch).toHaveBeenCalledTimes(2);
     });
 });
