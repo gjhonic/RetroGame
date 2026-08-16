@@ -159,6 +159,16 @@
                                     ⏱️ История запусков кронов
                                 </a>
                             </li>
+                            {% if is_granted('ROLE_ADMIN') %}
+                                <li class="nav-item">
+                                    <a
+                                        class="nav-link {{ current_route starts with 'admin_audit_log_' ? 'active' : '' }}"
+                                        href="{{ path('admin_audit_log_index') }}"
+                                    >
+                                        📜 Логи
+                                    </a>
+                                </li>
+                            {% endif %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ path('app.swagger_ui', {area: 'admin'}) }}" target="_blank">
                                     📖 API

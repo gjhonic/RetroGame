@@ -3,7 +3,9 @@
 namespace App\Tests\Unit\Controller\Api\Public;
 
 use App\Controller\Api\Public\RegistrationApiController;
+use App\Entity\Enum\AuditLogStatus;
 use App\Entity\User;
+use App\Service\AuditLog\AuditLogger;
 use App\Service\User\Exceptions\EmailAlreadyRegisteredException;
 use App\Service\User\UserMapper;
 use App\Service\User\UserRegistrationService;
@@ -30,12 +32,14 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class RegistrationApiControllerTest extends TestCase
 {
     private UserRegistrationService&MockObject $userRegistrationService;
+    private AuditLogger&MockObject $auditLogger;
     private RegistrationApiController $controller;
     private SerializerInterface $serializer;
 
     protected function setUp(): void
     {
         $this->userRegistrationService = $this->createMock(UserRegistrationService::class);
+        $this->auditLogger = $this->createMock(AuditLogger::class);
 
         $this->controller = new RegistrationApiController();
         $this->controller->setContainer(new Container());
@@ -54,6 +58,9 @@ class RegistrationApiControllerTest extends TestCase
         $this->userRegistrationService->expects($this->once())
             ->method('register')
             ->willReturn($user);
+        $this->auditLogger->expects($this->once())
+            ->method('log')
+            ->with($user, 'user.register', AuditLogStatus::Success, ['email' => 'player@retrogame.local']);
 
         $request = new Request(
             content: json_encode([
@@ -69,6 +76,7 @@ class RegistrationApiControllerTest extends TestCase
             $this->validator(),
             $this->userRegistrationService,
             new UserMapper(),
+            $this->auditLogger,
         );
 
         self::assertSame(201, $response->getStatusCode());
@@ -79,6 +87,7 @@ class RegistrationApiControllerTest extends TestCase
     public function testRegisterReturnsValidationErrorsForInvalidPayload(): void
     {
         $this->userRegistrationService->expects($this->never())->method('register');
+        $this->auditLogger->expects($this->never())->method('log');
 
         $request = new Request(
             content: json_encode([
@@ -94,6 +103,7 @@ class RegistrationApiControllerTest extends TestCase
             $this->validator(),
             $this->userRegistrationService,
             new UserMapper(),
+            $this->auditLogger,
         );
 
         self::assertSame(422, $response->getStatusCode());
@@ -109,6 +119,9 @@ class RegistrationApiControllerTest extends TestCase
             ->willThrowException(
                 new EmailAlreadyRegisteredException('Пользователь с таким email уже зарегистрирован.'),
             );
+        $this->auditLogger->expects($this->once())
+            ->method('log')
+            ->with(null, 'user.register', AuditLogStatus::Failure, ['email' => 'player@retrogame.local']);
 
         $request = new Request(
             content: json_encode([
@@ -126,6 +139,7 @@ class RegistrationApiControllerTest extends TestCase
             $this->validator(),
             $this->userRegistrationService,
             new UserMapper(),
+            $this->auditLogger,
         );
     }
 }

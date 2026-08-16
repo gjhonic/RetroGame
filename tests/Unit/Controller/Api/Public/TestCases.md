@@ -25,9 +25,9 @@
 
 | Кейс | Метод теста |
 |---|---|
-| Валидный запрос → `201` с данными созданного пользователя | `testRegisterReturnsCreatedUserOnValidRequest` |
-| Невалидный email/пароль/ник → `422` с ошибками по каждому полю | `testRegisterReturnsValidationErrorsForInvalidPayload` |
-| Email уже занят (`EmailAlreadyRegisteredException` из сервиса) → `ConflictHttpException` (409 через `ApiExceptionListener`) | `testRegisterThrowsConflictWhenEmailAlreadyRegistered` |
+| Валидный запрос → `201` с данными созданного пользователя, запись в журнале действий (`user.register`, `Success`) | `testRegisterReturnsCreatedUserOnValidRequest` |
+| Невалидный email/пароль/ник → `422` с ошибками по каждому полю, в журнал ничего не пишется | `testRegisterReturnsValidationErrorsForInvalidPayload` |
+| Email уже занят (`EmailAlreadyRegisteredException` из сервиса) → `ConflictHttpException` (409 через `ApiExceptionListener`), запись в журнале (`user.register`, `Failure`) | `testRegisterThrowsConflictWhenEmailAlreadyRegistered` |
 
 ## TakeApiControllerTest.php
 

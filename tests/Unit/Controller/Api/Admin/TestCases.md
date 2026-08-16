@@ -3,6 +3,21 @@
 Список проверяемых сценариев для `src/Controller/Api/Admin/`. При добавлении
 нового кейса — дописывайте сюда строку с методом, где он проверяется.
 
+## AuditLogApiControllerTest.php
+
+Журнал действий (`/admin/audit-logs`) — доступен только `ROLE_ADMIN`
+(строже, чем остальная админка на `ROLE_MODERATOR`), см.
+`src/Controller/Admin/AuditLogController.php`.
+
+| Кейс | Метод теста |
+|---|---|
+| Список: страница по умолчанию (сортировка `createdAt DESC`, `perPage=25`), `details` не включён в списочный ответ | `testListReturnsItemsWithDefaultPaginationAndSort` |
+| `filters[...]`/`dateFrom`/`dateTo`/`sortBy`/`sortDir` передаются в репозиторий | `testListPassesFiltersAndDateRangeToRepository` |
+| Запрошенная страница выходит за `totalPages` → клампится до последней доступной | `testListClampsRequestedPageToTotalPages` |
+| Справочник уникальных значений `action` для фильтра | `testActionsReturnsDistinctActions` |
+| Детали записи включают полный `details` (JSON) | `testShowReturnsDetailWithJsonDetails` |
+| Несуществующий ID → `NotFoundHttpException` | `testShowThrowsNotFoundExceptionForUnknownId` |
+
 ## OurGameApiControllerTest.php
 
 `OurGameRequestFactory` собран из реального `Serializer`+`Validator` (по образцу

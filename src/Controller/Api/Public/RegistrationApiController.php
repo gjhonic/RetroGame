@@ -3,6 +3,8 @@
 namespace App\Controller\Api\Public;
 
 use App\Dto\User\RegisterUserRequest;
+use App\Entity\Enum\AuditLogStatus;
+use App\Service\AuditLog\AuditLogger;
 use App\Service\User\Exceptions\EmailAlreadyRegisteredException;
 use App\Service\User\UserMapper;
 use App\Service\User\UserRegistrationService;
@@ -40,6 +42,7 @@ class RegistrationApiController extends AbstractController
         ValidatorInterface $validator,
         UserRegistrationService $userRegistrationService,
         UserMapper $userMapper,
+        AuditLogger $auditLogger,
     ): JsonResponse {
         try {
             $dto = $serializer->deserialize($request->getContent(), RegisterUserRequest::class, 'json');
@@ -60,8 +63,12 @@ class RegistrationApiController extends AbstractController
         try {
             $user = $userRegistrationService->register($dto);
         } catch (EmailAlreadyRegisteredException $exception) {
+            $auditLogger->log(null, 'user.register', AuditLogStatus::Failure, ['email' => $dto->email]);
+
             throw new ConflictHttpException($exception->getMessage());
         }
+
+        $auditLogger->log($user, 'user.register', AuditLogStatus::Success, ['email' => $dto->email]);
 
         return $this->json($userMapper->toPublic($user), 201);
     }
