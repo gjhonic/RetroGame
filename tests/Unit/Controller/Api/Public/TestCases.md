@@ -28,6 +28,7 @@
 | Валидный запрос → `201` с данными созданного пользователя, запись в журнале действий (`user.register`, `Success`) | `testRegisterReturnsCreatedUserOnValidRequest` |
 | Невалидный email/пароль/ник → `422` с ошибками по каждому полю, в журнал ничего не пишется | `testRegisterReturnsValidationErrorsForInvalidPayload` |
 | Email уже занят (`EmailAlreadyRegisteredException` из сервиса) → `ConflictHttpException` (409 через `ApiExceptionListener`), запись в журнале (`user.register`, `Failure`) | `testRegisterThrowsConflictWhenEmailAlreadyRegistered` |
+| Ник уже занят (`NicknameAlreadyTakenException` из сервиса) → `ConflictHttpException` (409), запись в журнале (`user.register`, `Failure`) | `testRegisterThrowsConflictWhenNicknameAlreadyTaken` |
 
 ## TakeApiControllerTest.php
 
