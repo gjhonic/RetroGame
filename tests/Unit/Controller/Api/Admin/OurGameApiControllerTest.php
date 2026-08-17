@@ -314,4 +314,42 @@ class OurGameApiControllerTest extends TestCase
             $this->ourGameMapper,
         );
     }
+
+    public function testUploadContentImageStoresFileAndReturnsUrl(): void
+    {
+        $game = new OurGame('Die Again', 'die-again');
+        $this->ourGameRepository->method('find')->willReturn($game);
+        $this->imageUploadService->expects($this->once())
+            ->method('uploadContentImage')
+            ->willReturn('uploads/our_games/1/content/x.jpg');
+
+        $file = new UploadedFile(__FILE__, 'inline.jpg', 'image/jpeg', null, true);
+        $request = new Request(files: ['file' => $file]);
+
+        $response = $this->controller->uploadContentImage(
+            1,
+            $request,
+            $this->ourGameRepository,
+            $this->imageUploadService,
+        );
+
+        $data = json_decode((string) $response->getContent(), true);
+        self::assertSame('/uploads/our_games/1/content/x.jpg', $data['url']);
+    }
+
+    public function testUploadContentImageReturnsValidationErrorWhenNoFile(): void
+    {
+        $game = new OurGame('Die Again', 'die-again');
+        $this->ourGameRepository->method('find')->willReturn($game);
+        $this->imageUploadService->expects($this->never())->method('uploadContentImage');
+
+        $response = $this->controller->uploadContentImage(
+            1,
+            new Request(),
+            $this->ourGameRepository,
+            $this->imageUploadService,
+        );
+
+        self::assertSame(422, $response->getStatusCode());
+    }
 }

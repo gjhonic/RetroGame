@@ -70,6 +70,12 @@
     color: var(--color-text-muted);
 }
 
+.our-game-detail__description img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+}
+
 .our-game-detail__sidebar .game-facts {
     margin: 0;
     grid-template-columns: 120px 1fr;

@@ -63,6 +63,16 @@ class OurGameImageUploadService
         return $game;
     }
 
+    /**
+     * Картинка, вставленная в описание игры через редактор (Admin/RichTextEditor.vue) —
+     * не привязана к отдельному полю сущности (ссылка на неё живёт прямо в HTML
+     * description), поэтому flush() здесь не нужен.
+     */
+    public function uploadContentImage(OurGame $game, UploadedFile $file): string
+    {
+        return $this->imageStorage->store((int) $game->getId(), 'content', $file);
+    }
+
     public function uploadDownloadLinkImage(OurGameDownloadLink $link, UploadedFile $file): OurGameDownloadLink
     {
         $path = $this->imageStorage->store(

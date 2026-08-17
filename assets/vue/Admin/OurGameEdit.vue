@@ -36,8 +36,8 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label" for="description">Описание</label>
-                        <textarea id="description" v-model="form.description" class="form-control" rows="5"></textarea>
+                        <label class="form-label">Описание</label>
+                        <RichTextEditor v-model="form.description" :upload-url="contentImagesUploadUrl" />
                     </div>
 
                     <div class="row g-3 mb-3">
@@ -192,13 +192,16 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
+import RichTextEditor from './RichTextEditor.vue';
 
 const PLATFORM_LABELS = { windows: 'Windows', macos: 'macOS', linux: 'Linux', android: 'Android', web: 'Web' };
 
 const props = defineProps({
     id: { type: [String, Number], required: true },
 });
+
+const contentImagesUploadUrl = computed(() => `/api/admin/our-games/${props.id}/content-images`);
 
 const game = ref(null);
 const genres = ref([]);

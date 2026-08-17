@@ -41,6 +41,8 @@
 | `POST /{id}/cover` без файла — `422`, сервис не вызывается | `testUploadCoverReturnsValidationErrorWhenNoFile` |
 | `POST /{id}/cover` с файлом, превышающим `upload_max_filesize` (`UploadedFile::isValid()` → false) — `422` с текстом ошибки, сервис не вызывается | `testUploadCoverReturnsValidationErrorWhenFileExceedsUploadLimit` |
 | `DELETE /{id}/screenshots` передаёт `url` из тела запроса в сервис как есть | `testRemoveScreenshotPassesUrlFromRequestBody` |
+| `POST /{id}/content-images` с файлом — картинка, вставляемая в описание через `Admin/RichTextEditor.vue` | `testUploadContentImageStoresFileAndReturnsUrl` |
+| `POST /{id}/content-images` без файла — `422`, сервис не вызывается | `testUploadContentImageReturnsValidationErrorWhenNoFile` |
 
 ## OurGameDownloadLinkApiControllerTest.php
 

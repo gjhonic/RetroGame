@@ -51,14 +51,14 @@
                 @click="toggleLink"
             >🔗</button>
             <button
-                v-if="postId"
+                v-if="uploadUrl"
                 type="button"
                 class="btn btn-sm btn-outline-secondary"
                 title="Вставить картинку"
                 @click="fileInput?.click()"
             >🖼️</button>
             <input
-                v-if="postId"
+                v-if="uploadUrl"
                 ref="fileInput"
                 type="file"
                 accept="image/*"
@@ -82,7 +82,8 @@ import LinkExtension from '@tiptap/extension-link';
 
 const props = defineProps({
     modelValue: { type: String, default: '' },
-    postId: { type: [String, Number], default: null },
+    // URL, куда POST'ить файл через FormData({ file }) — ответ {url}. Без него кнопка вставки картинки скрыта.
+    uploadUrl: { type: String, default: null },
     invalid: { type: Boolean, default: false },
 });
 
@@ -130,10 +131,7 @@ async function uploadImage(event) {
     body.append('file', file);
 
     try {
-        const response = await fetch(`/api/admin/our-game-posts/${props.postId}/content-images`, {
-            method: 'POST',
-            body,
-        });
+        const response = await fetch(props.uploadUrl, { method: 'POST', body });
 
         if (!response.ok) {
             const data = await response.json().catch(() => null);

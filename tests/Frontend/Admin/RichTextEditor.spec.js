@@ -15,22 +15,26 @@ describe('RichTextEditor — тулбар', () => {
         expect(wrapper.find('.rich-text-editor__content').exists()).toBe(true);
     });
 
-    it('без postId кнопка вставки картинки не отображается', () => {
+    it('без uploadUrl кнопка вставки картинки не отображается', () => {
         const wrapper = mount(RichTextEditor, { props: { modelValue: '' } });
 
         expect(wrapper.find('input[type="file"]').exists()).toBe(false);
     });
 
-    it('с postId кнопка вставки картинки и file input отображаются', () => {
-        const wrapper = mount(RichTextEditor, { props: { modelValue: '', postId: 5 } });
+    it('с uploadUrl кнопка вставки картинки и file input отображаются', () => {
+        const wrapper = mount(RichTextEditor, {
+            props: { modelValue: '', uploadUrl: '/api/admin/our-game-posts/5/content-images' },
+        });
 
         expect(wrapper.find('input[type="file"]').exists()).toBe(true);
     });
 });
 
 describe('RichTextEditor — вставка картинки', () => {
-    it('загружает файл через /api/admin/our-game-posts/{postId}/content-images', async () => {
-        const wrapper = mount(RichTextEditor, { props: { modelValue: '', postId: 5 } });
+    it('загружает файл через переданный uploadUrl', async () => {
+        const wrapper = mount(RichTextEditor, {
+            props: { modelValue: '', uploadUrl: '/api/admin/our-game-posts/5/content-images' },
+        });
 
         mockFetchOnce({ url: '/uploads/our_game_posts/5/content/x.jpg' });
         const input = wrapper.get('input[type="file"]');
@@ -45,7 +49,9 @@ describe('RichTextEditor — вставка картинки', () => {
     });
 
     it('показывает ошибку сервера, если загрузка картинки не удалась', async () => {
-        const wrapper = mount(RichTextEditor, { props: { modelValue: '', postId: 5 } });
+        const wrapper = mount(RichTextEditor, {
+            props: { modelValue: '', uploadUrl: '/api/admin/our-game-posts/5/content-images' },
+        });
 
         mockFetchOnce({ errors: { file: ['The uploaded file is too large.'] } }, { ok: false, status: 422 });
         const input = wrapper.get('input[type="file"]');

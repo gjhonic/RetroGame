@@ -76,6 +76,17 @@ describe('OurGameDetail — загрузка', () => {
         expect(description.text()).toBe('A roguelike survival game.');
     });
 
+    it('описание рендерится как HTML из редактора, санитайзится от script', async () => {
+        const wrapper = await mountDetail({
+            ...sampleGame,
+            description: '<p>Про игру <strong>жирным</strong>.</p><script>alert(1)</script>',
+        });
+
+        const description = wrapper.get('.our-game-detail__description');
+        expect(description.find('strong').text()).toBe('жирным');
+        expect(description.find('script').exists()).toBe(false);
+    });
+
     it('показывает ошибку при неудачном запросе', async () => {
         mockFetchRejectOnce('HTTP 404');
         const wrapper = mount(OurGameDetail, { props: { slug: 'missing' } });

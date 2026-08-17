@@ -69,7 +69,7 @@
 
         <div class="mt-4">
             <h3 class="h5">Описание</h3>
-            <p v-if="game.description" class="mb-0" style="white-space: pre-wrap;">{{ game.description }}</p>
+            <div v-if="game.description" v-html="sanitize(game.description)"></div>
             <p v-else class="text-muted mb-0">Описание не заполнено.</p>
         </div>
 
@@ -149,6 +149,7 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
+import DOMPurify from 'dompurify';
 import ScoreDieAgainList from './ScoreDieAgainList.vue';
 
 const PLATFORM_LABELS = { windows: 'Windows', macos: 'macOS', linux: 'Linux', android: 'Android', web: 'Web' };
@@ -166,6 +167,10 @@ const error = ref(null);
 const posts = ref([]);
 const postsLoading = ref(true);
 const postsError = ref(null);
+
+function sanitize(html) {
+    return DOMPurify.sanitize(html ?? '');
+}
 
 function statusLabel(status) {
     return STATUS_LABELS[status] ?? status;
