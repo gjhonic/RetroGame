@@ -41,6 +41,8 @@
 | `POST /{id}/cover` без файла — `422`, сервис не вызывается | `testUploadCoverReturnsValidationErrorWhenNoFile` |
 | `POST /{id}/cover` с файлом, превышающим `upload_max_filesize` (`UploadedFile::isValid()` → false) — `422` с текстом ошибки, сервис не вызывается | `testUploadCoverReturnsValidationErrorWhenFileExceedsUploadLimit` |
 | `DELETE /{id}/screenshots` передаёт `url` из тела запроса в сервис как есть | `testRemoveScreenshotPassesUrlFromRequestBody` |
+| `POST /{id}/content-images` с файлом — картинка, вставляемая в описание через `Admin/RichTextEditor.vue` | `testUploadContentImageStoresFileAndReturnsUrl` |
+| `POST /{id}/content-images` без файла — `422`, сервис не вызывается | `testUploadContentImageReturnsValidationErrorWhenNoFile` |
 
 ## OurGameDownloadLinkApiControllerTest.php
 
@@ -170,6 +172,17 @@ gamesCount; набор кейсов идентичен во всех трёх ф
 | `PATCH` с нестроковым `name` — `422` с ошибкой, `flush()` не вызывается | `testUpdateRejectsNonStringName` |
 | `PATCH` одновременно с `name` и `color` — оба поля сохраняются | `testUpdateSetsNameAndColorTogether` |
 | `PATCH` с несуществующим `id` → `NotFoundHttpException` | `testUpdateThrowsNotFoundExceptionForUnknownId` |
+
+## UserReportApiControllerTest.php
+
+Список отчётов пользователей о проблемах (`user_report`) — только чтение,
+создание доступно всем через `Api/Public/UserReportApiController`.
+
+| Кейс | Метод теста |
+|---|---|
+| Список: страница по умолчанию (сортировка `createdAt DESC`, `perPage=25`) | `testListReturnsItemsWithDefaultPaginationAndSort` |
+| `filters[type]`/`sortBy`/`sortDir` передаются в репозиторий | `testListPassesTypeFilterAndSortToRepository` |
+| Запрошенная страница выходит за `totalPages` → клампится до последней доступной | `testListClampsRequestedPageToTotalPages` |
 
 ## ScoreDieAgainApiControllerTest.php
 

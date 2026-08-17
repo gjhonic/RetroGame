@@ -105,7 +105,11 @@
             </div>
         </div>
 
-        <p v-if="game.description" class="our-game-detail__description">{{ game.description }}</p>
+        <div
+            v-if="game.description"
+            class="our-game-detail__description"
+            v-html="sanitize(game.description)"
+        ></div>
 
         <button
             v-if="props.slug === 'die-again'"

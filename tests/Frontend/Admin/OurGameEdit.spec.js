@@ -91,7 +91,8 @@ describe('OurGameEdit — картинки', () => {
         const wrapper = await mountEdit();
 
         mockFetchOnce({ ...sampleGame, coverImageUrl: '/uploads/our_games/1/cover/x.jpg' });
-        const input = wrapper.findAll('input[type="file"]')[0];
+        // [0] — файловый input внутри RichTextEditor (описание), [1] — обложка.
+        const input = wrapper.findAll('input[type="file"]')[1];
         const file = new File(['x'], 'cover.jpg', { type: 'image/jpeg' });
         Object.defineProperty(input.element, 'files', { value: [file] });
         await input.trigger('change');
@@ -107,7 +108,8 @@ describe('OurGameEdit — картинки', () => {
         const wrapper = await mountEdit();
 
         mockFetchOnce({ errors: { file: ['The uploaded file is too large.'] } }, { ok: false, status: 422 });
-        const input = wrapper.findAll('input[type="file"]')[1];
+        // [0] — файловый input внутри RichTextEditor (описание), [2] — баннер (после обложки).
+        const input = wrapper.findAll('input[type="file"]')[2];
         const file = new File(['x'], 'banner.jpg', { type: 'image/jpeg' });
         Object.defineProperty(input.element, 'files', { value: [file] });
         await input.trigger('change');

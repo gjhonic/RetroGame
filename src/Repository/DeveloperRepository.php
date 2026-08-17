@@ -18,9 +18,4 @@ class DeveloperRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Developer::class);
     }
-
-    protected function gameAssociationName(): string
-    {
-        return 'developers';
-    }
 }

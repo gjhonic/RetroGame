@@ -1,61 +1,33 @@
 # CLAUDE.md
 
-Базовая информация о проекте для Claude. Дополняется по мере разработки.
-
-## О проекте
-
 RetroGame — веб-приложение на Symfony (PHP 8.4).
 
-## Язык общения
+## Язык
 
-Отвечай пользователю всегда на русском языке, независимо от языка вопроса.
+Отвечай всегда на русском.
 
 ## Стек
 
-- PHP 8.4, Symfony 8.1 (webapp pack: Twig, Forms, Validator, Doctrine ORM, Security, Mailer)
-- Composer — управление зависимостями
-- Vue 3 + Vite (`symfony/reprise`, `symfony/ux-vue`) — интерактивные публичные страницы
-- `nelmio/api-doc-bundle` — Swagger-документация JSON API (`/api/doc`)
-- PHPStan (уровень 8) — статический анализ
-- PHP_CodeSniffer (PSR-12) — стиль кода
-- Symfony CLI — локальный сервер
+PHP 8.4, Symfony 8.1 (Twig, Forms, Validator, Doctrine ORM, Security, Mailer), Composer, Vue 3 + Vite (`symfony/reprise`, `symfony/ux-vue`) для интерактивных публичных страниц, `nelmio/api-doc-bundle` (Swagger `/api/doc`), PHPStan level 8, PHP_CodeSniffer (PSR-12), Symfony CLI.
 
 ## Структура
 
-- `src/Controller/Public` — контроллеры страниц (тонкие Twig-обёртки)
-- `src/Controller/Api` — JSON API-контроллеры
-- `src/Entity` — сущности Doctrine
-- `src/Repository` — репозитории Doctrine
-- `config/` — конфигурация бандлов, роутинга, сервисов
-- `templates/` — Twig-шаблоны
-- `assets/vue/` — Vue 3 SFC-компоненты
-- `tests/` — тесты (PHPUnit)
-- `migrations/` — миграции БД
+- `src/Controller/Public` — тонкие Twig-контроллеры
+- `src/Controller/Api` — JSON API
+- `src/Entity`, `src/Repository` — Doctrine
+- `config/`, `templates/`, `assets/vue/`, `tests/` (PHPUnit), `migrations/`
 
 ## Команды
 
-Все основные команды — через `Makefile`. Полный список: `make help`.
+Через `Makefile` (`make help` — полный список):
 
-- `make server-start` / `make server-stop` — локальный сервер (сначала собирает фронтенд)
-- `make assets-install` / `make assets-build` — npm-зависимости / сборка Vite
-- `make test` — все проверки (PHPStan + PHPCS)
-- `make test-phpstan [DIR=путь]` — статический анализ (по умолчанию `src tests`)
-- `make test-phpcs [DIR=путь]` — проверка стиля
-- `make fix-cs [DIR=путь]` — автоисправление стиля
+- `server-start`/`server-stop` — локальный сервер (собирает фронтенд)
+- `assets-install`/`assets-build` — npm/Vite
+- `test` — все проверки (PHPStan + PHPCS)
+- `test-phpstan [DIR=путь]` (default `src tests`), `test-phpcs [DIR=путь]`, `fix-cs [DIR=путь]`
 
-Перед тем как считать задачу завершённой, прогоняй `make test` для затронутых директорий.
+Перед завершением задачи — прогонять `make test` для затронутых директорий.
 
-## Правила и стандарты
+## Правила
 
-Подробные правила разработки — в `.claude/rules/`:
-
-- [`.claude/rules/modules.md`](.claude/rules/modules.md) — как писать модули/классы
-- [`.claude/rules/frontend.md`](.claude/rules/frontend.md) — стандарт Vue + API для публичных страниц
-- [`.claude/rules/tests.md`](.claude/rules/tests.md) — как писать тесты
-- [`.claude/rules/git.md`](.claude/rules/git.md) — именование веток, правила PR
-
-Локальные правила разработчика (не коммитятся) — `.claude/rules/local/`.
-
-## Примечания
-
-Этот файл и файлы в `.claude/rules/` пока являются заготовками и будут наполняться по ходу разработки проекта.
+Подробности в `.claude/rules/`: [modules.md](.claude/rules/modules.md) (модули/классы), [frontend.md](.claude/rules/frontend.md) (Vue+API), [tests.md](.claude/rules/tests.md) (тесты), [git.md](.claude/rules/git.md) (ветки/PR). Локальные правила (не коммитятся) — `.claude/rules/local/`.

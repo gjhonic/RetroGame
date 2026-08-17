@@ -1,81 +1,29 @@
 # Правила: фронтенд (Vue + API)
 
-Стандарт для публичных интерактивных страниц: тонкий Twig-шаблон без
-данных + Vue 3 SFC-компонент, который сам забирает данные через JSON API.
-Серверный рендеринг данных в Twig (передача сущностей/коллекций в
-`render()`) для таких страниц больше не используется — см. пример
-`src/Controller/Public/GameController.php` + `templates/public/game/` +
-`assets/vue/Public/GameCatalog.vue`/`GameDetail.vue` +
-`src/Controller/Api/Public/GameApiController.php`.
+Стандарт публичных интерактивных страниц: тонкий Twig-шаблон без данных + Vue 3 SFC, сам забирающий данные через JSON API. Серверный рендеринг данных в Twig не используется. Пример: `src/Controller/Public/GameController.php` + `templates/public/game/` + `assets/vue/Public/GameCatalog.vue`/`GameDetail.vue` + `src/Controller/Api/Public/GameApiController.php`.
 
 ## Структура
 
-- `src/Controller/Api/` — JSON-контроллеры, разложены по трём версиям API
-  (подпапка = namespace-сегмент), у каждой свой контур доступа и своя
-  секция в Swagger (`/api/doc/{area}`, area = имя подпапки в нижнем
-  регистре):
-  - `Api/Public/` — без авторизации, доступно всем (`PUBLIC_ACCESS`,
-    явных правил в `access_control` не требуется). Пример:
-    `Public/GameApiController.php`, маршруты `/api/games...`.
-  - `Api/Cabinet/` — личный кабинет, требует авторизации (`ROLE_USER`),
-    маршруты `/api/cabinet/...`. `access_control` в `security.yaml` уже
-    настроен, эндпоинтов пока нет.
-  - `Api/Admin/` — админ-панель, требует `ROLE_MODERATOR` (роль
-    наследуется от `ROLE_ADMIN`), маршруты `/api/admin/...`. Пример:
-    `Admin/GameApiController.php`.
-  - Права проверяются централизованно через `access_control` в
-    `config/packages/security.yaml` по префиксу пути — при добавлении
-    нового контроллера в `Cabinet`/`Admin` отдельно навешивать
-    `#[IsGranted]` не нужно, но не забывать это при переносе
-    роута в другую версию.
-  - По одному классу-контроллеру на ресурс (например `GameApiController`),
-    ответ через `$this->json(...)`. Сложную логику (импорт, вычисления) выносить в
-  `src/Service/`, в контроллере — только выборка через репозиторий и
-  маппинг сущности в массив.
-- `src/Controller/Public/` — контроллеры страниц только рендерят тонкую
-  Twig-обёртку (`extends base.html.twig`), **никаких запросов к
-  репозиторию/БД в этих контроллерах быть не должно** — ни для данных
-  виджета, ни для 404, ни для `<title>`. Параметры маршрута (например
-  `slug`) можно прокинуть в шаблон как есть, без похода в БД — их
-  использует Vue-компонент при запросе к API. Пример:
-  `GameController::show()` просто передаёт `slug` из `{slug}` маршрута.
-- Проверка существования ресурса (404) и формирование `<title>` —
-  на клиенте: 404 отдаёт сам API (`createNotFoundException` в
-  `src/Controller/Api/...`), Vue-компонент показывает состояние ошибки
-  и выставляет `document.title` после успешной загрузки (см.
-  `GameDetail.vue`). Из-за этого страница всегда отвечает `200` даже для
-  несуществующего ресурса — сознательный компромисс в пользу тонких
-  контроллеров.
-- `assets/vue/*.vue` — корневые Vue-компоненты (конвенция `symfony/ux-vue`),
-  монтируются в шаблоне через `{{ vue_component('Name', {...}) }}`. Пропсы —
-  только простые идентифицирующие параметры (`slug` и т.п.), не готовые
-  данные.
-- Компоненты раскладываются по подпапкам `assets/vue/<Модуль>/` по тому, в
-  какой части приложения и на какой странице они используются (например
-  `Public/` — публичные страницы, позже появятся `Admin/` и т.п.), чтобы не
-  путать одноимённые компоненты разных модулей (например будущий
-  `GameCatalog` в админке). Имя в `vue_component()` включает подпапку:
-  `vue_component('Public/GameCatalog')` — регистрация в `assets/app.js`
-  берёт имя компонента из пути файла относительно `vue/` как есть
-  (`import.meta.glob('./vue/**/*.vue')`).
-- Данные компонент получает через `fetch()` к `/api/...` в `onMounted`,
-  состояния `loading`/`error` — обязательны (см. существующие компоненты
-  как образец).
+- `src/Controller/Api/` — JSON-контроллеры по трём областям (подпапка = namespace, своя секция Swagger `/api/doc/{area}`):
+  - `Api/Public/` — без авторизации (`PUBLIC_ACCESS`). Пример: `Public/GameApiController.php`, `/api/games...`.
+  - `Api/Cabinet/` — `ROLE_USER`, `/api/cabinet/...` (эндпоинтов пока нет, `access_control` настроен).
+  - `Api/Admin/` — `ROLE_MODERATOR` (наследует `ROLE_ADMIN`), `/api/admin/...`. Пример: `Admin/GameApiController.php`.
+  - Права — централизованно в `access_control` (`config/packages/security.yaml`) по префиксу пути, `#[IsGranted]` не нужен (но учитывать при переносе роута между областями).
+  - Один класс-контроллер на ресурс, ответ через `$this->json(...)`. Логику (импорт, вычисления) — в `src/Service/`, в контроллере — только выборка + маппинг.
+- `src/Controller/Public/` — только рендер тонкой Twig-обёртки (`extends base.html.twig`), **без запросов к БД** (ни данные, ни 404, ни `<title>`). Параметры маршрута (`slug` и т.п.) прокидываются в шаблон как есть. Пример: `GameController::show()`.
+- 404 и `<title>` — на клиенте: API кидает `createNotFoundException`, Vue-компонент показывает ошибку и выставляет `document.title` после загрузки (см. `GameDetail.vue`). Страница всегда отвечает `200` — осознанный компромисс ради тонких контроллеров.
+- `assets/vue/*.vue` — корневые компоненты (`symfony/ux-vue`), монтируются через `{{ vue_component('Name', {...}) }}`. Пропсы — только простые идентификаторы (`slug`), не готовые данные.
+- Подпапки `assets/vue/<Модуль>/` по месту использования (`Public/`, позже `Admin/` и т.п.) — чтобы не путать одноимённые компоненты. Имя в `vue_component()` включает подпапку: `vue_component('Public/GameCatalog')` (регистрация в `assets/app.js` через `import.meta.glob('./vue/**/*.vue')`).
+- Данные — через `fetch()` к `/api/...` в `onMounted`, состояния `loading`/`error` обязательны.
 
 ## Сборка
 
-Vite через `symfony/reprise` (`vite.config.ts`), не AssetMapper.
-`make assets-install` / `make assets-build`; `server-start` уже зависит
-от `assets-build`.
+Vite через `symfony/reprise` (`vite.config.ts`), не AssetMapper. `make assets-install`/`assets-build`; `server-start` уже зависит от `assets-build`.
 
 ## Документация API
 
-`nelmio/api-doc-bundle`, Swagger UI на `/api/doc`, JSON-схема на
-`/api/doc.json`. У каждого экшена в `src/Controller/Api/` — атрибуты
-`OpenApi\Attributes` (`#[OA\Tag]`, `#[OA\Parameter]`, `#[OA\Response]`) с
-описанием параметров и формы ответа.
+`nelmio/api-doc-bundle`, Swagger UI `/api/doc`, схема `/api/doc.json`. У каждого экшена — атрибуты `OpenApi\Attributes` (`#[OA\Tag]`, `#[OA\Parameter]`, `#[OA\Response]`).
 
 ## Тесты
 
-См. [`tests.md`](tests.md) — API-контроллеры покрываются юнит-тестами с
-моком репозитория, без реальной БД.
+См. [tests.md](tests.md) — API-контроллеры юнит-тестами с моком репозитория, без реальной БД.

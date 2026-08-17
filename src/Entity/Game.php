@@ -32,17 +32,17 @@ class Game implements HasSteamDetailsInterface
     private ?string $coverImagePath = null;
 
     /** @var Collection<int, Developer> */
-    #[ORM\ManyToMany(targetEntity: Developer::class)]
+    #[ORM\ManyToMany(targetEntity: Developer::class, inversedBy: 'games')]
     #[ORM\JoinTable(name: 'game_developer')]
     private Collection $developers;
 
     /** @var Collection<int, Publisher> */
-    #[ORM\ManyToMany(targetEntity: Publisher::class)]
+    #[ORM\ManyToMany(targetEntity: Publisher::class, inversedBy: 'games')]
     #[ORM\JoinTable(name: 'game_publisher')]
     private Collection $publishers;
 
     /** @var Collection<int, Genre> */
-    #[ORM\ManyToMany(targetEntity: Genre::class)]
+    #[ORM\ManyToMany(targetEntity: Genre::class, inversedBy: 'games')]
     #[ORM\JoinTable(name: 'game_genre')]
     private Collection $genres;
 

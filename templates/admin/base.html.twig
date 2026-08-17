@@ -170,6 +170,14 @@
                                 </li>
                             {% endif %}
                             <li class="nav-item">
+                                <a
+                                    class="nav-link {{ current_route starts with 'admin_user_report_' ? 'active' : '' }}"
+                                    href="{{ path('admin_user_report_index') }}"
+                                >
+                                    🚩 Отчёты пользователей
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link" href="{{ path('app.swagger_ui', {area: 'admin'}) }}" target="_blank">
                                     📖 API
                                 </a>

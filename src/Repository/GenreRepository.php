@@ -18,9 +18,4 @@ class GenreRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Genre::class);
     }
-
-    protected function gameAssociationName(): string
-    {
-        return 'genres';
-    }
 }

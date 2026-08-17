@@ -79,7 +79,7 @@
                         <label class="form-label">Краткое описание</label>
                         <RichTextEditor
                             v-model="form.shortDescription"
-                            :post-id="props.id"
+                            :upload-url="contentImagesUploadUrl"
                             :invalid="!!saveErrors.shortDescription"
                         />
                         <div v-if="saveErrors.shortDescription" class="text-danger small mt-1">
@@ -89,7 +89,7 @@
 
                     <div class="mb-3">
                         <label class="form-label">Полное описание</label>
-                        <RichTextEditor v-model="form.fullDescription" :post-id="props.id" />
+                        <RichTextEditor v-model="form.fullDescription" :upload-url="contentImagesUploadUrl" />
                     </div>
 
                     <button type="submit" class="btn btn-primary" :disabled="saving">
@@ -116,12 +116,14 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import RichTextEditor from './RichTextEditor.vue';
 
 const props = defineProps({
     id: { type: [String, Number], required: true },
 });
+
+const contentImagesUploadUrl = computed(() => `/api/admin/our-game-posts/${props.id}/content-images`);
 
 const post = ref(null);
 const games = ref([]);

@@ -265,6 +265,42 @@ class OurGameApiController extends AbstractController
         return $this->json($ourGameMapper->toDetail($game));
     }
 
+    /** Загружает картинку, вставляемую в описание игры через редактор (Admin/RichTextEditor.vue). */
+    #[Route(
+        '/{id}/content-images',
+        name: 'app_api_admin_our_game_upload_content_image',
+        methods: ['POST'],
+        requirements: ['id' => '\d+'],
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(
+        response: 200,
+        description: 'Картинка загружена',
+        content: new OA\JsonContent(properties: [new OA\Property(property: 'url', type: 'string')], type: 'object'),
+    )]
+    #[OA\Response(response: 404, description: 'Игра не найдена')]
+    #[OA\Response(response: 422, description: 'Файл не передан')]
+    public function uploadContentImage(
+        int $id,
+        Request $request,
+        OurGameRepository $ourGameRepository,
+        OurGameImageUploadService $imageUploadService,
+    ): JsonResponse {
+        $game = $ourGameRepository->find($id);
+        if ($game === null) {
+            throw $this->createNotFoundException('Игра не найдена.');
+        }
+
+        $file = $request->files->get('file');
+        if ($file === null || !$file->isValid()) {
+            return $this->json(['errors' => ['file' => [$file?->getErrorMessage() ?? 'Файл не передан.']]], 422);
+        }
+
+        $relativePath = $imageUploadService->uploadContentImage($game, $file);
+
+        return $this->json(['url' => '/' . $relativePath]);
+    }
+
     /** Удаляет скриншот по его URL. */
     #[Route(
         '/{id}/screenshots',

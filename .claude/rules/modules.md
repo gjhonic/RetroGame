@@ -1,34 +1,20 @@
-# Правила: как писать модули
+# Правила: модули
 
-## Структура папок
+## Папки
 
-- Интерфейсы лежат в подпапке `Interfaces/` внутри своего модуля
-  (например, `src/Entity/Interfaces/NamedEntityInterface.php`,
-  `src/Service/Steam/Interfaces/RateLimiterInterface.php`), namespace
-  дополняется сегментом `Interfaces`.
-- Исключения (`Exception`) лежат в подпапке `Exceptions/` внутри своего
-  модуля (например, `src/Service/Steam/Exceptions/SteamApiException.php`),
-  namespace дополняется сегментом `Exceptions`.
+- Интерфейсы — в подпапке `Interfaces/` внутри модуля (`src/Entity/Interfaces/NamedEntityInterface.php`, `src/Service/Steam/Interfaces/RateLimiterInterface.php`), namespace + `Interfaces`.
+- Исключения — в `Exceptions/` внутри модуля (`src/Service/Steam/Exceptions/SteamApiException.php`), namespace + `Exceptions`.
 
 ## Controller
 
-- В классах контроллеров (`src/Controller/**`) — только public action-методы
-  (по одному на маршрут). Никаких приватных/protected методов: любую
-  вспомогательную логику (маппинг сущности в массив, вычисления и т.п.)
-  выносить в отдельный класс (`src/Service/...`), контроллер получает его
-  через DI как аргумент action-метода. Пример: `GameApiController` +
-  `src/Service/Game/GameMapper.php`.
+Только public action-методы (один на маршрут), никаких private/protected — вспомогательную логику (маппинг, вычисления) выносить в `src/Service/...`, инжектить в action. Пример: `GameApiController` + `src/Service/Game/GameMapper.php`.
 
 ## Doctrine Entity
 
-- Маппинг через PHP-атрибуты (`#[ORM\...]`), не аннотации/XML/YAML.
-- Свойства `private`, доступ через `get`/`is` и `set` (fluent-сеттеры, `return static`).
-- Дата/время — только `\DateTimeImmutable` (тип колонки `datetime_immutable` / `date_immutable`).
-- `createdAt`/`updatedAt` проставляются в конструкторе; для обновления — метод `touch()`.
-- Внешний ID источника данных (например, `rawgId` для RAWG) — `nullable: true, unique: true`,
-  чтобы сущность можно было создать и вручную, без привязки к внешнему API.
-- Миграции — вручную в `migrations/`, если локально нет поднятой БД для `make:migration`
-  (см. `make db-start` — Postgres в WSL). Проверка маппинга без БД: `bin/console doctrine:schema:validate --skip-sync`.
-- Для устранения ложных срабатываний PHPStan на Doctrine-сущностях (например,
-  `$id` "never assigned") подключён `phpstan/phpstan-doctrine` — не подавлять такие
-  ошибки через `ignoreErrors`.
+- Маппинг через PHP-атрибуты (`#[ORM\...]`).
+- Свойства `private`, доступ через `get`/`is`/`set` (fluent, `return static`).
+- Дата/время — только `\DateTimeImmutable` (`datetime_immutable`/`date_immutable`).
+- `createdAt`/`updatedAt` — в конструкторе; обновление через `touch()`.
+- Внешний ID источника (например `rawgId`) — `nullable: true, unique: true` (сущность создаваема и без внешнего API).
+- Миграции — вручную в `migrations/`, если нет локальной БД для `make:migration` (`make db-start` — Postgres в WSL). Проверка без БД: `bin/console doctrine:schema:validate --skip-sync`.
+- Подключён `phpstan/phpstan-doctrine` (для ложных срабатываний типа `$id` "never assigned") — не подавлять такие ошибки через `ignoreErrors`.
