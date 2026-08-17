@@ -7,6 +7,7 @@ use App\Entity\Enum\AuditLogStatus;
 use App\Entity\User;
 use App\Service\AuditLog\AuditLogger;
 use App\Service\User\Exceptions\EmailAlreadyRegisteredException;
+use App\Service\User\Exceptions\NicknameAlreadyTakenException;
 use App\Service\User\UserMapper;
 use App\Service\User\UserRegistrationService;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
@@ -119,6 +120,34 @@ class RegistrationApiControllerTest extends TestCase
             ->willThrowException(
                 new EmailAlreadyRegisteredException('Пользователь с таким email уже зарегистрирован.'),
             );
+        $this->auditLogger->expects($this->once())
+            ->method('log')
+            ->with(null, 'user.register', AuditLogStatus::Failure, ['email' => 'player@retrogame.local']);
+
+        $request = new Request(
+            content: json_encode([
+                'email' => 'player@retrogame.local',
+                'password' => 'secret123',
+                'nickname' => 'Player One',
+            ], \JSON_THROW_ON_ERROR),
+        );
+
+        $this->expectException(ConflictHttpException::class);
+
+        $this->controller->register(
+            $request,
+            $this->serializer,
+            $this->validator(),
+            $this->userRegistrationService,
+            new UserMapper(),
+            $this->auditLogger,
+        );
+    }
+
+    public function testRegisterThrowsConflictWhenNicknameAlreadyTaken(): void
+    {
+        $this->userRegistrationService->method('register')
+            ->willThrowException(new NicknameAlreadyTakenException('Этот ник уже занят.'));
         $this->auditLogger->expects($this->once())
             ->method('log')
             ->with(null, 'user.register', AuditLogStatus::Failure, ['email' => 'player@retrogame.local']);

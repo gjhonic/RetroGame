@@ -47,13 +47,22 @@ describe('Cabinet/RegistrationForm', () => {
         expect(wrapper.text()).toContain('Некорректный email.');
     });
 
-    it('показывает сообщение о занятом email при 409', async () => {
+    it('показывает сообщение сервера о конфликте (email/ник) при 409', async () => {
+        mockFetchOnce({ message: 'Этот ник уже занят.' }, { status: 409, ok: false });
+        const wrapper = mount(RegistrationForm);
+
+        await fillAndSubmit(wrapper);
+
+        expect(wrapper.text()).toContain('Этот ник уже занят.');
+    });
+
+    it('показывает запасное сообщение при 409 без тела ответа', async () => {
         mockFetchOnce({}, { status: 409, ok: false });
         const wrapper = mount(RegistrationForm);
 
         await fillAndSubmit(wrapper);
 
-        expect(wrapper.text()).toContain('уже зарегистрирован');
+        expect(wrapper.text()).toContain('Такой email или имя пользователя уже заняты.');
     });
 
     it('показывает общую ошибку при сетевом сбое', async () => {

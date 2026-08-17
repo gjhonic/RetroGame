@@ -6,6 +6,7 @@ use App\Dto\User\RegisterUserRequest;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use App\Service\User\Exceptions\EmailAlreadyRegisteredException;
+use App\Service\User\Exceptions\NicknameAlreadyTakenException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
@@ -19,7 +20,10 @@ class UserRegistrationService
     ) {
     }
 
-    /** @throws EmailAlreadyRegisteredException если email уже занят */
+    /**
+     * @throws EmailAlreadyRegisteredException если email уже занят
+     * @throws NicknameAlreadyTakenException если ник уже занят
+     */
     public function register(RegisterUserRequest $request): User
     {
         if ($request->email === '') {
@@ -28,6 +32,10 @@ class UserRegistrationService
 
         if ($this->userRepository->findOneByEmail($request->email) !== null) {
             throw new EmailAlreadyRegisteredException('Пользователь с таким email уже зарегистрирован.');
+        }
+
+        if ($this->userRepository->findOneByNickname($request->nickname) !== null) {
+            throw new NicknameAlreadyTakenException('Этот ник уже занят.');
         }
 
         $user = new User($request->email, '');

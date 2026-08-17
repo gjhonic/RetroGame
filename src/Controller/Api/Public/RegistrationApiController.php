@@ -6,6 +6,7 @@ use App\Dto\User\RegisterUserRequest;
 use App\Entity\Enum\AuditLogStatus;
 use App\Service\AuditLog\AuditLogger;
 use App\Service\User\Exceptions\EmailAlreadyRegisteredException;
+use App\Service\User\Exceptions\NicknameAlreadyTakenException;
 use App\Service\User\UserMapper;
 use App\Service\User\UserRegistrationService;
 use OpenApi\Attributes as OA;
@@ -62,7 +63,7 @@ class RegistrationApiController extends AbstractController
 
         try {
             $user = $userRegistrationService->register($dto);
-        } catch (EmailAlreadyRegisteredException $exception) {
+        } catch (EmailAlreadyRegisteredException | NicknameAlreadyTakenException $exception) {
             $auditLogger->log(null, 'user.register', AuditLogStatus::Failure, ['email' => $dto->email]);
 
             throw new ConflictHttpException($exception->getMessage());

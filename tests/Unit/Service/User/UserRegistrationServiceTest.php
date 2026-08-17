@@ -6,6 +6,7 @@ use App\Dto\User\RegisterUserRequest;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use App\Service\User\Exceptions\EmailAlreadyRegisteredException;
+use App\Service\User\Exceptions\NicknameAlreadyTakenException;
 use App\Service\User\UserRegistrationService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
@@ -66,6 +67,19 @@ class UserRegistrationServiceTest extends TestCase
         $this->entityManager->expects($this->never())->method('persist');
 
         $this->expectException(EmailAlreadyRegisteredException::class);
+
+        $this->service->register($this->makeRequest());
+    }
+
+    public function testRegisterThrowsWhenNicknameAlreadyTaken(): void
+    {
+        $this->userRepository->method('findOneByEmail')->willReturn(null);
+        $this->userRepository->method('findOneByNickname')->willReturn(
+            new User('other@retrogame.local', 'old-hash'),
+        );
+        $this->entityManager->expects($this->never())->method('persist');
+
+        $this->expectException(NicknameAlreadyTakenException::class);
 
         $this->service->register($this->makeRequest());
     }

@@ -16,6 +16,7 @@
 |---|---|
 | Email свободен: создаётся User с захешированным паролем и ником | `testRegisterCreatesUserWithHashedPassword` |
 | Email уже занят: бросается `EmailAlreadyRegisteredException`, пользователь не сохраняется | `testRegisterThrowsWhenEmailAlreadyRegistered` |
+| Ник уже занят другим пользователем: бросается `NicknameAlreadyTakenException`, пользователь не сохраняется | `testRegisterThrowsWhenNicknameAlreadyTaken` |
 
 ## ModeratorCreationServiceTest.php
 

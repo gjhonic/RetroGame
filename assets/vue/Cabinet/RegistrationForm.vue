@@ -100,7 +100,8 @@ async function onSubmit() {
         }
 
         if (response.status === 409) {
-            conflictError.value = 'Этот email уже зарегистрирован.';
+            const data = await response.json();
+            conflictError.value = data.message ?? 'Такой email или имя пользователя уже заняты.';
 
             return;
         }
