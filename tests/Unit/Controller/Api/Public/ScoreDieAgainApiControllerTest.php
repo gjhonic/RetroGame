@@ -57,7 +57,7 @@ class ScoreDieAgainApiControllerTest extends TestCase
         $this->scoreDieAgainRepository->method('countAll')->willReturn(1);
         $this->scoreDieAgainRepository->expects($this->once())
             ->method('findForLeaderboard')
-            ->with('kills', 'DESC', 20, 0)
+            ->with('kills', 'DESC', 10, 0)
             ->willReturn([$score]);
 
         $response = $this->controller->list(
@@ -78,7 +78,7 @@ class ScoreDieAgainApiControllerTest extends TestCase
         $this->scoreDieAgainRepository->method('countAll')->willReturn(1);
         $this->scoreDieAgainRepository->expects($this->once())
             ->method('findForLeaderboard')
-            ->with('kills', 'DESC', 20, 0)
+            ->with('kills', 'DESC', 10, 0)
             ->willReturn([]);
 
         $response = $this->controller->list(
@@ -96,7 +96,7 @@ class ScoreDieAgainApiControllerTest extends TestCase
         $this->scoreDieAgainRepository->method('countAll')->willReturn(0);
         $this->scoreDieAgainRepository->expects($this->once())
             ->method('findForLeaderboard')
-            ->with('survivedSeconds', 'ASC', 20, 0)
+            ->with('survivedSeconds', 'ASC', 10, 0)
             ->willReturn([]);
 
         $this->controller->list(

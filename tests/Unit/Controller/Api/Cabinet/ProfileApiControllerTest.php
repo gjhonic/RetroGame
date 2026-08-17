@@ -3,10 +3,14 @@
 namespace App\Tests\Unit\Controller\Api\Cabinet;
 
 use App\Controller\Api\Cabinet\ProfileApiController;
+use App\Dto\User\UpdatePrivacyRequest;
 use App\Entity\User;
 use App\Service\User\AvatarUploadService;
 use App\Service\User\ChangePasswordService;
 use App\Service\User\Exceptions\InvalidCurrentPasswordException;
+use App\Service\User\Exceptions\NicknameAlreadyTakenException;
+use App\Service\User\UpdateNicknameService;
+use App\Service\User\UpdateProfilePrivacyService;
 use App\Service\User\UserMapper;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -32,6 +36,8 @@ class ProfileApiControllerTest extends TestCase
 {
     private ChangePasswordService&MockObject $changePasswordService;
     private AvatarUploadService&MockObject $avatarUploadService;
+    private UpdateProfilePrivacyService&MockObject $updateProfilePrivacyService;
+    private UpdateNicknameService&MockObject $updateNicknameService;
     private ProfileApiController $controller;
     private SerializerInterface $serializer;
     private User $user;
@@ -40,6 +46,8 @@ class ProfileApiControllerTest extends TestCase
     {
         $this->changePasswordService = $this->createMock(ChangePasswordService::class);
         $this->avatarUploadService = $this->createMock(AvatarUploadService::class);
+        $this->updateProfilePrivacyService = $this->createMock(UpdateProfilePrivacyService::class);
+        $this->updateNicknameService = $this->createMock(UpdateNicknameService::class);
         $this->user = new User('player@retrogame.local', 'hash');
 
         $this->controller = new ProfileApiController();
@@ -127,6 +135,47 @@ class ProfileApiControllerTest extends TestCase
         self::assertArrayHasKey('currentPassword', $data['errors']);
     }
 
+    public function testUpdatePrivacyMakesProfilePublic(): void
+    {
+        $this->updateProfilePrivacyService->expects($this->once())
+            ->method('update')
+            ->with(
+                $this->user,
+                self::callback(static fn (UpdatePrivacyRequest $dto) => $dto->isProfilePublic === true),
+            );
+
+        $request = new Request(content: json_encode(['isProfilePublic' => true], \JSON_THROW_ON_ERROR));
+
+        $response = $this->controller->updatePrivacy(
+            $request,
+            $this->serializer,
+            $this->validator(),
+            $this->updateProfilePrivacyService,
+            new UserMapper(),
+            $this->user,
+        );
+
+        self::assertSame(200, $response->getStatusCode());
+    }
+
+    public function testUpdatePrivacyReturnsBadRequestForInvalidJsonBody(): void
+    {
+        $this->updateProfilePrivacyService->expects($this->never())->method('update');
+
+        $request = new Request(content: 'not-json');
+
+        $response = $this->controller->updatePrivacy(
+            $request,
+            $this->serializer,
+            $this->validator(),
+            $this->updateProfilePrivacyService,
+            new UserMapper(),
+            $this->user,
+        );
+
+        self::assertSame(400, $response->getStatusCode());
+    }
+
     public function testUploadAvatarReturnsUpdatedUserOnValidFile(): void
     {
         $this->avatarUploadService->expects($this->once())
@@ -163,6 +212,65 @@ class ProfileApiControllerTest extends TestCase
         self::assertSame(422, $response->getStatusCode());
         $data = json_decode((string) $response->getContent(), true);
         self::assertArrayHasKey('file', $data['errors']);
+    }
+
+    public function testUpdateNicknameSetsNewNickname(): void
+    {
+        $this->updateNicknameService->expects($this->once())->method('update')->with($this->user);
+
+        $request = new Request(content: json_encode(['nickname' => 'PlayerOne'], \JSON_THROW_ON_ERROR));
+
+        $response = $this->controller->updateNickname(
+            $request,
+            $this->serializer,
+            $this->validator(),
+            $this->updateNicknameService,
+            new UserMapper(),
+            $this->user,
+        );
+
+        self::assertSame(200, $response->getStatusCode());
+    }
+
+    public function testUpdateNicknameReturnsValidationErrorForTooShortNickname(): void
+    {
+        $this->updateNicknameService->expects($this->never())->method('update');
+
+        $request = new Request(content: json_encode(['nickname' => 'a'], \JSON_THROW_ON_ERROR));
+
+        $response = $this->controller->updateNickname(
+            $request,
+            $this->serializer,
+            $this->validator(),
+            $this->updateNicknameService,
+            new UserMapper(),
+            $this->user,
+        );
+
+        self::assertSame(422, $response->getStatusCode());
+        $data = json_decode((string) $response->getContent(), true);
+        self::assertArrayHasKey('nickname', $data['errors']);
+    }
+
+    public function testUpdateNicknameReturnsValidationErrorWhenAlreadyTaken(): void
+    {
+        $this->updateNicknameService->method('update')
+            ->willThrowException(new NicknameAlreadyTakenException('Этот ник уже занят.'));
+
+        $request = new Request(content: json_encode(['nickname' => 'taken'], \JSON_THROW_ON_ERROR));
+
+        $response = $this->controller->updateNickname(
+            $request,
+            $this->serializer,
+            $this->validator(),
+            $this->updateNicknameService,
+            new UserMapper(),
+            $this->user,
+        );
+
+        self::assertSame(422, $response->getStatusCode());
+        $data = json_decode((string) $response->getContent(), true);
+        self::assertArrayHasKey('nickname', $data['errors']);
     }
 
     /**

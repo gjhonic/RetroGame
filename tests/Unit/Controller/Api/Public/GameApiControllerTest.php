@@ -4,11 +4,20 @@ namespace App\Tests\Unit\Controller\Api\Public;
 
 use App\Controller\Api\Public\GameApiController;
 use App\Entity\Developer;
+use App\Entity\Enum\GamePlaythroughStatus;
+use App\Entity\Enum\GameReactionType;
 use App\Entity\Game;
+use App\Entity\GameFavorite;
+use App\Entity\GameReaction;
+use App\Entity\GameStatus;
 use App\Entity\Genre;
 use App\Entity\Platform;
 use App\Entity\Publisher;
+use App\Entity\User;
+use App\Repository\GameFavoriteRepository;
+use App\Repository\GameReactionRepository;
 use App\Repository\GameRepository;
+use App\Repository\GameStatusRepository;
 use App\Repository\GenreRepository;
 use App\Repository\PlatformRepository;
 use App\Service\Game\GameMapper;
@@ -28,6 +37,9 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class GameApiControllerTest extends TestCase
 {
     private GameRepository&MockObject $gameRepository;
+    private GameReactionRepository&MockObject $gameReactionRepository;
+    private GameFavoriteRepository&MockObject $gameFavoriteRepository;
+    private GameStatusRepository&MockObject $gameStatusRepository;
     private GenreRepository&MockObject $genreRepository;
     private PlatformRepository&MockObject $platformRepository;
     private GameMapper $gameMapper;
@@ -36,6 +48,9 @@ class GameApiControllerTest extends TestCase
     protected function setUp(): void
     {
         $this->gameRepository = $this->createMock(GameRepository::class);
+        $this->gameReactionRepository = $this->createMock(GameReactionRepository::class);
+        $this->gameFavoriteRepository = $this->createMock(GameFavoriteRepository::class);
+        $this->gameStatusRepository = $this->createMock(GameStatusRepository::class);
         $this->genreRepository = $this->createMock(GenreRepository::class);
         $this->platformRepository = $this->createMock(PlatformRepository::class);
         $this->gameMapper = new GameMapper();
@@ -175,6 +190,25 @@ class GameApiControllerTest extends TestCase
         self::assertSame(2024, $data['releaseYearMax']);
     }
 
+    public function testFiltersExcludesHiddenPublicGenre(): void
+    {
+        $this->genreRepository->method('findBy')->willReturn([
+            (new Genre('Экшены')),
+            (new Genre('Сексуальный контент')),
+        ]);
+        $this->platformRepository->method('findBy')->willReturn([]);
+        $this->gameRepository->method('findPublicReleaseYearRange')->willReturn(null);
+
+        $response = $this->controller->filters(
+            $this->gameRepository,
+            $this->genreRepository,
+            $this->platformRepository,
+        );
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertSame([['id' => null, 'name' => 'Экшены']], $data['genres']);
+    }
+
     public function testFiltersReturnsNullReleaseYearRangeWhenNoGamesHaveReleaseDate(): void
     {
         $this->genreRepository->method('findBy')->willReturn([]);
@@ -210,8 +244,17 @@ class GameApiControllerTest extends TestCase
             ->method('findOneBy')
             ->with(['slug' => 'day-of-defeat'])
             ->willReturn($game);
+        $this->gameReactionRepository->method('countByTypeForGame')->willReturn(['like' => 3, 'dislike' => 1]);
 
-        $response = $this->controller->show('day-of-defeat', $this->gameRepository, $this->gameMapper);
+        $response = $this->controller->show(
+            'day-of-defeat',
+            $this->gameRepository,
+            $this->gameReactionRepository,
+            $this->gameFavoriteRepository,
+            $this->gameStatusRepository,
+            $this->gameMapper,
+            null,
+        );
         $data = json_decode((string) $response->getContent(), true);
 
         self::assertSame('Day of Defeat', $data['name']);
@@ -223,18 +266,61 @@ class GameApiControllerTest extends TestCase
         self::assertSame(['Valve'], $data['publishers']);
         self::assertSame(['Экшены'], $data['genres']);
         self::assertSame(['Windows'], $data['platforms']);
+        self::assertSame(3, $data['likeCount']);
+        self::assertSame(1, $data['dislikeCount']);
+        self::assertNull($data['myReaction']);
+        self::assertFalse($data['myFavorite']);
+        self::assertNull($data['myStatus']);
     }
 
     public function testShowNormalizesMissingScreenshotUrlsToEmptyArray(): void
     {
         $game = new Game('Minimal Game', 'minimal-game');
         $this->gameRepository->method('findOneBy')->willReturn($game);
+        $this->gameReactionRepository->method('countByTypeForGame')->willReturn(['like' => 0, 'dislike' => 0]);
 
-        $response = $this->controller->show('minimal-game', $this->gameRepository, $this->gameMapper);
+        $response = $this->controller->show(
+            'minimal-game',
+            $this->gameRepository,
+            $this->gameReactionRepository,
+            $this->gameFavoriteRepository,
+            $this->gameStatusRepository,
+            $this->gameMapper,
+            null,
+        );
         $data = json_decode((string) $response->getContent(), true);
 
         self::assertSame([], $data['screenshotUrls']);
         self::assertNull($data['coverImageUrl']);
+    }
+
+    public function testShowIncludesCurrentUserReactionFavoriteAndStatus(): void
+    {
+        $game = new Game('Day of Defeat', 'day-of-defeat');
+        $user = new User('viewer@retrogame.local', 'hash');
+
+        $this->gameRepository->method('findOneBy')->willReturn($game);
+        $this->gameReactionRepository->method('countByTypeForGame')->willReturn(['like' => 1, 'dislike' => 0]);
+        $this->gameReactionRepository->method('findOneByGameAndUser')
+            ->willReturn(new GameReaction($game, $user, GameReactionType::Like));
+        $this->gameFavoriteRepository->method('findOneByGameAndUser')->willReturn(new GameFavorite($game, $user));
+        $this->gameStatusRepository->method('findOneByGameAndUser')
+            ->willReturn(new GameStatus($game, $user, GamePlaythroughStatus::InProgress));
+
+        $response = $this->controller->show(
+            'day-of-defeat',
+            $this->gameRepository,
+            $this->gameReactionRepository,
+            $this->gameFavoriteRepository,
+            $this->gameStatusRepository,
+            $this->gameMapper,
+            $user,
+        );
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertSame('like', $data['myReaction']);
+        self::assertTrue($data['myFavorite']);
+        self::assertSame('in_progress', $data['myStatus']);
     }
 
     public function testShowThrowsNotFoundExceptionForUnknownSlug(): void
@@ -243,6 +329,33 @@ class GameApiControllerTest extends TestCase
 
         $this->expectException(NotFoundHttpException::class);
 
-        $this->controller->show('unknown-slug', $this->gameRepository, $this->gameMapper);
+        $this->controller->show(
+            'unknown-slug',
+            $this->gameRepository,
+            $this->gameReactionRepository,
+            $this->gameFavoriteRepository,
+            $this->gameStatusRepository,
+            $this->gameMapper,
+            null,
+        );
+    }
+
+    public function testShowThrowsNotFoundExceptionForGameWithHiddenGenre(): void
+    {
+        $game = new Game('NSFW Game', 'nsfw-game');
+        $game->addGenre(new Genre('Сексуальный контент'));
+        $this->gameRepository->method('findOneBy')->willReturn($game);
+
+        $this->expectException(NotFoundHttpException::class);
+
+        $this->controller->show(
+            'nsfw-game',
+            $this->gameRepository,
+            $this->gameReactionRepository,
+            $this->gameFavoriteRepository,
+            $this->gameStatusRepository,
+            $this->gameMapper,
+            null,
+        );
     }
 }

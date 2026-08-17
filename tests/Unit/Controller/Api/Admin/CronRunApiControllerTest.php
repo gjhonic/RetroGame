@@ -3,8 +3,10 @@
 namespace App\Tests\Unit\Controller\Api\Admin;
 
 use App\Controller\Api\Admin\CronRunApiController;
+use App\Entity\Cron;
 use App\Entity\CronRun;
 use App\Entity\Enum\CronRunStatus;
+use App\Repository\CronRepository;
 use App\Repository\CronRunRepository;
 use App\Service\Cron\CronLogReader;
 use App\Service\Cron\CronRunMapper;
@@ -24,12 +26,15 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class CronRunApiControllerTest extends TestCase
 {
     private CronRunRepository&MockObject $cronRunRepository;
+    private CronRepository&MockObject $cronRepository;
     private CronRunApiController $controller;
     private CronRunMapper $mapper;
 
     protected function setUp(): void
     {
         $this->cronRunRepository = $this->createMock(CronRunRepository::class);
+        $this->cronRepository = $this->createMock(CronRepository::class);
+        $this->cronRepository->method('findAllIndexedByCommand')->willReturn([]);
         $this->mapper = new CronRunMapper();
 
         $this->controller = new CronRunApiController();
@@ -46,7 +51,8 @@ class CronRunApiControllerTest extends TestCase
             ->with([], null, null, 'startedAt', 'DESC', 25, 0)
             ->willReturn([$run]);
 
-        $response = $this->controller->list(new Request(), $this->cronRunRepository, $this->mapper);
+        $request = new Request();
+        $response = $this->controller->list($request, $this->cronRunRepository, $this->cronRepository, $this->mapper);
         $data = json_decode((string) $response->getContent(), true);
 
         self::assertSame(1, $data['total']);
@@ -54,6 +60,24 @@ class CronRunApiControllerTest extends TestCase
         self::assertSame(1, $data['totalPages']);
         self::assertSame('app:games:import', $data['items'][0]['command']);
         self::assertSame('running', $data['items'][0]['status']);
+    }
+
+    public function testListIncludesMatchingCronNameAndColor(): void
+    {
+        $run = new CronRun('app:games:import', null, null);
+        $cron = (new Cron('app:games:import'))->setName('Импорт игр из Steam')->setColor('#198754');
+
+        $this->cronRunRepository->method('countForAdminList')->willReturn(1);
+        $this->cronRunRepository->method('findForAdminList')->willReturn([$run]);
+        $this->cronRepository = $this->createMock(CronRepository::class);
+        $this->cronRepository->method('findAllIndexedByCommand')->willReturn(['app:games:import' => $cron]);
+
+        $request = new Request();
+        $response = $this->controller->list($request, $this->cronRunRepository, $this->cronRepository, $this->mapper);
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertSame('Импорт игр из Steam', $data['items'][0]['cronName']);
+        self::assertSame('#198754', $data['items'][0]['cronColor']);
     }
 
     public function testListPassesFiltersAndSortingToRepository(): void
@@ -70,7 +94,7 @@ class CronRunApiControllerTest extends TestCase
             'sortDir' => 'asc',
             'perPage' => '10',
         ]);
-        $this->controller->list($request, $this->cronRunRepository, $this->mapper);
+        $this->controller->list($request, $this->cronRunRepository, $this->cronRepository, $this->mapper);
     }
 
     public function testListPassesDateRangeToRepository(): void
@@ -85,7 +109,7 @@ class CronRunApiControllerTest extends TestCase
             ->willReturn([]);
 
         $request = new Request(['dateFrom' => '2026-08-01T00:00', 'dateTo' => '2026-08-02T00:00']);
-        $this->controller->list($request, $this->cronRunRepository, $this->mapper);
+        $this->controller->list($request, $this->cronRunRepository, $this->cronRepository, $this->mapper);
     }
 
     public function testListFallsBackToStartedAtSortingForUnknownSortBy(): void
@@ -97,7 +121,7 @@ class CronRunApiControllerTest extends TestCase
             ->willReturn([]);
 
         $request = new Request(['sortBy' => 'unknownField']);
-        $this->controller->list($request, $this->cronRunRepository, $this->mapper);
+        $this->controller->list($request, $this->cronRunRepository, $this->cronRepository, $this->mapper);
     }
 
     public function testShowReturnsRunDetail(): void
@@ -107,7 +131,7 @@ class CronRunApiControllerTest extends TestCase
 
         $this->cronRunRepository->expects($this->once())->method('find')->with(1)->willReturn($run);
 
-        $response = $this->controller->show(1, $this->cronRunRepository, $this->mapper);
+        $response = $this->controller->show(1, $this->cronRunRepository, $this->cronRepository, $this->mapper);
         $data = json_decode((string) $response->getContent(), true);
 
         self::assertSame('success', $data['status']);
@@ -120,7 +144,7 @@ class CronRunApiControllerTest extends TestCase
         $this->cronRunRepository->expects($this->once())->method('find')->with(999)->willReturn(null);
 
         $this->expectException(NotFoundHttpException::class);
-        $this->controller->show(999, $this->cronRunRepository, $this->mapper);
+        $this->controller->show(999, $this->cronRunRepository, $this->cronRepository, $this->mapper);
     }
 
     public function testCommandsReturnsDistinctCommandList(): void
@@ -145,7 +169,12 @@ class CronRunApiControllerTest extends TestCase
             ->willReturn([$run]);
 
         $request = new Request(['dateFrom' => '2026-08-01T00:00', 'dateTo' => '2026-08-02T00:00']);
-        $response = $this->controller->timeline($request, $this->cronRunRepository, $this->mapper);
+        $response = $this->controller->timeline(
+            $request,
+            $this->cronRunRepository,
+            $this->cronRepository,
+            $this->mapper,
+        );
         $data = json_decode((string) $response->getContent(), true);
 
         self::assertCount(1, $data['items']);
@@ -158,7 +187,7 @@ class CronRunApiControllerTest extends TestCase
             ->with(self::isInstanceOf(\DateTimeImmutable::class), self::isInstanceOf(\DateTimeImmutable::class))
             ->willReturn([]);
 
-        $this->controller->timeline(new Request(), $this->cronRunRepository, $this->mapper);
+        $this->controller->timeline(new Request(), $this->cronRunRepository, $this->cronRepository, $this->mapper);
     }
 
     public function testLogReturnsPlainTextContent(): void

@@ -11,8 +11,13 @@ use App\Entity\User;
 class TakeMapper
 {
     /** @return array<string, mixed> */
-    public function toListItem(Take $take, int $likeCount, int $dislikeCount, int $commentCount): array
-    {
+    public function toListItem(
+        Take $take,
+        int $likeCount,
+        int $dislikeCount,
+        int $commentCount,
+        ?string $myReaction = null,
+    ): array {
         return [
             'id' => $take->getId(),
             'text' => $take->getText(),
@@ -22,6 +27,7 @@ class TakeMapper
             'likeCount' => $likeCount,
             'dislikeCount' => $dislikeCount,
             'commentCount' => $commentCount,
+            'myReaction' => $myReaction,
         ];
     }
 
@@ -30,10 +36,15 @@ class TakeMapper
      *
      * @return array<string, mixed>
      */
-    public function toDetail(Take $take, int $likeCount, int $dislikeCount, array $comments): array
-    {
+    public function toDetail(
+        Take $take,
+        int $likeCount,
+        int $dislikeCount,
+        array $comments,
+        ?string $myReaction = null,
+    ): array {
         return [
-            ...$this->toListItem($take, $likeCount, $dislikeCount, \count($comments)),
+            ...$this->toListItem($take, $likeCount, $dislikeCount, \count($comments), $myReaction),
             'comments' => array_map($this->toComment(...), $comments),
         ];
     }

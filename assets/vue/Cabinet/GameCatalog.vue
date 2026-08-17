@@ -81,7 +81,7 @@
 
     <template v-else>
         <div class="game-grid">
-            <a v-for="game in games" :key="game.id" :href="`/cabinet/games/${game.slug}`" class="game-card">
+            <a v-for="game in games" :key="game.id" :href="`/games/${game.slug}`" class="game-card">
                 <img
                     v-if="game.coverImageUrl"
                     class="game-card__cover"
@@ -141,7 +141,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 
 const DEFAULT_SORT = 'popularity_desc';
 
@@ -166,21 +166,32 @@ const hasActiveFilters = computed(() => (
 ));
 
 /**
- * Строит список кнопок пагинации: если страниц немного — все подряд, иначе
- * окно из 5 страниц вокруг текущей плюс первая/последняя (с многоточием
- * между ними, если между окном и краем есть разрыв). На первых страницах
- * это выглядит как "1 2 3 4 5 … N" — то, что запрашивали.
+ * На мобильных экранах кнопок пагинации меньше (окно в 1 страницу вместо 5) —
+ * иначе "← Назад 1 … 3 4 5 6 7 … 100 Вперёд →" не помещается по ширине.
  */
-const pageNumbers = computed(() => {
-    const total = totalPages.value;
-    const current = page.value;
+const compactMediaQuery = typeof window.matchMedia === 'function'
+    ? window.matchMedia('(max-width: 600px)')
+    : null;
+const isCompactPagination = ref(compactMediaQuery?.matches ?? false);
 
-    if (total <= 7) {
+function updateIsCompactPagination(event) {
+    isCompactPagination.value = event.matches;
+}
+
+/**
+ * Строит список кнопок пагинации: если страниц немного — все подряд, иначе
+ * окно вокруг текущей страницы плюс первая/последняя (с многоточием между
+ * ними, если между окном и краем есть разрыв). На десктопе окно — 5 страниц
+ * (выглядит как "1 2 3 4 5 … N"), на мобильных — 1 страница ("1 … 5 … N").
+ */
+function buildPageNumbers(total, current, windowSize, smallThreshold) {
+    if (total <= smallThreshold) {
         return Array.from({ length: total }, (_, i) => ({ type: 'page', value: i + 1, key: `p${i + 1}` }));
     }
 
-    const windowStart = Math.min(Math.max(current - 2, 1), total - 4);
-    const windowEnd = windowStart + 4;
+    const half = Math.floor(windowSize / 2);
+    const windowStart = Math.min(Math.max(current - half, 1), total - windowSize + 1);
+    const windowEnd = windowStart + windowSize - 1;
 
     const items = [];
 
@@ -203,7 +214,13 @@ const pageNumbers = computed(() => {
     }
 
     return items;
-});
+}
+
+const pageNumbers = computed(() => (
+    isCompactPagination.value
+        ? buildPageNumbers(totalPages.value, page.value, 1, 3)
+        : buildPageNumbers(totalPages.value, page.value, 5, 7)
+));
 
 function pluralizeGames(count) {
     const mod10 = count % 10;
@@ -358,5 +375,11 @@ onMounted(() => {
     const initialPage = readStateFromUrl();
     loadFilterOptions();
     loadPage(initialPage);
+
+    compactMediaQuery?.addEventListener('change', updateIsCompactPagination);
+});
+
+onUnmounted(() => {
+    compactMediaQuery?.removeEventListener('change', updateIsCompactPagination);
 });
 </script>

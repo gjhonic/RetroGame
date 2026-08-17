@@ -12,14 +12,28 @@
         <div class="card mb-4" style="max-width: 860px;">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                    <h2 class="card-title mb-0">{{ cron.command }}</h2>
-                    <input
-                        type="color"
-                        class="form-control form-control-color"
-                        :value="cron.color ?? '#6c757d'"
-                        title="Цвет для графика"
-                        @change="updateColor($event.target.value)"
-                    >
+                    <div>
+                        <h2 class="card-title mb-0">{{ cron.name || cron.command }}</h2>
+                        <div v-if="cron.name" class="text-muted small">{{ cron.command }}</div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <input
+                            type="text"
+                            class="form-control form-control-sm"
+                            style="width: 220px;"
+                            :value="cron.name ?? ''"
+                            placeholder="Название крона"
+                            @keyup.enter="$event.target.blur()"
+                            @blur="updateCron({ name: $event.target.value.trim() || null })"
+                        >
+                        <input
+                            type="color"
+                            class="form-control form-control-color"
+                            :value="cron.color ?? '#6c757d'"
+                            title="Цвет для графика"
+                            @change="updateCron({ color: $event.target.value })"
+                        >
+                    </div>
                 </div>
             </div>
         </div>
@@ -127,7 +141,7 @@ async function loadCron() {
         }
 
         cron.value = await response.json();
-        document.title = `${cron.value.command} — Админка — RetroGame`;
+        document.title = `${cron.value.name || cron.value.command} — Админка — RetroGame`;
     } catch (e) {
         error.value = e.message;
     } finally {
@@ -162,12 +176,12 @@ async function loadRuns() {
     }
 }
 
-async function updateColor(color) {
+async function updateCron(patch) {
     try {
         const response = await fetch(`/api/admin/crons/${props.id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ color }),
+            body: JSON.stringify(patch),
         });
 
         if (!response.ok) {

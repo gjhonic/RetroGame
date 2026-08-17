@@ -2,6 +2,7 @@
 
 namespace App\Controller\Api\Public;
 
+use App\Entity\User;
 use App\Repository\TakeCommentRepository;
 use App\Repository\TakeReactionRepository;
 use App\Repository\TakeRepository;
@@ -11,6 +12,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 /** JSON API тэйков об играх — доступен всем без авторизации. */
 #[Route('/api/takes')]
@@ -52,6 +54,7 @@ class TakeApiController extends AbstractController
         TakeReactionRepository $takeReactionRepository,
         TakeCommentRepository $takeCommentRepository,
         TakeMapper $takeMapper,
+        #[CurrentUser] ?User $user,
     ): JsonResponse {
         $rawFilters = $request->query->all('filters');
         $filters = [];
@@ -77,6 +80,7 @@ class TakeApiController extends AbstractController
 
         $takeIds = array_map(static fn ($take): int => (int) $take->getId(), $takes);
         $reactionCounts = $takeReactionRepository->countByTypeForTakes($takeIds);
+        $myReactions = $user !== null ? $takeReactionRepository->findTypesForTakesAndUser($takeIds, $user) : [];
 
         return $this->json([
             'items' => array_map(
@@ -85,6 +89,7 @@ class TakeApiController extends AbstractController
                     $reactionCounts[(int) $take->getId()]['like'],
                     $reactionCounts[(int) $take->getId()]['dislike'],
                     $takeCommentRepository->countForTake($take),
+                    $myReactions[(int) $take->getId()] ?? null,
                 ),
                 $takes,
             ),
@@ -111,6 +116,7 @@ class TakeApiController extends AbstractController
         TakeReactionRepository $takeReactionRepository,
         TakeCommentRepository $takeCommentRepository,
         TakeMapper $takeMapper,
+        #[CurrentUser] ?User $user,
     ): JsonResponse {
         $take = $takeRepository->find($id);
         if ($take === null) {
@@ -119,8 +125,15 @@ class TakeApiController extends AbstractController
 
         $counts = $takeReactionRepository->countByTypeForTake($take);
         $comments = $takeCommentRepository->findForTake($take, self::PER_PAGE, 0);
+        $myReaction = $user !== null ? $takeReactionRepository->findOneByTakeAndUser($take, $user) : null;
 
-        return $this->json($takeMapper->toDetail($take, $counts['like'], $counts['dislike'], $comments));
+        return $this->json($takeMapper->toDetail(
+            $take,
+            $counts['like'],
+            $counts['dislike'],
+            $comments,
+            $myReaction?->getType()->value,
+        ));
     }
 
     /** Постраничные комментарии тэйка. */

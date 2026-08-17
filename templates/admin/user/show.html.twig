@@ -1,0 +1,10 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Пользователь — Админка — RetroGame{% endblock %}
+{% block admin_title %}Пользователь{% endblock %}
+
+{% block body %}
+    <a href="{{ path('admin_user_index') }}" class="d-inline-block mb-3 link-secondary">← Назад к списку пользователей</a>
+
+    <div {{ vue_component('Admin/UserDetail', { id: id }) }}></div>
+{% endblock %}

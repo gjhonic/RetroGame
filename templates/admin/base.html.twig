@@ -55,6 +55,29 @@
                             </li>
                         </ul>
 
+                        {% set our_game_route = app.request.attributes.get('_route') %}
+                        <h6 class="sidebar-heading d-flex align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
+                            <span>Наши игры</span>
+                        </h6>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a
+                                    class="nav-link {{ our_game_route starts with 'admin_our_game_' and not (our_game_route starts with 'admin_our_game_post_') ? 'active' : '' }}"
+                                    href="{{ path('admin_our_game_index') }}"
+                                >
+                                    🚀 Наши игры
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a
+                                    class="nav-link {{ our_game_route starts with 'admin_our_game_post_' ? 'active' : '' }}"
+                                    href="{{ path('admin_our_game_post_index') }}"
+                                >
+                                    📰 Посты об играх
+                                </a>
+                            </li>
+                        </ul>
+
                         <h6 class="sidebar-heading d-flex align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
                             <span>База данных</span>
                         </h6>
@@ -65,6 +88,14 @@
                                     href="{{ path('admin_game_index') }}"
                                 >
                                     🎮 Игры
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a
+                                    class="nav-link {{ app.request.attributes.get('_route') starts with 'admin_steam_game_' ? 'active' : '' }}"
+                                    href="{{ path('admin_steam_game_index') }}"
+                                >
+                                    🕹️ Steam-игры
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -94,6 +125,20 @@
                         </ul>
 
                         <h6 class="sidebar-heading d-flex align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
+                            <span>Пользователи</span>
+                        </h6>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a
+                                    class="nav-link {{ app.request.attributes.get('_route') starts with 'admin_user_' ? 'active' : '' }}"
+                                    href="{{ path('admin_user_index') }}"
+                                >
+                                    👤 Пользователи
+                                </a>
+                            </li>
+                        </ul>
+
+                        <h6 class="sidebar-heading d-flex align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
                             <span>Система</span>
                         </h6>
                         {% set current_route = app.request.attributes.get('_route') %}
@@ -114,6 +159,16 @@
                                     ⏱️ История запусков кронов
                                 </a>
                             </li>
+                            {% if is_granted('ROLE_ADMIN') %}
+                                <li class="nav-item">
+                                    <a
+                                        class="nav-link {{ current_route starts with 'admin_audit_log_' ? 'active' : '' }}"
+                                        href="{{ path('admin_audit_log_index') }}"
+                                    >
+                                        📜 Логи
+                                    </a>
+                                </li>
+                            {% endif %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ path('app.swagger_ui', {area: 'admin'}) }}" target="_blank">
                                     📖 API

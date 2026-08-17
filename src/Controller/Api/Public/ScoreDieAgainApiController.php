@@ -20,7 +20,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 #[OA\Tag(name: 'ScoreDieAgain')]
 class ScoreDieAgainApiController extends AbstractController
 {
-    private const int PER_PAGE = 20;
+    private const int PER_PAGE = 10;
 
     /** Таблица лидеров с постраничной навигацией. */
     #[Route('', name: 'app_api_score_die_again_list', methods: ['GET'])]

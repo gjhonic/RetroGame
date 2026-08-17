@@ -123,24 +123,6 @@
     color: var(--color-bad);
 }
 
-.btn {
-    padding: 12px 16px;
-    border: none;
-    border-radius: var(--radius);
-    font-size: 1.0625rem;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.btn--primary {
-    background-color: var(--color-accent);
-    color: #fff;
-}
-
-.btn--primary:hover {
-    background-color: var(--color-accent-hover);
-}
-
 .alert {
     margin: 0 0 16px;
     padding: 10px 14px;
@@ -152,6 +134,11 @@
     background-color: rgba(224, 93, 93, 0.15);
     color: var(--color-bad);
     border: 1px solid rgba(224, 93, 93, 0.4);
+}
+
+.auth-card__cta {
+    display: block;
+    text-align: center;
 }
 
 .auth-card__footer {

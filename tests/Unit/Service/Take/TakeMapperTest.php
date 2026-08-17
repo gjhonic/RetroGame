@@ -32,6 +32,17 @@ class TakeMapperTest extends TestCase
         self::assertSame(3, $data['likeCount']);
         self::assertSame(1, $data['dislikeCount']);
         self::assertSame(2, $data['commentCount']);
+        self::assertNull($data['myReaction']);
+    }
+
+    public function testToListItemIncludesMyReactionWhenPassed(): void
+    {
+        $author = new User('author@retrogame.local', 'hash');
+        $take = new Take($author, new Game('Half-Life', 'half-life'), 'Take text');
+
+        $data = $this->mapper->toListItem($take, 3, 1, 2, 'like');
+
+        self::assertSame('like', $data['myReaction']);
     }
 
     public function testToDetailIncludesMappedComments(): void

@@ -31,8 +31,16 @@
                     <img src="{{ asset('favicon/favicon-64.png') }}" alt="" class="site-logo__icon">
                     RetroGame
                 </a>
+                {% set current_route = app.request.attributes.get('_route') %}
                 <nav class="site-nav">
-                    <a href="{{ path('app_game_index') }}" class="site-nav__link site-nav__link--active">Каталог</a>
+                    <a
+                        href="{{ path('app_game_index') }}"
+                        class="site-nav__link {{ current_route in ['app_game_index', 'app_game_show'] ? 'site-nav__link--active' : '' }}"
+                    >Каталог</a>
+                    <a
+                        href="{{ path('app_our_game_index') }}"
+                        class="site-nav__link {{ current_route starts with 'app_our_game_' ? 'site-nav__link--active' : '' }}"
+                    >Наши игры</a>
                     {% if is_granted('ROLE_USER') %}
                         <a href="{{ path('cabinet_feed') }}" class="site-nav__link">Кабинет</a>
                         {% if is_granted('ROLE_MODERATOR') %}

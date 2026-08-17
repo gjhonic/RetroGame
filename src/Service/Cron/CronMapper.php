@@ -14,6 +14,7 @@ class CronMapper
         return [
             'id' => $cron->getId(),
             'command' => $cron->getCommand(),
+            'name' => $cron->getName(),
             'color' => $cron->getColor(),
             'lastRun' => $lastRun === null ? null : [
                 'startedAt' => $lastRun->getStartedAt()->format(\DateTimeInterface::ATOM),
@@ -28,6 +29,7 @@ class CronMapper
         return [
             'id' => $cron->getId(),
             'command' => $cron->getCommand(),
+            'name' => $cron->getName(),
             'color' => $cron->getColor(),
             'createdAt' => $cron->getCreatedAt()->format(\DateTimeInterface::ATOM),
         ];

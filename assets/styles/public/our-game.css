@@ -1,0 +1,299 @@
+/*
+ * Страница одной своей игры (templates/public/our_game/show.html.twig и
+ * templates/cabinet/our_game/show.html.twig — общая вёрстка, данные
+ * не зависят от авторизации).
+ */
+
+.our-game-detail {
+    max-width: 1100px;
+    margin: 24px auto 64px;
+}
+
+.our-game-detail__banner {
+    aspect-ratio: 1200 / 450;
+    width: 100%;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+}
+
+.our-game-detail__banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.our-game-detail__banner--placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: var(--color-text-muted);
+}
+
+.our-game-detail__title {
+    margin: 24px 0 0;
+    font-size: 2.25rem;
+}
+
+.our-game-detail__body {
+    margin-top: 24px;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 32px;
+    align-items: start;
+}
+
+.our-game-detail__subtitle {
+    margin: 0 0 16px;
+    font-size: 1.15rem;
+}
+
+.our-game-detail__screenshots .our-game-detail__subtitle {
+    margin-top: 0;
+}
+
+.our-game-detail__sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+}
+
+.our-game-detail__description {
+    margin: 40px 0 0;
+    color: var(--color-text-muted);
+}
+
+.our-game-detail__sidebar .game-facts {
+    margin: 0;
+    grid-template-columns: 120px 1fr;
+}
+
+.our-game-detail__trailer-link {
+    text-align: center;
+}
+
+.our-game-download-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.our-game-download-list__link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background-color: var(--color-surface-hover);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.our-game-download-list__link:hover {
+    border-color: var(--color-accent);
+}
+
+.our-game-download-list__icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+@media (max-width: 860px) {
+    .our-game-detail__body {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Посты об игре — блок карточек под основным содержимым страницы */
+
+.our-game-posts {
+    margin-top: 40px;
+}
+
+.our-game-post-list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.our-game-post-card {
+    display: flex;
+    gap: 24px;
+    padding: 28px;
+    text-align: left;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 0;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.our-game-post-card:hover {
+    border-color: var(--color-accent);
+}
+
+.our-game-post-card--major {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 24px rgba(124, 92, 255, 0.35);
+}
+
+.our-game-post-card--major:hover {
+    box-shadow: 0 0 32px rgba(124, 92, 255, 0.5);
+}
+
+.our-game-post-card__image {
+    flex: none;
+    width: 180px;
+    aspect-ratio: 300 / 400;
+    object-fit: cover;
+    border-radius: 0;
+    background-color: var(--color-surface-hover);
+}
+
+.our-game-post-card__image--placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--color-text-muted);
+}
+
+.our-game-post-card__body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.our-game-post-card__type {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--color-accent);
+}
+
+.our-game-post-card__title {
+    margin: 6px 0 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
+.our-game-post-card__divider {
+    margin: 12px 0;
+    border: none;
+    border-top: 1px solid var(--color-border);
+}
+
+.our-game-post-card__description {
+    margin: 0;
+    color: var(--color-text-muted);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.our-game-post-card__description p:first-child {
+    margin-top: 0;
+}
+
+.our-game-post-card__date {
+    margin-top: auto;
+    padding-top: 12px;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+/* Модалка поста — шире стандартной (.modal-window из common.css) */
+
+.our-game-post-modal {
+    width: 70vw;
+    max-width: 70vw;
+}
+
+@media (max-width: 760px) {
+    .our-game-post-modal {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
+.our-game-post-modal__content {
+    max-width: none;
+}
+
+.our-game-post-modal__content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+}
+
+/* Кнопка и модалка таблицы лидеров (DIE//AGAIN, score_die_again) — ширина 70vw, как у модалки поста */
+
+.our-game-detail__leaderboard-button {
+    margin-top: 20px;
+}
+
+.our-game-leaderboard-modal {
+    width: 70vw;
+    max-width: 70vw;
+}
+
+@media (max-width: 760px) {
+    .our-game-leaderboard-modal {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
+.leaderboard-table-wrapper {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.leaderboard-table th {
+    position: sticky;
+    top: 0;
+    background-color: var(--color-surface);
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.leaderboard-table tbody tr:hover {
+    background-color: var(--color-surface-hover);
+}
+
+.leaderboard-load-more {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding-top: 16px;
+}

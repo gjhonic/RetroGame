@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{% block title %}Личный кабинет — RetroGame{% endblock %}</title>
+        <title>{% block title %}RetroGame{% endblock %}</title>
         <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon/favicon-32.png') }}">
         <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon/favicon-16.png') }}">
         <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('favicon/apple-touch-icon.png') }}">
@@ -21,55 +21,85 @@
         <header class="site-header">
             <div class="container site-header__inner">
                 <a href="{{ path('app_game_index') }}" class="site-logo">RetroGame</a>
+                <label for="cabinet-menu-toggle" class="cabinet-menu-toggle" aria-label="Открыть меню">☰</label>
             </div>
         </header>
 
+        <input type="checkbox" id="cabinet-menu-toggle" class="cabinet-menu-toggle-checkbox">
+
         <div class="container cabinet-layout">
             <aside class="cabinet-sidebar">
-                <div class="cabinet-profile">
-                    {% if app.user.avatarUrl %}
-                        <img src="{{ '/' ~ app.user.avatarUrl }}" alt="" class="cabinet-profile__avatar cabinet-profile__avatar--image">
-                    {% else %}
-                        <div class="cabinet-profile__avatar">{{ app.user.email|slice(0, 1)|upper }}</div>
-                    {% endif %}
-                    <div class="cabinet-profile__email">{{ app.user.email }}</div>
-                </div>
+                {% if is_granted('ROLE_USER') %}
+                    <div class="cabinet-profile">
+                        {% if app.user.avatarUrl %}
+                            <img src="{{ '/' ~ app.user.avatarUrl }}" alt="" class="cabinet-profile__avatar cabinet-profile__avatar--image">
+                        {% else %}
+                            <div class="cabinet-profile__avatar">{{ app.user.email|slice(0, 1)|upper }}</div>
+                        {% endif %}
+                        <div class="cabinet-profile__email">{{ app.user.email }}</div>
+                    </div>
+                {% endif %}
 
                 {% set current_route = app.request.attributes.get('_route') %}
-                {% set is_game_route = current_route in ['cabinet_game_index', 'cabinet_game_show'] %}
+                {% set is_game_route = current_route in ['app_game_index', 'app_game_show'] %}
+                {% set is_our_game_route = current_route in ['app_our_game_index', 'app_our_game_show'] %}
                 <nav class="cabinet-nav">
+                    {% if is_granted('ROLE_USER') %}
+                        <a
+                            href="{{ app.user.nickname ? path('public_profile_show', {nickname: app.user.nickname}) : path('cabinet_settings') }}"
+                            class="cabinet-nav__link {{ current_route == 'public_profile_show' and app.request.attributes.get('nickname') == app.user.nickname ? 'cabinet-nav__link--active' : '' }}"
+                        >
+                            <span class="cabinet-nav__icon">👤</span>
+                            Профиль
+                        </a>
+                        <a
+                            href="{{ path('cabinet_feed') }}"
+                            class="cabinet-nav__link {{ current_route == 'cabinet_feed' ? 'cabinet-nav__link--active' : '' }}"
+                        >
+                            <span class="cabinet-nav__icon">📰</span>
+                            Лента
+                        </a>
+                    {% endif %}
                     <a
-                        href="{{ path('cabinet_profile') }}"
-                        class="cabinet-nav__link {{ current_route == 'cabinet_profile' ? 'cabinet-nav__link--active' : '' }}"
-                    >
-                        <span class="cabinet-nav__icon">👤</span>
-                        Профиль
-                    </a>
-                    <a
-                        href="{{ path('cabinet_feed') }}"
-                        class="cabinet-nav__link {{ current_route == 'cabinet_feed' ? 'cabinet-nav__link--active' : '' }}"
-                    >
-                        <span class="cabinet-nav__icon">📰</span>
-                        Лента
-                    </a>
-                    <a
-                        href="{{ path('cabinet_game_index') }}"
+                        href="{{ path('app_game_index') }}"
                         class="cabinet-nav__link {{ is_game_route ? 'cabinet-nav__link--active' : '' }}"
                     >
                         <span class="cabinet-nav__icon">🎮</span>
                         Игры
                     </a>
                     <a
-                        href="{{ path('cabinet_settings') }}"
-                        class="cabinet-nav__link {{ current_route == 'cabinet_settings' ? 'cabinet-nav__link--active' : '' }}"
+                        href="{{ path('app_our_game_index') }}"
+                        class="cabinet-nav__link {{ is_our_game_route ? 'cabinet-nav__link--active' : '' }}"
                     >
-                        <span class="cabinet-nav__icon">⚙️</span>
-                        Настройки
+                        <span class="cabinet-nav__icon">🚀</span>
+                        Наши игры
                     </a>
-                    <a href="{{ path('logout') }}" class="cabinet-nav__link cabinet-nav__link--logout">
-                        <span class="cabinet-nav__icon">🚪</span>
-                        Выход
-                    </a>
+                    {% if is_granted('ROLE_USER') %}
+                        <a
+                            href="{{ path('cabinet_settings') }}"
+                            class="cabinet-nav__link {{ current_route == 'cabinet_settings' ? 'cabinet-nav__link--active' : '' }}"
+                        >
+                            <span class="cabinet-nav__icon">⚙️</span>
+                            Настройки
+                        </a>
+                    {% endif %}
+                    {% if is_granted('ROLE_MODERATOR') %}
+                        <a href="{{ path('admin_dashboard') }}" class="cabinet-nav__link">
+                            <span class="cabinet-nav__icon">🛠️</span>
+                            Админка
+                        </a>
+                    {% endif %}
+                    {% if is_granted('ROLE_USER') %}
+                        <a href="{{ path('logout') }}" class="cabinet-nav__link cabinet-nav__link--logout">
+                            <span class="cabinet-nav__icon">🚪</span>
+                            Выход
+                        </a>
+                    {% else %}
+                        <a href="{{ path('login') }}" class="cabinet-nav__link">
+                            <span class="cabinet-nav__icon">🔑</span>
+                            Войти
+                        </a>
+                    {% endif %}
                 </nav>
             </aside>
 

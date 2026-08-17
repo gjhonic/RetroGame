@@ -38,6 +38,7 @@ class CronApiController extends AbstractController
                     properties: [
                         new OA\Property(property: 'id', type: 'integer'),
                         new OA\Property(property: 'command', type: 'string'),
+                        new OA\Property(property: 'name', type: 'string', nullable: true),
                         new OA\Property(property: 'color', type: 'string', nullable: true),
                         new OA\Property(property: 'lastRun', type: 'object', nullable: true),
                     ],
@@ -81,17 +82,20 @@ class CronApiController extends AbstractController
         return $this->json($cronMapper->toDetail($cron));
     }
 
-    /** Задаёт цвет крона для графика. */
-    #[Route('/{id}', name: 'app_api_admin_cron_update_color', methods: ['PATCH'], requirements: ['id' => '\d+'])]
+    /** Задаёт название и/или цвет крона для графика — поля в теле запроса необязательны, обновляются только присланные. */
+    #[Route('/{id}', name: 'app_api_admin_cron_update', methods: ['PATCH'], requirements: ['id' => '\d+'])]
     #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
     #[OA\RequestBody(content: new OA\JsonContent(
-        properties: [new OA\Property(property: 'color', type: 'string', nullable: true, example: '#198754')],
+        properties: [
+            new OA\Property(property: 'name', type: 'string', nullable: true, example: 'Импорт игр из Steam'),
+            new OA\Property(property: 'color', type: 'string', nullable: true, example: '#198754'),
+        ],
         type: 'object',
     ))]
     #[OA\Response(response: 200, description: 'Крон обновлён')]
     #[OA\Response(response: 404, description: 'Крон не найден')]
-    #[OA\Response(response: 422, description: 'Некорректный формат цвета')]
-    public function updateColor(
+    #[OA\Response(response: 422, description: 'Некорректный формат цвета или названия')]
+    public function update(
         int $id,
         Request $request,
         CronRepository $cronRepository,
@@ -105,13 +109,27 @@ class CronApiController extends AbstractController
         }
 
         $data = json_decode($request->getContent(), true);
-        $color = \is_array($data) ? ($data['color'] ?? null) : null;
+        $data = \is_array($data) ? $data : [];
 
-        if ($color !== null && (!\is_string($color) || preg_match(self::COLOR_PATTERN, $color) !== 1)) {
-            return $this->json(['errors' => ['color' => ['Цвет должен быть в формате #RRGGBB.']]], 422);
+        if (\array_key_exists('color', $data)) {
+            $color = $data['color'];
+            if ($color !== null && (!\is_string($color) || preg_match(self::COLOR_PATTERN, $color) !== 1)) {
+                return $this->json(['errors' => ['color' => ['Цвет должен быть в формате #RRGGBB.']]], 422);
+            }
+
+            $cron->setColor($color);
         }
 
-        $cron->setColor($color);
+        if (\array_key_exists('name', $data)) {
+            $name = $data['name'];
+            if ($name !== null && !\is_string($name)) {
+                return $this->json(['errors' => ['name' => ['Название должно быть строкой.']]], 422);
+            }
+
+            $name = \is_string($name) ? trim($name) : null;
+            $cron->setName($name === '' ? null : $name);
+        }
+
         $entityManager->flush();
 
         return $this->json($cronMapper->toDetail($cron));

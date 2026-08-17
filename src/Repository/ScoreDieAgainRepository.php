@@ -45,4 +45,13 @@ class ScoreDieAgainRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /** Сбрасывает таблицу лидеров: удаляет все результаты, возвращает количество удалённых строк. */
+    public function deleteAll(): int
+    {
+        return $this->createQueryBuilder('s')
+            ->delete()
+            ->getQuery()
+            ->execute();
+    }
 }

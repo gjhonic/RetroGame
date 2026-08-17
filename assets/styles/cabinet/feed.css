@@ -1,0 +1,26 @@
+/* Личная лента тэйков на /cabinet (templates/cabinet/feed/index.html.twig) */
+
+.take-feed {
+    margin-top: 40px;
+}
+
+.take-feed .game-detail__subtitle {
+    margin-bottom: 20px;
+}
+
+.take-card__game {
+    color: var(--color-accent);
+    text-decoration: none;
+}
+
+.take-card__game:hover {
+    text-decoration: underline;
+}
+
+.take-feed__load-more {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+}

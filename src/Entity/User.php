@@ -33,7 +33,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $updatedAt;
 
-    #[ORM\Column(length: 50, nullable: true)]
+    #[ORM\Column(length: 50, unique: true, nullable: true)]
     private ?string $nickname = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -41,6 +41,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $lastLoginAt = null;
+
+    /** Виден ли профиль (`/profile/{nickname}`) кому угодно — по умолчанию закрыт. */
+    #[ORM\Column]
+    private bool $isProfilePublic = false;
 
     /**
      * Создаёт пользователя с обязательными полями, остальное — через сеттеры.
@@ -186,6 +190,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function touchLastLogin(): static
     {
         $this->lastLoginAt = new \DateTimeImmutable();
+
+        return $this;
+    }
+
+    /** Виден ли публичный профиль (`/profile/{nickname}`) всем, а не только владельцу. */
+    public function isProfilePublic(): bool
+    {
+        return $this->isProfilePublic;
+    }
+
+    /** Задаёт видимость публичного профиля. */
+    public function setIsProfilePublic(bool $isProfilePublic): static
+    {
+        $this->isProfilePublic = $isProfilePublic;
 
         return $this;
     }

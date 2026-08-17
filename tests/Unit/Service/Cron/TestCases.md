@@ -15,9 +15,9 @@
 
 | Кейс | Метод теста |
 |---|---|
-| `toListItem` без последнего запуска — `lastRun: null` | `testToListItemWithoutLastRun` |
+| `toListItem` без последнего запуска — `lastRun: null`, `name`/`color` крона в ответе | `testToListItemWithoutLastRun` |
 | `toListItem` с последним запуском — статус/время запуска в `lastRun` | `testToListItemWithLastRun` |
-| `toDetail` — id/command/color/createdAt | `testToDetail` |
+| `toDetail` — id/command/name/color/createdAt | `testToDetail` |
 
 ## CronSyncServiceTest.php
 

@@ -2,7 +2,11 @@
 
 namespace App\Controller\Api\Public;
 
+use App\Entity\User;
+use App\Repository\GameFavoriteRepository;
+use App\Repository\GameReactionRepository;
 use App\Repository\GameRepository;
+use App\Repository\GameStatusRepository;
 use App\Repository\GenreRepository;
 use App\Repository\PlatformRepository;
 use App\Service\Game\GameMapper;
@@ -11,6 +15,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 /** JSON API каталога игр — используется Vue-компонентами каталога (GameCatalog, GameDetail). */
 #[Route('/api/games')]
@@ -169,11 +174,16 @@ class GameApiController extends AbstractController
     ): JsonResponse {
         $yearRange = $gameRepository->findPublicReleaseYearRange();
 
+        $genres = array_filter(
+            $genreRepository->findBy([], ['name' => 'ASC']),
+            static fn ($genre): bool => !\in_array($genre->getName(), GameMapper::HIDDEN_PUBLIC_GENRE_NAMES, true),
+        );
+
         return $this->json([
-            'genres' => array_map(
+            'genres' => array_values(array_map(
                 static fn ($genre): array => ['id' => $genre->getId(), 'name' => $genre->getName()],
-                $genreRepository->findBy([], ['name' => 'ASC']),
-            ),
+                $genres,
+            )),
             'platforms' => array_map(
                 static fn ($platform): array => ['id' => $platform->getId(), 'name' => $platform->getName()],
                 $platformRepository->findBy([], ['name' => 'ASC']),
@@ -211,19 +221,43 @@ class GameApiController extends AbstractController
                 new OA\Property(property: 'publishers', type: 'array', items: new OA\Items(type: 'string')),
                 new OA\Property(property: 'genres', type: 'array', items: new OA\Items(type: 'string')),
                 new OA\Property(property: 'platforms', type: 'array', items: new OA\Items(type: 'string')),
+                new OA\Property(property: 'likeCount', type: 'integer'),
+                new OA\Property(property: 'dislikeCount', type: 'integer'),
+                new OA\Property(property: 'myReaction', type: 'string', nullable: true),
+                new OA\Property(property: 'myFavorite', type: 'boolean'),
+                new OA\Property(property: 'myStatus', type: 'string', nullable: true),
             ],
             type: 'object',
         ),
     )]
     #[OA\Response(response: 404, description: 'Игра не найдена')]
-    public function show(string $slug, GameRepository $gameRepository, GameMapper $gameMapper): JsonResponse
-    {
+    public function show(
+        string $slug,
+        GameRepository $gameRepository,
+        GameReactionRepository $gameReactionRepository,
+        GameFavoriteRepository $gameFavoriteRepository,
+        GameStatusRepository $gameStatusRepository,
+        GameMapper $gameMapper,
+        #[CurrentUser] ?User $user,
+    ): JsonResponse {
         $game = $gameRepository->findOneBy(['slug' => $slug]);
 
-        if ($game === null) {
+        if ($game === null || $gameMapper->isHiddenFromPublic($game)) {
             throw $this->createNotFoundException('Игра не найдена.');
         }
 
-        return $this->json($gameMapper->toDetail($game));
+        $counts = $gameReactionRepository->countByTypeForGame($game);
+        $myReaction = $user !== null ? $gameReactionRepository->findOneByGameAndUser($game, $user) : null;
+        $myFavorite = $user !== null && $gameFavoriteRepository->findOneByGameAndUser($game, $user) !== null;
+        $myStatus = $user !== null ? $gameStatusRepository->findOneByGameAndUser($game, $user) : null;
+
+        return $this->json($gameMapper->toDetail(
+            $game,
+            $counts['like'],
+            $counts['dislike'],
+            $myReaction?->getType()->value,
+            $myFavorite,
+            $myStatus?->getStatus()->value,
+        ));
     }
 }

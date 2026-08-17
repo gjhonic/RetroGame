@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block body %}
-    <a href="{{ path('cabinet_game_index') }}" class="back-link">← Назад в каталог</a>
+    <a href="{{ path('app_game_index') }}" class="back-link">← Назад в каталог</a>
 
-    <div {{ vue_component('Cabinet/GameDetail', { slug: slug }) }}></div>
+    <div {{ vue_component('Cabinet/GameDetail', { slug: slug, isAuthenticated: is_granted('ROLE_USER') }) }}></div>
 {% endblock %}

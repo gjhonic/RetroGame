@@ -8,7 +8,7 @@
         Не удалось загрузить игру: {{ error }}
     </div>
 
-    <div v-else class="card" style="max-width: 860px;">
+    <div v-else style="width: 70%;">
         <img v-if="game.coverImageUrl" class="card-img-top cover-large" :src="game.coverImageUrl" :alt="game.name">
         <div v-else class="card-img-top cover-large bg-body-secondary d-flex align-items-center justify-content-center fs-1">🎮</div>
 

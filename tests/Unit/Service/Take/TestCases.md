@@ -29,6 +29,7 @@
 
 | Кейс | Метод теста |
 |---|---|
-| Маппинг полей тэйка в список, включая счётчики лайков/дизлайков/комментариев | `testToListItemMapsFieldsIncludingCounts` |
+| Маппинг полей тэйка в список, включая счётчики лайков/дизлайков/комментариев (`myReaction: null` по умолчанию) | `testToListItemMapsFieldsIncludingCounts` |
+| `myReaction` передаётся и попадает в ответ | `testToListItemIncludesMyReactionWhenPassed` |
 | Детали тэйка включают смаппленные комментарии | `testToDetailIncludesMappedComments` |
 | Маппинг полей комментария | `testToCommentMapsFields` |

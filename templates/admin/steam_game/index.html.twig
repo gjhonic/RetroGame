@@ -1,0 +1,8 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Steam-игры — Админка — RetroGame{% endblock %}
+{% block admin_title %}Steam-игры{% endblock %}
+
+{% block body %}
+    <div {{ vue_component('Admin/SteamGameList') }}></div>
+{% endblock %}

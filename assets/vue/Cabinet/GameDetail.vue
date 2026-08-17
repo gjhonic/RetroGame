@@ -54,48 +54,128 @@
 
         <template v-if="game.screenshotUrls.length > 0">
             <h2 class="game-detail__subtitle">Скриншоты</h2>
-            <div class="screenshot-grid">
+            <div class="screenshot-carousel">
+                <button
+                    v-if="game.screenshotUrls.length > 1"
+                    type="button"
+                    class="screenshot-carousel__nav screenshot-carousel__nav--prev"
+                    aria-label="Предыдущий скриншот"
+                    @click="prevImage"
+                >‹</button>
+
+                <button
+                    type="button"
+                    class="screenshot-carousel__main"
+                    @click="openLightbox(currentIndex)"
+                >
+                    <img :src="game.screenshotUrls[currentIndex]" :alt="`${game.name} — скриншот`">
+                </button>
+
+                <button
+                    v-if="game.screenshotUrls.length > 1"
+                    type="button"
+                    class="screenshot-carousel__nav screenshot-carousel__nav--next"
+                    aria-label="Следующий скриншот"
+                    @click="nextImage"
+                >›</button>
+            </div>
+
+            <div v-if="game.screenshotUrls.length > 1" class="screenshot-carousel__dots">
                 <button
                     v-for="(url, index) in game.screenshotUrls"
                     :key="url"
                     type="button"
-                    class="screenshot-grid__item"
-                    @click="openLightbox(index)"
-                >
-                    <img :src="url" :alt="`${game.name} — скриншот`" loading="lazy">
-                </button>
+                    class="screenshot-carousel__dot"
+                    :class="{ 'screenshot-carousel__dot--active': index === currentIndex }"
+                    :aria-label="`Скриншот ${index + 1}`"
+                    @click="currentIndex = index"
+                ></button>
+            </div>
 
-                <div
-                    class="lightbox"
-                    :class="{ 'lightbox--open': lightboxOpen }"
-                    @click="closeOnOverlayClick"
+            <div
+                class="lightbox"
+                :class="{ 'lightbox--open': lightboxOpen }"
+                @click="closeOnOverlayClick"
+            >
+                <button type="button" class="lightbox__close" aria-label="Закрыть" @click="closeLightbox">✕</button>
+                <button
+                    type="button"
+                    class="lightbox__nav lightbox__nav--prev"
+                    aria-label="Предыдущий скриншот"
+                    @click="prevImage"
+                >‹</button>
+                <img
+                    class="lightbox__image"
+                    :src="game.screenshotUrls[currentIndex]"
+                    :alt="`${game.name} — скриншот`"
                 >
-                    <button type="button" class="lightbox__close" aria-label="Закрыть" @click="closeLightbox">✕</button>
-                    <button
-                        type="button"
-                        class="lightbox__nav lightbox__nav--prev"
-                        aria-label="Предыдущий скриншот"
-                        @click="prevImage"
-                    >‹</button>
-                    <img
-                        class="lightbox__image"
-                        :src="game.screenshotUrls[currentIndex]"
-                        :alt="`${game.name} — скриншот`"
-                    >
-                    <button
-                        type="button"
-                        class="lightbox__nav lightbox__nav--next"
-                        aria-label="Следующий скриншот"
-                        @click="nextImage"
-                    >›</button>
-                </div>
+                <button
+                    type="button"
+                    class="lightbox__nav lightbox__nav--next"
+                    aria-label="Следующий скриншот"
+                    @click="nextImage"
+                >›</button>
             </div>
         </template>
+
+        <div class="game-actions">
+            <div class="game-actions__row">
+                <button
+                    type="button"
+                    class="take-reaction game-actions__reaction"
+                    :class="{ 'take-reaction--active': game.myReaction === 'like' }"
+                    :disabled="!props.isAuthenticated || reactionPending"
+                    :title="props.isAuthenticated ? '' : 'Войдите, чтобы оценить игру'"
+                    @click="toggleReaction('like')"
+                >👍 {{ game.likeCount }}</button>
+                <button
+                    type="button"
+                    class="take-reaction game-actions__reaction"
+                    :class="{ 'take-reaction--active': game.myReaction === 'dislike' }"
+                    :disabled="!props.isAuthenticated || reactionPending"
+                    :title="props.isAuthenticated ? '' : 'Войдите, чтобы оценить игру'"
+                    @click="toggleReaction('dislike')"
+                >👎 {{ game.dislikeCount }}</button>
+                <button
+                    type="button"
+                    class="game-actions__favorite"
+                    :class="{ 'game-actions__favorite--active': game.myFavorite }"
+                    :disabled="!props.isAuthenticated || favoritePending"
+                    :title="props.isAuthenticated ? '' : 'Войдите, чтобы добавить в избранное'"
+                    @click="toggleFavorite"
+                >{{ game.myFavorite ? '♥ В избранном' : '♡ В избранное' }}</button>
+
+                <div class="game-actions__status">
+                    <label for="playthroughStatus">Статус прохождения</label>
+                    <select
+                        id="playthroughStatus"
+                        :value="game.myStatus || ''"
+                        :disabled="!props.isAuthenticated || statusPending"
+                        @change="updateStatus"
+                    >
+                        <option value="">— не указан —</option>
+                        <option value="planned">Буду проходить</option>
+                        <option value="in_progress">Прохожу</option>
+                        <option value="completed">Прошёл</option>
+                        <option value="dropped">Забросил</option>
+                    </select>
+                </div>
+            </div>
+            <a v-if="!props.isAuthenticated" href="/login" class="game-actions__login-link">
+                Войдите, чтобы оценивать игры, добавлять в избранное и отмечать статус прохождения
+            </a>
+        </div>
 
         <div class="game-takes">
             <div class="game-takes__header">
                 <h2 class="game-detail__subtitle">Тэйки</h2>
-                <button type="button" class="btn btn--primary" @click="modalOpen = true">+ Добавить тэйк</button>
+                <button
+                    v-if="props.isAuthenticated"
+                    type="button"
+                    class="btn btn--primary"
+                    @click="modalOpen = true"
+                >+ Добавить тэйк</button>
+                <a v-else href="/login" class="btn btn--secondary">Войдите, чтобы оставить тэйк</a>
             </div>
 
             <div v-if="takesLoading" class="empty-state">
@@ -114,18 +194,7 @@
             </div>
 
             <ul v-else class="take-list">
-                <li v-for="take in takes" :key="take.id" class="take-card">
-                    <div class="take-card__meta">
-                        <span class="take-card__author">{{ take.author.nickname || 'Игрок' }}</span>
-                        <span class="take-card__date">{{ formatDate(take.createdAt) }}</span>
-                    </div>
-                    <p class="take-card__text">{{ take.text }}</p>
-                    <div class="take-card__counts">
-                        <span>👍 {{ take.likeCount }}</span>
-                        <span>👎 {{ take.dislikeCount }}</span>
-                        <span>💬 {{ take.commentCount }}</span>
-                    </div>
-                </li>
+                <TakeCard v-for="take in takes" :key="take.id" :take="take" :is-authenticated="props.isAuthenticated" />
             </ul>
         </div>
 
@@ -140,10 +209,12 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import TakeCard from './TakeCard.vue';
 import TakeCreateModal from './TakeCreateModal.vue';
 
 const props = defineProps({
     slug: { type: String, required: true },
+    isAuthenticated: { type: Boolean, default: false },
 });
 
 const game = ref(null);
@@ -157,6 +228,10 @@ const modalOpen = ref(false);
 
 const lightboxOpen = ref(false);
 const currentIndex = ref(0);
+
+const reactionPending = ref(false);
+const favoritePending = ref(false);
+const statusPending = ref(false);
 
 const releaseDateFormatted = computed(() => {
     if (!game.value?.releaseDate) {
@@ -178,12 +253,6 @@ function scoreBadgeClass(score) {
 
 function formatPopularity(value) {
     return new Intl.NumberFormat('ru-RU', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
-}
-
-function formatDate(value) {
-    return new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(
-        new Date(value),
-    );
 }
 
 function openLightbox(index) {
@@ -222,6 +291,93 @@ function onKeydown(event) {
         nextImage();
     } else if (event.key === 'ArrowLeft') {
         prevImage();
+    }
+}
+
+async function toggleReaction(type) {
+    if (!props.isAuthenticated || reactionPending.value) {
+        return;
+    }
+
+    reactionPending.value = true;
+
+    try {
+        const remove = game.value.myReaction === type;
+        const response = await fetch(`/api/cabinet/games/${props.slug}/reaction`, {
+            method: remove ? 'DELETE' : 'PUT',
+            headers: remove ? undefined : { 'Content-Type': 'application/json' },
+            body: remove ? undefined : JSON.stringify({ type }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        game.value.myReaction = data.type;
+        game.value.likeCount = data.likeCount;
+        game.value.dislikeCount = data.dislikeCount;
+    } catch {
+        // Реакция не сохранилась — счётчики останутся прежними, пользователь может повторить клик.
+    } finally {
+        reactionPending.value = false;
+    }
+}
+
+async function toggleFavorite() {
+    if (!props.isAuthenticated || favoritePending.value) {
+        return;
+    }
+
+    favoritePending.value = true;
+
+    try {
+        const method = game.value.myFavorite ? 'DELETE' : 'PUT';
+        const response = await fetch(`/api/cabinet/games/${props.slug}/favorite`, { method });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        game.value.myFavorite = data.favorite;
+    } catch {
+        // Состояние не сохранилось — остаётся прежним, пользователь может повторить клик.
+    } finally {
+        favoritePending.value = false;
+    }
+}
+
+async function updateStatus(event) {
+    if (!props.isAuthenticated || statusPending.value) {
+        return;
+    }
+
+    const value = event.target.value;
+    const previousStatus = game.value.myStatus;
+    statusPending.value = true;
+
+    try {
+        const response = value === ''
+            ? await fetch(`/api/cabinet/games/${props.slug}/status`, { method: 'DELETE' })
+            : await fetch(`/api/cabinet/games/${props.slug}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: value }),
+            });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        game.value.myStatus = data.status;
+    } catch {
+        // Статус не сохранился — возвращаем select к прежнему значению (Vue не патчит DOM,
+        // если реактивное значение совпадает со старым, поэтому сбрасываем элемент напрямую).
+        event.target.value = previousStatus || '';
+    } finally {
+        statusPending.value = false;
     }
 }
 

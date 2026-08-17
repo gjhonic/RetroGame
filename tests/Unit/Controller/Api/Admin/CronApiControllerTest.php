@@ -105,52 +105,97 @@ class CronApiControllerTest extends TestCase
         $this->controller->show(999, $this->cronRepository, $this->mapper);
     }
 
-    public function testUpdateColorSetsValidColorAndFlushes(): void
+    public function testUpdateSetsValidColorAndFlushes(): void
     {
         $cron = new Cron('app:games:import');
         $this->cronRepository->expects($this->once())->method('find')->with(1)->willReturn($cron);
         $this->entityManager->expects($this->once())->method('flush');
 
         $request = new Request(content: json_encode(['color' => '#198754'], \JSON_THROW_ON_ERROR));
-        $response = $this->controller->updateColor(
-            1,
-            $request,
-            $this->cronRepository,
-            $this->mapper,
-            $this->entityManager,
-        );
+        $response = $this->controller->update(1, $request, $this->cronRepository, $this->mapper, $this->entityManager);
         $data = json_decode((string) $response->getContent(), true);
 
         self::assertSame('#198754', $data['color']);
         self::assertSame('#198754', $cron->getColor());
     }
 
-    public function testUpdateColorRejectsInvalidFormat(): void
+    public function testUpdateRejectsInvalidColorFormat(): void
     {
         $cron = new Cron('app:games:import');
         $this->cronRepository->method('find')->willReturn($cron);
         $this->entityManager->expects($this->never())->method('flush');
 
         $request = new Request(content: json_encode(['color' => 'red'], \JSON_THROW_ON_ERROR));
-        $response = $this->controller->updateColor(
-            1,
-            $request,
-            $this->cronRepository,
-            $this->mapper,
-            $this->entityManager,
-        );
+        $response = $this->controller->update(1, $request, $this->cronRepository, $this->mapper, $this->entityManager);
         $data = json_decode((string) $response->getContent(), true);
 
         self::assertSame(422, $response->getStatusCode());
         self::assertArrayHasKey('color', $data['errors']);
     }
 
-    public function testUpdateColorThrowsNotFoundExceptionForUnknownId(): void
+    public function testUpdateSetsNameAndFlushes(): void
+    {
+        $cron = new Cron('app:games:import');
+        $this->cronRepository->expects($this->once())->method('find')->with(1)->willReturn($cron);
+        $this->entityManager->expects($this->once())->method('flush');
+
+        $request = new Request(content: json_encode(['name' => ' Импорт игр из Steam '], \JSON_THROW_ON_ERROR));
+        $response = $this->controller->update(1, $request, $this->cronRepository, $this->mapper, $this->entityManager);
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertSame('Импорт игр из Steam', $data['name']);
+        self::assertSame('Импорт игр из Steam', $cron->getName());
+    }
+
+    public function testUpdateWithBlankNameClearsIt(): void
+    {
+        $cron = (new Cron('app:games:import'))->setName('Старое название');
+        $this->cronRepository->method('find')->willReturn($cron);
+        $this->entityManager->expects($this->once())->method('flush');
+
+        $request = new Request(content: json_encode(['name' => '   '], \JSON_THROW_ON_ERROR));
+        $response = $this->controller->update(1, $request, $this->cronRepository, $this->mapper, $this->entityManager);
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertNull($data['name']);
+        self::assertNull($cron->getName());
+    }
+
+    public function testUpdateRejectsNonStringName(): void
+    {
+        $cron = new Cron('app:games:import');
+        $this->cronRepository->method('find')->willReturn($cron);
+        $this->entityManager->expects($this->never())->method('flush');
+
+        $request = new Request(content: json_encode(['name' => 123], \JSON_THROW_ON_ERROR));
+        $response = $this->controller->update(1, $request, $this->cronRepository, $this->mapper, $this->entityManager);
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertSame(422, $response->getStatusCode());
+        self::assertArrayHasKey('name', $data['errors']);
+    }
+
+    public function testUpdateSetsNameAndColorTogether(): void
+    {
+        $cron = new Cron('app:games:import');
+        $this->cronRepository->method('find')->willReturn($cron);
+        $this->entityManager->expects($this->once())->method('flush');
+
+        $request = new Request(
+            content: json_encode(['name' => 'Импорт игр из Steam', 'color' => '#198754'], \JSON_THROW_ON_ERROR),
+        );
+        $this->controller->update(1, $request, $this->cronRepository, $this->mapper, $this->entityManager);
+
+        self::assertSame('Импорт игр из Steam', $cron->getName());
+        self::assertSame('#198754', $cron->getColor());
+    }
+
+    public function testUpdateThrowsNotFoundExceptionForUnknownId(): void
     {
         $this->cronRepository->expects($this->once())->method('find')->with(999)->willReturn(null);
 
         $this->expectException(NotFoundHttpException::class);
         $request = new Request(content: json_encode(['color' => '#198754'], \JSON_THROW_ON_ERROR));
-        $this->controller->updateColor(999, $request, $this->cronRepository, $this->mapper, $this->entityManager);
+        $this->controller->update(999, $request, $this->cronRepository, $this->mapper, $this->entityManager);
     }
 }

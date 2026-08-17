@@ -21,9 +21,15 @@
         "@symfony/ux-turbo": "file:vendor/symfony/ux-turbo/assets",
         "@symfony/ux-vue": "file:vendor/symfony/ux-vue/assets",
         "@tanstack/vue-table": "^8.21.3",
+        "@tiptap/extension-image": "^3.30.0",
+        "@tiptap/extension-link": "^3.30.0",
+        "@tiptap/pm": "^3.30.0",
+        "@tiptap/starter-kit": "^3.30.0",
+        "@tiptap/vue-3": "^3.30.0",
         "bootstrap": "^5.3.8",
         "chart.js": "^4.5.1",
-        "chartjs-plugin-zoom": "^2.2.0",
+        "dompurify": "^3.4.13",
+        "vis-timeline": "^8.5.3",
         "vue": "^3.5.41",
         "vue-chartjs": "^5.3.4"
     }
