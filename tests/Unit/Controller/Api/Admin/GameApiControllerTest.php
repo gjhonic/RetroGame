@@ -69,6 +69,7 @@ class GameApiControllerTest extends TestCase
             'description' => 'A sci-fi shooter',
             'metacriticScore' => 96,
             'popularity' => null,
+            'avgPopularity' => null,
             'releaseYear' => '1998',
             'developers' => ['Valve'],
             'publishers' => [],

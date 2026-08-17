@@ -38,6 +38,7 @@ class GameMapper
             'description' => $game->getDescription(),
             'metacriticScore' => $game->getMetacriticScore(),
             'popularity' => $game->getPopularity(),
+            'avgPopularity' => $game->getAvgPopularity(),
             'releaseYear' => $game->getReleaseDate()?->format('Y'),
         ];
     }
@@ -78,6 +79,7 @@ class GameMapper
             'rating' => $game->getRating(),
             'metacriticScore' => $game->getMetacriticScore(),
             'popularity' => $game->getPopularity(),
+            'avgPopularity' => $game->getAvgPopularity(),
             'releaseDate' => $game->getReleaseDate()?->format('Y-m-d'),
             'developers' => $this->names($game->getDevelopers()->toArray()),
             'publishers' => $this->names($game->getPublishers()->toArray()),

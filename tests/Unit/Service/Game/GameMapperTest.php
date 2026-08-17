@@ -30,6 +30,22 @@ class GameMapperTest extends TestCase
         self::assertTrue($this->mapper->isHiddenFromPublic($game));
     }
 
+    public function testToListItemComputesAvgPopularityAsPopularityPerYearSinceRelease(): void
+    {
+        $game = (new Game('Old Hit', 'old-hit'))
+            ->setReleaseDate(new \DateTimeImmutable('-3 years'))
+            ->setPopularity(3000);
+
+        self::assertSame(1000.0, $this->mapper->toListItem($game)['avgPopularity']);
+    }
+
+    public function testToListItemAvgPopularityIsNullWithoutReleaseDate(): void
+    {
+        $game = (new Game('No Date', 'no-date'))->setPopularity(3000);
+
+        self::assertNull($this->mapper->toListItem($game)['avgPopularity']);
+    }
+
     /** @param array<int, string> $genreNames */
     private function makeGame(array $genreNames): Game
     {

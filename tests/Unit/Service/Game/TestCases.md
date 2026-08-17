@@ -36,3 +36,5 @@
 |---|---|
 | У игры нет скрытого жанра — `isHiddenFromPublic` возвращает false | `testIsHiddenFromPublicReturnsFalseWhenGameHasNoHiddenGenre` |
 | У игры есть жанр "Сексуальный контент" — `isHiddenFromPublic` возвращает true | `testIsHiddenFromPublicReturnsTrueWhenGameHasHiddenGenre` |
+| avgPopularity = popularity / число полных лет с релиза | `testToListItemComputesAvgPopularityAsPopularityPerYearSinceRelease` |
+| avgPopularity = null без даты релиза | `testToListItemAvgPopularityIsNullWithoutReleaseDate` |

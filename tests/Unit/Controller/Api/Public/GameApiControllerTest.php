@@ -91,6 +91,7 @@ class GameApiControllerTest extends TestCase
             'description' => 'A sci-fi shooter',
             'metacriticScore' => 96,
             'popularity' => null,
+            'avgPopularity' => null,
             'releaseYear' => '1998',
         ], $data['items'][0]);
         self::assertNull($data['items'][1]['coverImageUrl']);
