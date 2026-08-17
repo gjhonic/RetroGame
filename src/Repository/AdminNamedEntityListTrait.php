@@ -2,23 +2,19 @@
 
 namespace App\Repository;
 
-use App\Entity\Game;
-use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
 
 /**
  * Общая логика постраничного списка для справочников (жанры, разработчики,
  * издатели) в админке: у всех троих одинаковая форма (id, name), отличается
- * только имя ManyToMany-связи на стороне Game (genres/developers/publishers),
- * которое возвращает gameAssociationName().
+ * только обратная ManyToMany-связь на стороне сущности (Genre::$games,
+ * Developer::$games, Publisher::$games — mappedBy соответствующего поля на
+ * Game), поэтому JOIN везде идёт через одно и то же имя 'e.games'.
  *
  * @method QueryBuilder createQueryBuilder(string $alias, ?string $indexBy = null)
  */
 trait AdminNamedEntityListTrait
 {
-    /** Имя ManyToMany-связи на Game, которой принадлежит эта сущность. */
-    abstract protected function gameAssociationName(): string;
-
     /**
      * Одна страница справочника: фильтр по названию, сортировка по названию
      * или количеству игр, постраничная навигация — всё на стороне БД.
@@ -35,6 +31,7 @@ trait AdminNamedEntityListTrait
         int $offset,
     ): array {
         $qb = $this->buildAdminListQueryBuilder($filters)
+            ->leftJoin('e.games', 'game')
             ->select('e.id AS id', 'e.name AS name', 'COUNT(game.id) AS gamesCount')
             ->groupBy('e.id');
 
@@ -61,11 +58,13 @@ trait AdminNamedEntityListTrait
     }
 
     /**
+     * Без JOIN на игры — фильтр только по названию, сам список игр тут не нужен.
+     *
      * @param array<string, string> $filters
      */
     public function countForAdminList(array $filters): int
     {
-        $qb = $this->buildAdminListQueryBuilder($filters)->select('COUNT(DISTINCT e.id)');
+        $qb = $this->buildAdminListQueryBuilder($filters)->select('COUNT(e.id)');
 
         return (int) $qb->getQuery()->getSingleScalarResult();
     }
@@ -75,10 +74,7 @@ trait AdminNamedEntityListTrait
      */
     private function buildAdminListQueryBuilder(array $filters): QueryBuilder
     {
-        // LEFT JOIN без общей владеющей стороны — Game хранит ManyToMany
-        // однонаправленно, поэтому связь проверяется через MEMBER OF.
-        $qb = $this->createQueryBuilder('e')
-            ->leftJoin(Game::class, 'game', Join::WITH, sprintf('e MEMBER OF game.%s', $this->gameAssociationName()));
+        $qb = $this->createQueryBuilder('e');
 
         if (($filters['name'] ?? '') !== '') {
             // LOWER() с обеих сторон — LIKE в PostgreSQL по умолчанию регистрозависим.

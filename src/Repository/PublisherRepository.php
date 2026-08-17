@@ -18,9 +18,4 @@ class PublisherRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Publisher::class);
     }
-
-    protected function gameAssociationName(): string
-    {
-        return 'publishers';
-    }
 }

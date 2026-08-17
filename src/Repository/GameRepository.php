@@ -51,43 +51,37 @@ class GameRepository extends ServiceEntityRepository
     }
 
     /**
-     * Распределение игр по диапазонам оценки Metacritic (для графика на дашборде).
+     * Распределение игр по диапазонам оценки Metacritic (для графика на дашборде) —
+     * один проход по таблице (CASE WHEN + GROUP BY) вместо пяти отдельных COUNT-запросов.
      *
      * @return array<int, array{label: string, count: int}>
      */
     public function findScoreDistribution(): array
     {
-        $buckets = [
-            ['label' => '90–100', 'min' => 90, 'max' => 100],
-            ['label' => '75–89', 'min' => 75, 'max' => 89],
-            ['label' => '50–74', 'min' => 50, 'max' => 74],
-            ['label' => '0–49', 'min' => 0, 'max' => 49],
-        ];
+        $labels = ['90–100', '75–89', '50–74', '0–49', 'Без оценки'];
 
-        $distribution = [];
-        foreach ($buckets as $bucket) {
-            $distribution[] = [
-                'label' => $bucket['label'],
-                'count' => (int) $this->createQueryBuilder('g')
-                    ->select('COUNT(g.id)')
-                    ->andWhere('g.metacriticScore BETWEEN :min AND :max')
-                    ->setParameter('min', $bucket['min'])
-                    ->setParameter('max', $bucket['max'])
-                    ->getQuery()
-                    ->getSingleScalarResult(),
-            ];
-        }
+        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            <<<'SQL'
+                SELECT
+                    CASE
+                        WHEN metacritic_score BETWEEN 90 AND 100 THEN '90–100'
+                        WHEN metacritic_score BETWEEN 75 AND 89 THEN '75–89'
+                        WHEN metacritic_score BETWEEN 50 AND 74 THEN '50–74'
+                        WHEN metacritic_score BETWEEN 0 AND 49 THEN '0–49'
+                        ELSE 'Без оценки'
+                    END AS label,
+                    COUNT(*) AS count
+                FROM game
+                GROUP BY label
+                SQL,
+        );
 
-        $distribution[] = [
-            'label' => 'Без оценки',
-            'count' => (int) $this->createQueryBuilder('g')
-                ->select('COUNT(g.id)')
-                ->andWhere('g.metacriticScore IS NULL')
-                ->getQuery()
-                ->getSingleScalarResult(),
-        ];
+        $countsByLabel = array_column($rows, 'count', 'label');
 
-        return $distribution;
+        return array_map(
+            static fn (string $label): array => ['label' => $label, 'count' => (int) ($countsByLabel[$label] ?? 0)],
+            $labels,
+        );
     }
 
     /**
