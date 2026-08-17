@@ -26,8 +26,8 @@ class LoginController extends AbstractController
             return $this->redirectToRoute('cabinet_feed');
         }
 
-        // Каждому ряду фона — свой набор обложек, чтобы картинки по возможности не повторялись.
-        $coverImagePaths = $gameRepository->findRandomCoverImagePaths(
+        // Обложки самых популярных игр (по убыванию popularity), разбитые по рядам фона.
+        $coverImagePaths = $gameRepository->findPopularCoverImagePaths(
             self::BACKGROUND_ROWS * self::BACKGROUND_COVERS_PER_ROW,
         );
 

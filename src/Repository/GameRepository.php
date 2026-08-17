@@ -91,22 +91,24 @@ class GameRepository extends ServiceEntityRepository
     }
 
     /**
-     * Пути обложек для декоративного фона (страница входа и т.п.), в случайном порядке.
+     * Пути обложек для декоративного фона (страница входа и т.п.) — самые
+     * популярные игры (g.popularity по убыванию, NULL — в конце).
      *
      * @return array<int, string>
      */
-    public function findRandomCoverImagePaths(int $limit): array
+    public function findPopularCoverImagePaths(int $limit): array
     {
         /** @var array<int, string> $paths */
         $paths = $this->createQueryBuilder('g')
             ->select('g.coverImagePath')
             ->where('g.coverImagePath IS NOT NULL')
+            ->addOrderBy('CASE WHEN g.popularity IS NULL THEN 1 ELSE 0 END', 'ASC')
+            ->addOrderBy('g.popularity', 'DESC')
+            ->setMaxResults($limit)
             ->getQuery()
             ->getSingleColumnResult();
 
-        shuffle($paths);
-
-        return array_slice($paths, 0, $limit);
+        return $paths;
     }
 
     /**

@@ -23,7 +23,7 @@ class RegistrationController extends AbstractController
         }
 
         // Тот же фон, что и на странице входа (см. LoginController) — единый визуальный стиль auth-страниц.
-        $coverImagePaths = $gameRepository->findRandomCoverImagePaths(
+        $coverImagePaths = $gameRepository->findPopularCoverImagePaths(
             self::BACKGROUND_ROWS * self::BACKGROUND_COVERS_PER_ROW,
         );
 
