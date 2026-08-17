@@ -171,6 +171,17 @@ gamesCount; набор кейсов идентичен во всех трёх ф
 | `PATCH` одновременно с `name` и `color` — оба поля сохраняются | `testUpdateSetsNameAndColorTogether` |
 | `PATCH` с несуществующим `id` → `NotFoundHttpException` | `testUpdateThrowsNotFoundExceptionForUnknownId` |
 
+## UserReportApiControllerTest.php
+
+Список отчётов пользователей о проблемах (`user_report`) — только чтение,
+создание доступно всем через `Api/Public/UserReportApiController`.
+
+| Кейс | Метод теста |
+|---|---|
+| Список: страница по умолчанию (сортировка `createdAt DESC`, `perPage=25`) | `testListReturnsItemsWithDefaultPaginationAndSort` |
+| `filters[type]`/`sortBy`/`sortDir` передаются в репозиторий | `testListPassesTypeFilterAndSortToRepository` |
+| Запрошенная страница выходит за `totalPages` → клампится до последней доступной | `testListClampsRequestedPageToTotalPages` |
+
 ## ScoreDieAgainApiControllerTest.php
 
 Админский список/сброс таблицы лидеров DIE//AGAIN (`score_die_again`) —

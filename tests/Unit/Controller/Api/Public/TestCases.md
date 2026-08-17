@@ -79,6 +79,19 @@
 | Отрицательное количество убийств → `422` | `testCreateReturnsValidationErrorForNegativeKills` |
 | Невалидное тело запроса (не JSON) → `400` | `testCreateReturnsBadRequestForInvalidJsonBody` |
 
+## UserReportApiControllerTest.php
+
+Отчёты пользователей о проблемах на сайте/в приложении/в игре DIE//AGAIN
+(`/api/user-reports`) — только `create`, список доступен лишь в админке
+(`Api/Admin/UserReportApiController`).
+
+| Кейс | Метод теста |
+|---|---|
+| Валидный запрос → `201` с сохранённым отчётом (`type`/`typeLabel`) | `testCreateReturnsCreatedReportOnValidRequest` |
+| Пустой комментарий → `422` | `testCreateReturnsValidationErrorForBlankComment` |
+| Недопустимое значение `type` (не 1/2/3) → `422` | `testCreateReturnsValidationErrorForInvalidType` |
+| Невалидное тело запроса (не JSON) → `400` | `testCreateReturnsBadRequestForInvalidJsonBody` |
+
 ## ProfileApiControllerTest.php
 
 Публичный профиль `/profile/{nickname}` — виден только если владелец открыл

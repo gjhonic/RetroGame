@@ -1,0 +1,8 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Отчёты пользователей — Админка — RetroGame{% endblock %}
+{% block admin_title %}Отчёты пользователей{% endblock %}
+
+{% block body %}
+    <div {{ vue_component('Admin/UserReportList') }}></div>
+{% endblock %}
