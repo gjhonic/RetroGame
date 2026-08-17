@@ -47,6 +47,7 @@
 
         <select v-model="sort" class="toolbar-select" @change="applyFilters">
             <option value="popularity_desc">Сначала популярные</option>
+            <option value="avgPopularity_desc">По средней популярности</option>
             <option value="metacriticScore_desc">Сначала высокая оценка</option>
             <option value="releaseYear_desc">Сначала новые</option>
             <option value="releaseYear_asc">Сначала старые</option>

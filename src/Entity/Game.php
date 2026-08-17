@@ -65,6 +65,14 @@ class Game implements HasSteamDetailsInterface
     #[ORM\Column(nullable: true)]
     private ?int $popularity = null;
 
+    /**
+     * Средняя популярность — popularity, делённое на число полных лет с релиза (не
+     * меньше 1), чтобы старые игры с большим накопленным popularity не забивали топ
+     * недавних хитов. Пересчитывается автоматически в setPopularity()/setReleaseDate().
+     */
+    #[ORM\Column(nullable: true)]
+    private ?float $avgPopularity = null;
+
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $createdAt;
 
@@ -142,6 +150,7 @@ class Game implements HasSteamDetailsInterface
     public function setReleaseDate(?\DateTimeImmutable $releaseDate): static
     {
         $this->releaseDate = $releaseDate;
+        $this->avgPopularity = $this->calculateAvgPopularity();
 
         return $this;
     }
@@ -300,8 +309,27 @@ class Game implements HasSteamDetailsInterface
     public function setPopularity(?int $popularity): static
     {
         $this->popularity = $popularity;
+        $this->avgPopularity = $this->calculateAvgPopularity();
 
         return $this;
+    }
+
+    /** Возвращает среднюю популярность (popularity в пересчёте на год с релиза). */
+    public function getAvgPopularity(): ?float
+    {
+        return $this->avgPopularity;
+    }
+
+    /** popularity / число полных лет с релиза (не меньше 1) — null, если нет popularity или даты релиза. */
+    private function calculateAvgPopularity(): ?float
+    {
+        if ($this->popularity === null || $this->releaseDate === null) {
+            return null;
+        }
+
+        $yearsSinceRelease = (new \DateTimeImmutable())->diff($this->releaseDate)->y;
+
+        return $this->popularity / max(1, $yearsSinceRelease);
     }
 
     /** Возвращает дату создания записи. */

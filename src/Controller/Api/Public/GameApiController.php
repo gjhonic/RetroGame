@@ -25,7 +25,7 @@ class GameApiController extends AbstractController
     private const int PER_PAGE = 24;
 
     /** Колонки, по которым разрешена сортировка (см. GameRepository::applyPublicSort()). */
-    private const array SORTABLE_FIELDS = ['popularity', 'metacriticScore', 'releaseYear', 'name'];
+    private const array SORTABLE_FIELDS = ['popularity', 'avgPopularity', 'metacriticScore', 'releaseYear', 'name'];
 
     /** Колонки, по которым разрешена фильтрация (query-параметр filters[<ключ>]). */
     private const array FILTERABLE_FIELDS = ['name', 'genre', 'platform', 'releaseYearFrom', 'releaseYearTo'];
@@ -70,7 +70,7 @@ class GameApiController extends AbstractController
     )]
     #[OA\Parameter(
         name: 'sortBy',
-        description: 'Поле сортировки: popularity, metacriticScore, releaseYear, name',
+        description: 'Поле сортировки: popularity, avgPopularity, metacriticScore, releaseYear, name',
         in: 'query',
         schema: new OA\Schema(type: 'string', default: 'popularity'),
     )]
@@ -94,6 +94,7 @@ class GameApiController extends AbstractController
                         new OA\Property(property: 'description', type: 'string', nullable: true),
                         new OA\Property(property: 'metacriticScore', type: 'integer', nullable: true),
                         new OA\Property(property: 'popularity', type: 'integer', nullable: true),
+                        new OA\Property(property: 'avgPopularity', type: 'number', nullable: true),
                         new OA\Property(property: 'releaseYear', type: 'string', nullable: true),
                     ],
                     type: 'object',
@@ -216,6 +217,7 @@ class GameApiController extends AbstractController
                 new OA\Property(property: 'rating', type: 'number', nullable: true),
                 new OA\Property(property: 'metacriticScore', type: 'integer', nullable: true),
                 new OA\Property(property: 'popularity', type: 'integer', nullable: true),
+                new OA\Property(property: 'avgPopularity', type: 'number', nullable: true),
                 new OA\Property(property: 'releaseDate', type: 'string', nullable: true),
                 new OA\Property(property: 'developers', type: 'array', items: new OA\Items(type: 'string')),
                 new OA\Property(property: 'publishers', type: 'array', items: new OA\Items(type: 'string')),

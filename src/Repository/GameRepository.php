@@ -231,6 +231,9 @@ class GameRepository extends ServiceEntityRepository
             'popularity' => $qb
                 ->addOrderBy('CASE WHEN g.popularity IS NULL THEN 1 ELSE 0 END', 'ASC')
                 ->addOrderBy('g.popularity', $sortDirection),
+            'avgPopularity' => $qb
+                ->addOrderBy('CASE WHEN g.avgPopularity IS NULL THEN 1 ELSE 0 END', 'ASC')
+                ->addOrderBy('g.avgPopularity', $sortDirection),
             'metacriticScore' => $qb
                 ->addOrderBy('CASE WHEN g.metacriticScore IS NULL THEN 1 ELSE 0 END', 'ASC')
                 ->addOrderBy('g.metacriticScore', $sortDirection),

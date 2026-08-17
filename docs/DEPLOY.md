@@ -68,13 +68,16 @@ usermod -aG retrogame www-data
 chmod -R g+rX /var/www/retrogame
 ```
 
-## 4. sudoers: reload php-fpm без пароля
+## 4. sudoers: reload php-fpm и уборка старых релизов без пароля
 
-`activate-release.sh` перезагружает php-fpm после каждого деплоя. Даём
-пользователю `retrogame` право **только** на этот один reload, не полный sudo:
+`activate-release.sh` перезагружает php-fpm после каждого деплоя и удаляет
+старые релизы (оставляя последние `KEEP_RELEASES`). Часть файлов в
+`var/cache/prod/pools/...` релиза создаётся в рантайме от имени `www-data`
+(php-fpm), поэтому `retrogame` не может их удалить обычным `rm` — даём ему
+право **только** на эти два конкретных действия, не полный sudo:
 
 ```bash
-echo 'retrogame ALL=(root) NOPASSWD: /usr/bin/systemctl reload php8.4-fpm' \
+echo 'retrogame ALL=(root) NOPASSWD: /usr/bin/systemctl reload php8.4-fpm, /usr/bin/rm -rf /var/www/retrogame/releases/*' \
     > /etc/sudoers.d/retrogame-php-fpm-reload
 visudo -c   # проверить синтаксис перед выходом
 ```

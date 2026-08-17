@@ -76,7 +76,11 @@ ln -sfn "$RELEASE_DIR" "$DEPLOY_PATH/current"
 sudo systemctl reload php8.4-fpm
 
 # --- Уборка: оставляем последние $KEEP_RELEASES релизов ---
+# sudo — часть файлов в var/cache/prod/pools/... создана в рантайме от
+# www-data (php-fpm), обычный rm пользователем retrogame их не удаляет
+# (см. docs/DEPLOY.md, п. 4). По одному релизу за вызов — под судоерс-
+# wildcard-правило, рассчитанное на один путь-аргумент.
 cd "$DEPLOY_PATH/releases"
-ls -1t | tail -n "+$((KEEP_RELEASES + 1))" | xargs -r rm -rf
+ls -1t | tail -n "+$((KEEP_RELEASES + 1))" | xargs -r -n1 sudo rm -rf
 
 echo "Релиз $RELEASE активирован."
