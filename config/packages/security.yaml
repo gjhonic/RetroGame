@@ -44,6 +44,15 @@ security:
             logout:
                 path: logout
                 target: app_game_index
+            # Без этого веб-логин держится только сессионной cookie (см. cookie_lifetime
+            # в framework.yaml), которая всё равно обнуляется при закрытии браузера —
+            # remember_me выдаёт отдельную долгоживущую cookie, always_remember_me: true,
+            # т.к. в форме логина нет чекбокса "запомнить меня".
+            remember_me:
+                secret: '%kernel.secret%'
+                lifetime: 1209600
+                path: /
+                always_remember_me: true
 
             # https://symfony.com/doc/current/security/impersonating_user.html
             # switch_user: true
