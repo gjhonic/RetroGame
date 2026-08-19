@@ -2,3 +2,7 @@ lexik_jwt_authentication:
     secret_key: '%env(resolve:JWT_SECRET_KEY)%'
     public_key: '%env(resolve:JWT_PUBLIC_KEY)%'
     pass_phrase: '%env(JWT_PASSPHRASE)%'
+    # Дефолт бандла — 3600с (1 час), refresh-токена в проекте нет, а мобильный
+    # клиент вне этого репозитория — поэтому продлеваем сам токен до 2 недель,
+    # чтобы мобилка не разлогинивала пользователя каждый час.
+    token_ttl: 1209600
