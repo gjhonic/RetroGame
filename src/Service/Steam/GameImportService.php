@@ -360,13 +360,22 @@ class GameImportService
     /**
      * Строит slug по названию, при коллизии добавляет appid. $repository —
      * GameRepository или DlcRepository, у slug'а каждого свой неймспейс уникальности.
+     *
+     * Колонка slug — varchar(255), поэтому базу обрезаем с запасом под суффикс
+     * "-{appid}": транслитерация (кириллица/иероглифы → латиница) может
+     * растянуть строку длиннее исходного названия и превысить лимит колонки,
+     * даже если само название укладывается в него.
      */
     private function buildUniqueSlug(string $name, int $steamAppId, GameRepository|DlcRepository $repository): string
     {
+        $maxLength = 255;
+        $suffix = '-' . $steamAppId;
+
         $base = strtolower((string) $this->slugger->slug($name));
+        $base = mb_substr($base, 0, $maxLength - mb_strlen($suffix));
 
         if ($base === '' || $repository->findOneBy(['slug' => $base]) !== null) {
-            return $base . '-' . $steamAppId;
+            return $base . $suffix;
         }
 
         return $base;

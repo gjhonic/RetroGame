@@ -26,7 +26,7 @@ class Dlc implements HasSteamDetailsInterface
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(type: 'text')]
     private string $name;
 
     #[ORM\Column(length: 255, unique: true)]
