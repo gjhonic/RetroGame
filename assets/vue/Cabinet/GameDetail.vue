@@ -74,7 +74,7 @@
             </div>
         </div>
 
-        <div v-if="currentPrice && !currentPrice.isFree" class="game-price__chart">
+        <div v-if="currentPrice && !currentPrice.isFree" class="game-price__chart game-price">
             <Line :data="priceChartData" :options="lineOptions" />
         </div>
 

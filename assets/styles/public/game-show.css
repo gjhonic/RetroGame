@@ -89,9 +89,6 @@
     flex: 1 1 280px;
     margin: 0;
     padding: 16px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    background-color: var(--color-surface);
 }
 
 .game-price__current {
@@ -134,6 +131,9 @@ a.game-price__store:hover {
 .game-price__chart {
     margin-top: 24px;
     height: 220px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background-color: var(--color-surface);
 }
 
 .screenshot-grid {
