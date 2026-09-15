@@ -33,38 +33,49 @@
 
         <p v-if="game.description" class="game-detail__description">{{ game.description }}</p>
 
-        <dl class="game-facts">
-            <div v-if="game.developers.length > 0" class="game-facts__row">
-                <dt>Разработчик</dt>
-                <dd>{{ game.developers.join(', ') }}</dd>
-            </div>
-            <div v-if="game.publishers.length > 0" class="game-facts__row">
-                <dt>Издатель</dt>
-                <dd>{{ game.publishers.join(', ') }}</dd>
-            </div>
-            <div v-if="game.genres.length > 0" class="game-facts__row">
-                <dt>Жанры</dt>
-                <dd>{{ game.genres.join(', ') }}</dd>
-            </div>
-            <div v-if="game.platforms.length > 0" class="game-facts__row">
-                <dt>Платформы</dt>
-                <dd>{{ game.platforms.join(', ') }}</dd>
-            </div>
-        </dl>
+        <div class="game-info">
+            <dl class="game-facts">
+                <div v-if="game.developers.length > 0" class="game-facts__row">
+                    <dt>Разработчик</dt>
+                    <dd>{{ game.developers.join(', ') }}</dd>
+                </div>
+                <div v-if="game.publishers.length > 0" class="game-facts__row">
+                    <dt>Издатель</dt>
+                    <dd>{{ game.publishers.join(', ') }}</dd>
+                </div>
+                <div v-if="game.genres.length > 0" class="game-facts__row">
+                    <dt>Жанры</dt>
+                    <dd>{{ game.genres.join(', ') }}</dd>
+                </div>
+                <div v-if="game.platforms.length > 0" class="game-facts__row">
+                    <dt>Платформы</dt>
+                    <dd>{{ game.platforms.join(', ') }}</dd>
+                </div>
+            </dl>
 
-        <div v-if="currentPrice" class="game-price">
-            <p class="game-price__current">
-                <strong>Цена:</strong> {{ currentPriceText }}
-                <a
-                    v-if="currentPrice.storeUrl"
-                    :href="currentPrice.storeUrl"
-                    target="_blank"
-                    rel="noopener"
-                    class="game-price__link"
-                >{{ currentPrice.store }}</a>
-            </p>
-            <div class="game-price__chart">
-                <Line :data="priceChartData" :options="lineOptions" />
+            <div v-if="currentPrice" class="game-price">
+                <p v-if="currentPrice.isFree" class="game-price__free">Игра бесплатная</p>
+
+                <template v-else>
+                    <p v-if="!currentPrice.isAvailableInRussia" class="game-price__warning">
+                        Игра не доступна в РФ
+                    </p>
+                    <p v-else class="game-price__current">
+                        <a
+                            v-if="currentPrice.storeUrl"
+                            :href="currentPrice.storeUrl"
+                            target="_blank"
+                            rel="noopener"
+                            class="game-price__store"
+                        >{{ currentPrice.store }}</a>
+                        <span v-else class="game-price__store">{{ currentPrice.store }}</span>:
+                        <span class="game-price__amount">{{ currentPriceText }}</span>
+                    </p>
+
+                    <div class="game-price__chart">
+                        <Line :data="priceChartData" :options="lineOptions" />
+                    </div>
+                </template>
             </div>
         </div>
 
@@ -258,20 +269,19 @@ const currentPrice = computed(() => {
 });
 
 const currentPriceText = computed(() => {
-    if (!currentPrice.value) {
+    if (!currentPrice.value || currentPrice.value.priceKopecks === null) {
         return null;
     }
 
-    if (currentPrice.value.isFree) {
-        return 'Бесплатно';
-    }
-
-    if (!currentPrice.value.isAvailableInRussia) {
-        return 'Недоступно в РФ';
-    }
-
-    return `${(currentPrice.value.priceKopecks / 100).toFixed(2)} ${currentPrice.value.currency}`;
+    return formatPriceRub(currentPrice.value.priceKopecks);
 });
+
+/** X XXX руб — рубли без копеек, тысячи отделены пробелом. */
+function formatPriceRub(priceKopecks) {
+    const rubles = Math.round(priceKopecks / 100);
+
+    return `${new Intl.NumberFormat('ru-RU').format(rubles)} руб`;
+}
 
 const priceChartData = computed(() => ({
     labels: priceHistory.value.map((point) => formatChartDate(point.date)),
