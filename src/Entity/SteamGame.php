@@ -50,6 +50,15 @@ class SteamGame
     #[ORM\Column]
     private int $attempts = 0;
 
+    /**
+     * Игра точно бесплатна (подтверждено импортом цены — App\Service\Steam\PriceImportService).
+     * Раз проставившись, больше не сбрасывается: бесплатная игра платной не
+     * становится, а сама проверка цены каждый раз дорогая (запрос к Steam) —
+     * такие игры сразу отсекаются из SteamGameRepository::findBatchForPriceImport().
+     */
+    #[ORM\Column]
+    private bool $priceFree = false;
+
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $fetchedAt = null;
 
@@ -137,6 +146,21 @@ class SteamGame
     public function getAttempts(): int
     {
         return $this->attempts;
+    }
+
+    /** Подтверждено ли, что игра бесплатна (см. PriceImportService). */
+    public function isPriceFree(): bool
+    {
+        return $this->priceFree;
+    }
+
+    /** Фиксирует, что игра бесплатна — исключает её из дальнейшего импорта цен. */
+    public function markPriceFree(): static
+    {
+        $this->priceFree = true;
+        $this->updatedAt = new \DateTimeImmutable();
+
+        return $this;
     }
 
     /** Возвращает время последней успешной загрузки. */

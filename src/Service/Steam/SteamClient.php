@@ -91,6 +91,22 @@ class SteamClient
     }
 
     /**
+     * Детали приложения в регионе RU — для импорта цен (PriceImportService).
+     * В отличие от fetchAppDetails() без фолбэка на другой регион: если
+     * success=false именно с cc=ru, это и есть искомый результат — игра
+     * действительно недоступна для покупки в российском Steam (регион-лок),
+     * а не временная неполадка, которую стоит перезапрашивать в другом регионе.
+     *
+     * @return array<string, mixed>|null
+     *
+     * @throws SteamApiException
+     */
+    public function fetchAppDetailsForRussia(int $appId): ?array
+    {
+        return $this->requestAppDetails($appId, 'russian', 'ru');
+    }
+
+    /**
      * @return array<string, mixed>|null
      *
      * @throws SteamApiException
