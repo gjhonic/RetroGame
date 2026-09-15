@@ -12,7 +12,7 @@ class GamePriceMapperTest extends TestCase
     public function testToApiIncludesSteamStoreAndUrlWhenAppIdGiven(): void
     {
         $game = new Game('Half-Life', 'half-life');
-        $price = (new GamePrice($game, new \DateTimeImmutable('2026-09-15')))->markPriced(199900, 'RUB');
+        $price = (new GamePrice($game, new \DateTimeImmutable('2026-09-15')))->markPriced(199900);
 
         $data = (new GamePriceMapper())->toApi($price, 70);
 

@@ -187,7 +187,7 @@ class GameApiControllerTest extends TestCase
         $game = new Game('Half-Life', 'half-life');
         $steamGame = new SteamGame(70);
         $steamGame->setGame($game);
-        $price = (new GamePrice($game, new \DateTimeImmutable('2026-09-15')))->markPriced(199900, 'RUB');
+        $price = (new GamePrice($game, new \DateTimeImmutable('2026-09-15')))->markPriced(199900);
 
         $this->gameRepository->expects($this->once())->method('find')->with(42)->willReturn($game);
         $this->steamGameRepository->expects($this->once())
@@ -278,7 +278,7 @@ class GameApiControllerTest extends TestCase
         $game = new Game('Half-Life', 'half-life');
         $steamGame = new SteamGame(70);
         $steamGame->setGame($game);
-        $older = (new GamePrice($game, new \DateTimeImmutable('2026-09-14')))->markPriced(199900, 'RUB');
+        $older = (new GamePrice($game, new \DateTimeImmutable('2026-09-14')))->markPriced(199900);
         $newer = (new GamePrice($game, new \DateTimeImmutable('2026-09-15')))->markFree();
 
         $this->gameRepository->expects($this->once())->method('find')->with(42)->willReturn($game);

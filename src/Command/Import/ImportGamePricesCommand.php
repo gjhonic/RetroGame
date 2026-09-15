@@ -123,10 +123,9 @@ class ImportGamePricesCommand extends Command
         }
 
         $io->writeln(sprintf(
-            '<info>%s</info> — %d %s',
+            '<info>%s</info> — %d RUB',
             $game->getName(),
             $price->getPriceKopecks(),
-            $price->getCurrency(),
         ));
     }
 }

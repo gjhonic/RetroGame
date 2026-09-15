@@ -163,7 +163,6 @@ class PriceImportService
             return;
         }
 
-        $currency = (string) ($details['price_overview']['currency'] ?? 'RUB');
-        $price->markPriced((int) $finalPriceKopecks, $currency);
+        $price->markPriced((int) $finalPriceKopecks);
     }
 }

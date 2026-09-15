@@ -20,7 +20,7 @@ class PriceImportResultTest extends TestCase
         $unavailable->markUnavailable();
 
         $priced = new GamePrice(new Game('Priced Game', 'priced-game'), $today);
-        $priced->markPriced(199900, 'RUB');
+        $priced->markPriced(199900);
 
         $result = new PriceImportResult(prices: [$free, $unavailable, $priced]);
 

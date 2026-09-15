@@ -376,7 +376,7 @@ class GameApiControllerTest extends TestCase
         $game = new Game('Half-Life', 'half-life');
         $steamGame = new SteamGame(70);
         $steamGame->setGame($game);
-        $older = (new GamePrice($game, new \DateTimeImmutable('2026-09-14')))->markPriced(199900, 'RUB');
+        $older = (new GamePrice($game, new \DateTimeImmutable('2026-09-14')))->markPriced(199900);
         $newer = (new GamePrice($game, new \DateTimeImmutable('2026-09-15')))->markFree();
 
         $this->gameRepository->expects($this->once())

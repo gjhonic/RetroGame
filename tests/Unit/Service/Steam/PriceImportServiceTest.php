@@ -91,7 +91,6 @@ class PriceImportServiceTest extends TestCase
         self::assertFalse($price->isFree());
         self::assertTrue($price->isAvailableInRussia());
         self::assertSame(199900, $price->getPriceKopecks());
-        self::assertSame('RUB', $price->getCurrency());
     }
 
     public function testImportNextBatchMarksFreeGameWhenIsFreeTrue(): void

@@ -23,7 +23,7 @@ class GamePriceMapper
             'gameId' => $price->getGame()->getId(),
             'date' => $price->getDate()->format('Y-m-d'),
             'priceKopecks' => $price->getPriceKopecks(),
-            'currency' => $price->getCurrency(),
+            'currency' => 'RUB',
             'isFree' => $price->isFree(),
             'isAvailableInRussia' => $price->isAvailableInRussia(),
             'store' => $steamAppId !== null ? self::STEAM_STORE_LABEL : null,
