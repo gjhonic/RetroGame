@@ -91,4 +91,42 @@ class SteamClientTest extends TestCase
 
         $this->client->fetchAppDetails(70);
     }
+
+    public function testFetchAppDetailsForRussiaRequestsWithRuRegion(): void
+    {
+        $response = $this->createMock(ResponseInterface::class);
+        $response->method('toArray')->willReturn([70 => ['success' => true, 'data' => ['name' => 'Half-Life']]]);
+
+        $this->httpClient->expects($this->once())->method('request')
+            ->with('GET', $this->anything(), $this->callback(
+                static fn (array $options): bool => $options['query']['cc'] === 'ru',
+            ))
+            ->willReturn($response);
+
+        $data = $this->client->fetchAppDetailsForRussia(70);
+
+        self::assertSame(['name' => 'Half-Life'], $data);
+    }
+
+    public function testFetchAppDetailsForRussiaReturnsNullWithoutRetryingOtherRegion(): void
+    {
+        $response = $this->createMock(ResponseInterface::class);
+        $response->method('toArray')->willReturn([70 => ['success' => false]]);
+
+        $this->httpClient->expects($this->once())->method('request')->willReturn($response);
+
+        $data = $this->client->fetchAppDetailsForRussia(70);
+
+        self::assertNull($data);
+    }
+
+    public function testFetchAppDetailsForRussiaThrowsOnTransportError(): void
+    {
+        $this->httpClient->expects($this->once())->method('request')
+            ->willThrowException($this->createMock(TransportExceptionInterface::class));
+
+        $this->expectException(SteamApiException::class);
+
+        $this->client->fetchAppDetailsForRussia(70);
+    }
 }

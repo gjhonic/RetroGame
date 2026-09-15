@@ -20,6 +20,10 @@
 | Авторизованный пользователь: `myReaction`/`myFavorite`/`myStatus` подмешиваются из соответствующих репозиториев | `testShowIncludesCurrentUserReactionFavoriteAndStatus` |
 | Несуществующий slug → `NotFoundHttpException` | `testShowThrowsNotFoundExceptionForUnknownSlug` |
 | Игра с жанром "Сексуальный контент" → `NotFoundHttpException` (скрыта из публичной части) | `testShowThrowsNotFoundExceptionForGameWithHiddenGenre` |
+| `GET /{slug}/price-history` — история по датам как из репозитория, каждый элемент со `store`/`storeUrl` | `testPriceHistoryReturnsOrderedItemsWithStoreLink` |
+| `GET /{slug}/price-history` — истории ещё нет: `items: []` | `testPriceHistoryReturnsEmptyItemsWhenNoHistory` |
+| `GET /{slug}/price-history` с несуществующим slug → `NotFoundHttpException` | `testPriceHistoryThrowsNotFoundExceptionForUnknownSlug` |
+| `GET /{slug}/price-history` для игры с жанром "Сексуальный контент" → `NotFoundHttpException` | `testPriceHistoryThrowsNotFoundExceptionForGameWithHiddenGenre` |
 
 ## RegistrationApiControllerTest.php
 

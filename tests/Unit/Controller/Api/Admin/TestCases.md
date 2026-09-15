@@ -94,6 +94,13 @@
 | Запрошенная страница выходит за `totalPages`: значение клампится до последней доступной | `testListClampsRequestedPageToTotalPages` |
 | Детали игры по `id`: разработчики/жанры возвращаются как массивы имён | `testShowReturnsFullDetailWithRelatedEntityNames` |
 | Несуществующий `id` → `NotFoundHttpException` | `testShowThrowsNotFoundExceptionForUnknownId` |
+| `POST /{id}/import-price` — игра привязана к Steam, сервис вернул цену: `200` с телом `GamePriceMapper::toApi()` | `testImportPriceReturnsPriceSnapshotOnSuccess` |
+| `POST /{id}/import-price` с несуществующей игрой → `NotFoundHttpException` | `testImportPriceThrowsNotFoundExceptionForUnknownGame` |
+| `POST /{id}/import-price` для игры без привязки к Steam (`findOneByGame` → `null`) → `NotFoundHttpException`, `PriceImportService` не вызывается | `testImportPriceThrowsNotFoundExceptionWhenGameNotLinkedToSteam` |
+| `POST /{id}/import-price` — `PriceImportService` вернул `null` (сетевая ошибка Steam) → `502` с текстом ошибки | `testImportPriceReturnsBadGatewayWhenSteamRequestFails` |
+| `GET /{id}/price-history` — история по датам как из репозитория, каждый элемент со `store`/`storeUrl` | `testPriceHistoryReturnsOrderedItemsWithStoreLink` |
+| `GET /{id}/price-history` — истории ещё нет: `items: []` | `testPriceHistoryReturnsEmptyItemsWhenNoHistory` |
+| `GET /{id}/price-history` с несуществующей игрой → `NotFoundHttpException` | `testPriceHistoryThrowsNotFoundExceptionForUnknownGame` |
 
 ## SteamGameApiControllerTest.php
 

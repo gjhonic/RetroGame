@@ -6,10 +6,16 @@ use App\Controller\Api\Admin\GameApiController;
 use App\Entity\Developer;
 use App\Entity\Game;
 use App\Entity\Genre;
+use App\Entity\GamePrice;
 use App\Entity\Platform;
 use App\Entity\Publisher;
+use App\Entity\SteamGame;
+use App\Repository\GamePriceRepository;
 use App\Repository\GameRepository;
+use App\Repository\SteamGameRepository;
 use App\Service\Game\GameMapper;
+use App\Service\GamePrice\GamePriceMapper;
+use App\Service\Steam\PriceImportService;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -26,13 +32,21 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class GameApiControllerTest extends TestCase
 {
     private GameRepository&MockObject $gameRepository;
+    private SteamGameRepository&MockObject $steamGameRepository;
+    private GamePriceRepository&MockObject $gamePriceRepository;
+    private PriceImportService&MockObject $priceImportService;
     private GameMapper $gameMapper;
+    private GamePriceMapper $gamePriceMapper;
     private GameApiController $controller;
 
     protected function setUp(): void
     {
         $this->gameRepository = $this->createMock(GameRepository::class);
+        $this->steamGameRepository = $this->createMock(SteamGameRepository::class);
+        $this->gamePriceRepository = $this->createMock(GamePriceRepository::class);
+        $this->priceImportService = $this->createMock(PriceImportService::class);
         $this->gameMapper = new GameMapper();
+        $this->gamePriceMapper = new GamePriceMapper();
 
         $this->controller = new GameApiController();
         // AbstractController::json() проверяет container->has('serializer') — пустой
@@ -166,5 +180,165 @@ class GameApiControllerTest extends TestCase
         $this->expectException(NotFoundHttpException::class);
 
         $this->controller->show(999, $this->gameRepository, $this->gameMapper);
+    }
+
+    public function testImportPriceReturnsPriceSnapshotOnSuccess(): void
+    {
+        $game = new Game('Half-Life', 'half-life');
+        $steamGame = new SteamGame(70);
+        $steamGame->setGame($game);
+        $price = (new GamePrice($game, new \DateTimeImmutable('2026-09-15')))->markPriced(199900);
+
+        $this->gameRepository->expects($this->once())->method('find')->with(42)->willReturn($game);
+        $this->steamGameRepository->expects($this->once())
+            ->method('findOneByGame')
+            ->with($game)
+            ->willReturn($steamGame);
+        $this->priceImportService->expects($this->once())
+            ->method('importPriceForGame')
+            ->with($steamGame)
+            ->willReturn($price);
+
+        $response = $this->controller->importPrice(
+            42,
+            $this->gameRepository,
+            $this->steamGameRepository,
+            $this->priceImportService,
+            $this->gamePriceMapper,
+        );
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame(199900, $data['priceKopecks']);
+        self::assertSame('RUB', $data['currency']);
+        self::assertFalse($data['isFree']);
+        self::assertTrue($data['isAvailableInRussia']);
+        self::assertSame('Steam', $data['store']);
+        self::assertSame('https://store.steampowered.com/app/70/', $data['storeUrl']);
+    }
+
+    public function testImportPriceThrowsNotFoundExceptionForUnknownGame(): void
+    {
+        $this->gameRepository->method('find')->willReturn(null);
+
+        $this->expectException(NotFoundHttpException::class);
+
+        $this->controller->importPrice(
+            999,
+            $this->gameRepository,
+            $this->steamGameRepository,
+            $this->priceImportService,
+            $this->gamePriceMapper,
+        );
+    }
+
+    public function testImportPriceThrowsNotFoundExceptionWhenGameNotLinkedToSteam(): void
+    {
+        $game = new Game('Our Own Game', 'our-own-game');
+        $this->gameRepository->method('find')->willReturn($game);
+        $this->steamGameRepository->method('findOneByGame')->willReturn(null);
+        $this->priceImportService->expects($this->never())->method('importPriceForGame');
+
+        $this->expectException(NotFoundHttpException::class);
+
+        $this->controller->importPrice(
+            42,
+            $this->gameRepository,
+            $this->steamGameRepository,
+            $this->priceImportService,
+            $this->gamePriceMapper,
+        );
+    }
+
+    public function testImportPriceReturnsBadGatewayWhenSteamRequestFails(): void
+    {
+        $game = new Game('Half-Life', 'half-life');
+        $steamGame = new SteamGame(70);
+        $steamGame->setGame($game);
+
+        $this->gameRepository->method('find')->willReturn($game);
+        $this->steamGameRepository->method('findOneByGame')->willReturn($steamGame);
+        $this->priceImportService->method('importPriceForGame')->willReturn(null);
+
+        $response = $this->controller->importPrice(
+            42,
+            $this->gameRepository,
+            $this->steamGameRepository,
+            $this->priceImportService,
+            $this->gamePriceMapper,
+        );
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertSame(502, $response->getStatusCode());
+        self::assertNotEmpty($data['errors']['steam']);
+    }
+
+    public function testPriceHistoryReturnsOrderedItemsWithStoreLink(): void
+    {
+        $game = new Game('Half-Life', 'half-life');
+        $steamGame = new SteamGame(70);
+        $steamGame->setGame($game);
+        $older = (new GamePrice($game, new \DateTimeImmutable('2026-09-14')))->markPriced(199900);
+        $newer = (new GamePrice($game, new \DateTimeImmutable('2026-09-15')))->markFree();
+
+        $this->gameRepository->expects($this->once())->method('find')->with(42)->willReturn($game);
+        $this->steamGameRepository->expects($this->once())
+            ->method('findOneByGame')
+            ->with($game)
+            ->willReturn($steamGame);
+        $this->gamePriceRepository->expects($this->once())
+            ->method('findHistoryForGame')
+            ->with($game)
+            ->willReturn([$older, $newer]);
+
+        $response = $this->controller->priceHistory(
+            42,
+            $this->gameRepository,
+            $this->steamGameRepository,
+            $this->gamePriceRepository,
+            $this->gamePriceMapper,
+        );
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertCount(2, $data['items']);
+        self::assertSame('2026-09-14', $data['items'][0]['date']);
+        self::assertSame('2026-09-15', $data['items'][1]['date']);
+        self::assertTrue($data['items'][1]['isFree']);
+        self::assertSame('Steam', $data['items'][0]['store']);
+        self::assertSame('https://store.steampowered.com/app/70/', $data['items'][0]['storeUrl']);
+    }
+
+    public function testPriceHistoryReturnsEmptyItemsWhenNoHistory(): void
+    {
+        $game = new Game('New Game', 'new-game');
+        $this->gameRepository->method('find')->willReturn($game);
+        $this->steamGameRepository->method('findOneByGame')->willReturn(null);
+        $this->gamePriceRepository->method('findHistoryForGame')->willReturn([]);
+
+        $response = $this->controller->priceHistory(
+            42,
+            $this->gameRepository,
+            $this->steamGameRepository,
+            $this->gamePriceRepository,
+            $this->gamePriceMapper,
+        );
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertSame([], $data['items']);
+    }
+
+    public function testPriceHistoryThrowsNotFoundExceptionForUnknownGame(): void
+    {
+        $this->gameRepository->method('find')->willReturn(null);
+
+        $this->expectException(NotFoundHttpException::class);
+
+        $this->controller->priceHistory(
+            999,
+            $this->gameRepository,
+            $this->steamGameRepository,
+            $this->gamePriceRepository,
+            $this->gamePriceMapper,
+        );
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Enum\SteamGameStatus;
+use App\Entity\Game;
 use App\Entity\SteamGame;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
@@ -23,6 +24,57 @@ class SteamGameRepository extends ServiceEntityRepository
     public function findOneBySteamAppId(int $steamAppId): ?SteamGame
     {
         return $this->findOneBy(['steamAppId' => $steamAppId]);
+    }
+
+    /** Ищет Steam-запись, привязанную к указанной игре (для ручного импорта цены из админки). */
+    public function findOneByGame(Game $game): ?SteamGame
+    {
+        return $this->findOneBy(['game' => $game]);
+    }
+
+    /**
+     * Пачка успешно импортированных игр (Game уже привязана) для импорта цен —
+     * по убыванию популярности (Game::popularity), чтобы в первую очередь
+     * обновлялись цены у игр, которые реально смотрят пользователи, а не в
+     * порядке появления в каталоге (см. App\Entity\SteamPriceImportCursor).
+     * INNER JOIN по game сам по себе исключает DLC/pending/failed записи.
+     * Игры с подтверждённым SteamGame::priceFree сразу отсекаются — бесплатная
+     * игра платной не становится, а повторный запрос к Steam ради этого
+     * ничего не даёт, только тратит дневной бюджет пачки (см. markPriceFree()).
+     *
+     * Keyset-постраничность (не OFFSET — деградирует на больших таблицах) по
+     * составному ключу (popularity, id): $afterPopularity === null означает
+     * "начать с самых популярных" (используется и для первого запуска, и для
+     * нового круга по кругу каталога). NULL popularity трактуется как -1 —
+     * такие игры (ещё не импортированные appdetails) идут в конце очереди.
+     * CASE WHEN, а не COALESCE — тот же приём, что и в
+     * GameRepository::applyPublicSort()/applyAdminSort() для "NULL в конце",
+     * COALESCE в ORDER BY/WHERE эта версия Doctrine DQL не разбирает.
+     *
+     * @return array<int, SteamGame>
+     */
+    public function findBatchForPriceImport(?int $afterPopularity, int $afterSteamGameId, int $limit): array
+    {
+        $effectivePopularity = 'CASE WHEN game.popularity IS NULL THEN -1 ELSE game.popularity END';
+
+        $qb = $this->createQueryBuilder('s')
+            ->addSelect('game')
+            ->join('s.game', 'game')
+            ->andWhere('s.priceFree = false')
+            ->addOrderBy($effectivePopularity, 'DESC')
+            ->addOrderBy('s.id', 'ASC')
+            ->setMaxResults($limit);
+
+        if ($afterPopularity !== null) {
+            $qb->andWhere(
+                '(' . $effectivePopularity . ') < :afterPopularity OR '
+                . '((' . $effectivePopularity . ') = :afterPopularity AND s.id > :afterSteamGameId)',
+            )
+                ->setParameter('afterPopularity', $afterPopularity)
+                ->setParameter('afterSteamGameId', $afterSteamGameId);
+        }
+
+        return $qb->getQuery()->getResult();
     }
 
     /**

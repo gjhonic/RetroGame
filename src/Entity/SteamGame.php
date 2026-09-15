@@ -50,6 +50,26 @@ class SteamGame
     #[ORM\Column]
     private int $attempts = 0;
 
+    /**
+     * Игра точно бесплатна (подтверждено импортом цены — App\Service\Steam\PriceImportService).
+     * Раз проставившись, больше не сбрасывается: бесплатная игра платной не
+     * становится, а сама проверка цены каждый раз дорогая (запрос к Steam) —
+     * такие игры сразу отсекаются из SteamGameRepository::findBatchForPriceImport().
+     */
+    #[ORM\Column]
+    private bool $priceFree = false;
+
+    /**
+     * Доступна ли игра для покупки в российском Steam (последний известный
+     * статус из PriceImportService) — в отличие от priceFree это не
+     * одноразовая метка: регион-лок может как появиться, так и сняться,
+     * поэтому значение обновляется при каждом импорте цены в обе стороны.
+     * До первой проверки цены считается доступной (оптимистичное значение
+     * по умолчанию, ещё не опровергнутое).
+     */
+    #[ORM\Column]
+    private bool $availableInRussia = true;
+
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $fetchedAt = null;
 
@@ -137,6 +157,36 @@ class SteamGame
     public function getAttempts(): int
     {
         return $this->attempts;
+    }
+
+    /** Подтверждено ли, что игра бесплатна (см. PriceImportService). */
+    public function isPriceFree(): bool
+    {
+        return $this->priceFree;
+    }
+
+    /** Фиксирует, что игра бесплатна — исключает её из дальнейшего импорта цен. */
+    public function markPriceFree(): static
+    {
+        $this->priceFree = true;
+        $this->updatedAt = new \DateTimeImmutable();
+
+        return $this;
+    }
+
+    /** Доступна ли игра для покупки в российском Steam (последний известный статус). */
+    public function isAvailableInRussia(): bool
+    {
+        return $this->availableInRussia;
+    }
+
+    /** Обновляет статус доступности игры в российском Steam по результату очередного импорта цены. */
+    public function setAvailableInRussia(bool $availableInRussia): static
+    {
+        $this->availableInRussia = $availableInRussia;
+        $this->updatedAt = new \DateTimeImmutable();
+
+        return $this;
     }
 
     /** Возвращает время последней успешной загрузки. */
