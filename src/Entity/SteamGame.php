@@ -59,6 +59,17 @@ class SteamGame
     #[ORM\Column]
     private bool $priceFree = false;
 
+    /**
+     * Доступна ли игра для покупки в российском Steam (последний известный
+     * статус из PriceImportService) — в отличие от priceFree это не
+     * одноразовая метка: регион-лок может как появиться, так и сняться,
+     * поэтому значение обновляется при каждом импорте цены в обе стороны.
+     * До первой проверки цены считается доступной (оптимистичное значение
+     * по умолчанию, ещё не опровергнутое).
+     */
+    #[ORM\Column]
+    private bool $availableInRussia = true;
+
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $fetchedAt = null;
 
@@ -158,6 +169,21 @@ class SteamGame
     public function markPriceFree(): static
     {
         $this->priceFree = true;
+        $this->updatedAt = new \DateTimeImmutable();
+
+        return $this;
+    }
+
+    /** Доступна ли игра для покупки в российском Steam (последний известный статус). */
+    public function isAvailableInRussia(): bool
+    {
+        return $this->availableInRussia;
+    }
+
+    /** Обновляет статус доступности игры в российском Steam по результату очередного импорта цены. */
+    public function setAvailableInRussia(bool $availableInRussia): static
+    {
+        $this->availableInRussia = $availableInRussia;
         $this->updatedAt = new \DateTimeImmutable();
 
         return $this;

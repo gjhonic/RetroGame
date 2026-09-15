@@ -130,6 +130,8 @@ class PriceImportService
             $steamGame->markPriceFree();
         }
 
+        $steamGame->setAvailableInRussia($price->isAvailableInRussia());
+
         if ($isNew) {
             $this->entityManager->persist($price);
         }

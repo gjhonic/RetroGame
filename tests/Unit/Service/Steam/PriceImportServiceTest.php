@@ -91,6 +91,7 @@ class PriceImportServiceTest extends TestCase
         self::assertFalse($price->isFree());
         self::assertTrue($price->isAvailableInRussia());
         self::assertSame(199900, $price->getPriceKopecks());
+        self::assertTrue($steamGame->isAvailableInRussia());
     }
 
     public function testImportNextBatchMarksFreeGameWhenIsFreeTrue(): void
@@ -136,6 +137,22 @@ class PriceImportServiceTest extends TestCase
         self::assertFalse($price->isFree());
         self::assertFalse($price->isAvailableInRussia());
         self::assertNull($price->getPriceKopecks());
+        self::assertFalse($steamGame->isAvailableInRussia());
+    }
+
+    public function testImportNextBatchRestoresSteamGameAvailabilityWhenGameBecomesAvailableAgain(): void
+    {
+        $game = new Game('Previously Locked Game', 'previously-locked-game');
+        $steamGame = self::makeSteamGame(1, 35, $game);
+        $steamGame->setAvailableInRussia(false);
+        $this->steamGameRepository->method('findBatchForPriceImport')->willReturn([$steamGame]);
+        $this->steamClient->method('fetchAppDetailsForRussia')->willReturn([
+            'price_overview' => ['final' => 19900, 'currency' => 'RUB'],
+        ]);
+
+        $this->service->importNextBatch(5, 1000, 1000);
+
+        self::assertTrue($steamGame->isAvailableInRussia());
     }
 
     public function testImportNextBatchMarksUnavailableWhenNoPriceOverviewAndNotFree(): void
@@ -334,6 +351,7 @@ class PriceImportServiceTest extends TestCase
 
         self::assertNotNull($price);
         self::assertFalse($price->isAvailableInRussia());
+        self::assertFalse($steamGame->isAvailableInRussia());
     }
 
     public function testImportPriceForGameReturnsNullOnSteamApiException(): void
