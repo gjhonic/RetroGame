@@ -446,18 +446,31 @@ describe('Cabinet/GameDetail — цена и график', () => {
         expect(wrapper.find('.game-price').exists()).toBe(false);
     });
 
-    it('рендерит текущую цену (последнюю по дате) со ссылкой на магазин', async () => {
+    it('рендерит текущую цену (последнюю по дате) со ссылкой на магазин в формате "X XXX руб"', async () => {
         const wrapper = mountGameDetail(sampleGame, takesResponse(), {}, { items: [pricePoint()] });
         await flushPromises();
 
         expect(global.fetch).toHaveBeenCalledWith('/api/games/half-life/price-history');
-        expect(wrapper.get('.game-price').text()).toContain('1999.00 RUB');
-        const link = wrapper.get('.game-price__link');
+        expect(wrapper.get('.game-price').text()).toContain('1 999 руб');
+        const link = wrapper.get('.game-price__store');
         expect(link.attributes('href')).toBe('https://store.steampowered.com/app/70/');
         expect(link.text()).toBe('Steam');
     });
 
-    it('показывает "Бесплатно"/"Недоступно в РФ" в зависимости от последнего снимка цены', async () => {
+    it('показывает "Игра бесплатная" и не рендерит график для бесплатной игры', async () => {
+        const wrapper = mountGameDetail(
+            sampleGame,
+            takesResponse(),
+            {},
+            { items: [pricePoint({ isFree: true, priceKopecks: 0 })] },
+        );
+        await flushPromises();
+
+        expect(wrapper.get('.game-price').text()).toContain('Игра бесплатная');
+        expect(wrapper.findComponent({ name: 'LineStub' }).exists()).toBe(false);
+    });
+
+    it('показывает жёлтое предупреждение "Игра не доступна в РФ", график при этом остаётся', async () => {
         const wrapper = mountGameDetail(
             sampleGame,
             takesResponse(),
@@ -466,7 +479,8 @@ describe('Cabinet/GameDetail — цена и график', () => {
         );
         await flushPromises();
 
-        expect(wrapper.get('.game-price').text()).toContain('Недоступно в РФ');
+        expect(wrapper.get('.game-price__warning').text()).toContain('Игра не доступна в РФ');
+        expect(wrapper.findComponent({ name: 'LineStub' }).exists()).toBe(true);
     });
 
     it('передаёт в график подписи дат и цены в рублях, недоступные дни — null', async () => {

@@ -64,6 +64,15 @@ class ImportGamesCommand extends Command
 
         $result = $this->gameImportService->importNextBatch($limit, $lastAppId, $delayMs);
 
+        if ($result->failureMessage !== null) {
+            $io->error(sprintf(
+                'Не удалось получить список игр от Steam: %s Курсор не сдвинут, следующий запуск повторит.',
+                $result->failureMessage,
+            ));
+
+            return Command::FAILURE;
+        }
+
         if ($result->steamGames === []) {
             $io->warning('Нечего импортировать: пустая порция от Steam или нет игр со статусом failed.');
 

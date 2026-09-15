@@ -14,6 +14,8 @@
 | `fetchAppDetailsForRussia()`: запрос уходит сразу с `cc=ru` | `testFetchAppDetailsForRussiaRequestsWithRuRegion` |
 | `fetchAppDetailsForRussia()`: `success=false` для RU → `null` без повторного запроса в другом регионе | `testFetchAppDetailsForRussiaReturnsNullWithoutRetryingOtherRegion` |
 | `fetchAppDetailsForRussia()`: сетевая ошибка → `SteamApiException` | `testFetchAppDetailsForRussiaThrowsOnTransportError` |
+| `fetchGameAppList()`: страница каталога (apps/hasMore/lastAppId) корректно извлекается из ответа | `testFetchGameAppListReturnsPageData` |
+| `fetchGameAppList()`: сетевая ошибка/таймаут → `SteamApiException`, а не необработанное исключение (падало всей командой `app:games:import`, см. GameImportServiceTest) | `testFetchGameAppListThrowsSteamApiExceptionOnTransportErrorInsteadOfCrashing` |
 
 ## GameImportServiceTest.php
 
@@ -24,6 +26,7 @@
 | Steam ответил, но данных нет (`success=false`): запись помечается `failed` с дефолтным сообщением | `testImportNextBatchMarksFailureWhenDetailsAreNull` |
 | Запрос к Steam упал с ошибкой (`SteamApiException`): запись помечается `failed` с текстом ошибки | `testImportNextBatchMarksFailureWhenSteamApiExceptionIsThrown` |
 | Steam вернул пустую порцию: результат пустой, БД и rate limiter не трогаются | `testImportNextBatchReturnsEmptyResultWhenNoApps` |
+| Запрос страницы каталога (`fetchGameAppList()`) упал с `SteamApiException` (сетевая ошибка/таймаут GetAppList): результат пустой с заполненным `failureMessage`, БД/rate limiter не трогаются, курсор не сдвигается — не роняет всю команду | `testImportNextBatchReturnsFailureResultWithoutCrashingWhenAppListRequestFails` |
 | Пауза между запросами: вызывается ровно N-1 раз (после последней игры паузы нет) | `testImportNextBatchDelaysBetweenItemsButNotAfterTheLastOne` |
 | Коллизия slug: если название уже занято другой игрой, к slug добавляется appid | `testImportNextBatchAppendsAppIdToSlugOnCollision` |
 | Слаггер вернул пустую строку (например, название без ascii-символов): slug строится только из appid | `testImportNextBatchFallsBackToAppIdWhenSluggerReturnsEmptyString` |

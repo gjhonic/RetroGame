@@ -230,6 +230,25 @@ class GameImportServiceTest extends TestCase
         self::assertSame(5, $result->lastAppId);
     }
 
+    public function testImportNextBatchReturnsFailureResultWithoutCrashingWhenAppListRequestFails(): void
+    {
+        $this->steamClient->method('fetchGameAppList')
+            ->willThrowException(new SteamApiException('Ошибка запроса к Steam GetAppList (last_appid 5): timeout'));
+
+        $this->entityManager->expects($this->never())->method('persist');
+        $this->entityManager->expects($this->never())->method('flush');
+        $this->rateLimiter->expects($this->never())->method('delay');
+
+        $result = $this->service->importNextBatch(5, 5, 1500);
+
+        self::assertSame([], $result->steamGames);
+        self::assertSame(5, $result->lastAppId);
+        self::assertSame(
+            'Ошибка запроса к Steam GetAppList (last_appid 5): timeout',
+            $result->failureMessage,
+        );
+    }
+
     public function testImportNextBatchDelaysBetweenItemsButNotAfterTheLastOne(): void
     {
         $this->steamClient->method('fetchGameAppList')->willReturn([
