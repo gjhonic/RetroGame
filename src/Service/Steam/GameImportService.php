@@ -60,13 +60,30 @@ class GameImportService
      * Если $lastAppId не задан — продолжает с сохранённого курсора (для
      * cron, чтобы не начинать каждый раз с начала каталога); в любом
      * случае после порции курсор сдвигается на достигнутую позицию.
+     *
+     * Сама страница каталога (GetAppList) может не ответить (таймаут,
+     * сетевая ошибка) — в отличие от деталей отдельной игры (см.
+     * fetchAndStore()) здесь нечего частично обработать, поэтому такая
+     * ошибка не бросается дальше и не роняет команду: возвращается пустой
+     * результат с заполненным failureMessage, курсор остаётся на месте —
+     * следующий запуск просто повторит тот же last_appid.
      */
     public function importNextBatch(int $limit, ?int $lastAppId, int $delayMs): ImportResult
     {
         $cursor = $this->cursorRepository->getOrCreate();
         $startAppId = $lastAppId ?? $cursor->getLastAppId();
 
-        $page = $this->steamClient->fetchGameAppList($limit, $startAppId);
+        try {
+            $page = $this->steamClient->fetchGameAppList($limit, $startAppId);
+        } catch (SteamApiException $e) {
+            return new ImportResult(
+                steamGames: [],
+                hasMore: true,
+                lastAppId: $startAppId,
+                failureMessage: $e->getMessage(),
+            );
+        }
+
         $apps = $page['apps'];
 
         if ($apps === []) {

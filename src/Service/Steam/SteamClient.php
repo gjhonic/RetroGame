@@ -37,6 +37,8 @@ class SteamClient
      * а не offset, так исторически устроен сам Steam Web API.
      *
      * @return array{apps: array<int, array{appid: int, name: string}>, hasMore: bool, lastAppId: int}
+     *
+     * @throws SteamApiException
      */
     public function fetchGameAppList(int $maxResults, int $lastAppId = 0): array
     {
@@ -47,21 +49,28 @@ class SteamClient
             );
         }
 
-        $response = $this->httpClient->request('GET', self::APP_LIST_URL, [
-            'query' => [
-                'key' => $this->apiKey,
-                'include_games' => 1,
-                'include_dlc' => 0,
-                'include_software' => 0,
-                'include_videos' => 0,
-                'include_hardware' => 0,
-                'max_results' => $maxResults,
-                'last_appid' => $lastAppId,
-            ],
-        ]);
+        try {
+            $response = $this->httpClient->request('GET', self::APP_LIST_URL, [
+                'query' => [
+                    'key' => $this->apiKey,
+                    'include_games' => 1,
+                    'include_dlc' => 0,
+                    'include_software' => 0,
+                    'include_videos' => 0,
+                    'include_hardware' => 0,
+                    'max_results' => $maxResults,
+                    'last_appid' => $lastAppId,
+                ],
+            ]);
 
-        /** @var array{response: array{apps?: array<int, array{appid: int, name: string}>, have_more_results?: bool, last_appid?: int}} $data */
-        $data = $response->toArray();
+            /** @var array{response: array{apps?: array<int, array{appid: int, name: string}>, have_more_results?: bool, last_appid?: int}} $data */
+            $data = $response->toArray();
+        } catch (ExceptionInterface $e) {
+            throw new SteamApiException(
+                sprintf('Ошибка запроса к Steam GetAppList (last_appid %d): %s', $lastAppId, $e->getMessage()),
+                previous: $e,
+            );
+        }
 
         return [
             'apps' => $data['response']['apps'] ?? [],

@@ -129,4 +129,33 @@ class SteamClientTest extends TestCase
 
         $this->client->fetchAppDetailsForRussia(70);
     }
+
+    public function testFetchGameAppListReturnsPageData(): void
+    {
+        $response = $this->createMock(ResponseInterface::class);
+        $response->method('toArray')->willReturn([
+            'response' => [
+                'apps' => [['appid' => 70, 'name' => 'Half-Life']],
+                'have_more_results' => true,
+                'last_appid' => 70,
+            ],
+        ]);
+        $this->httpClient->method('request')->willReturn($response);
+
+        $page = $this->client->fetchGameAppList(100, 10);
+
+        self::assertSame([['appid' => 70, 'name' => 'Half-Life']], $page['apps']);
+        self::assertTrue($page['hasMore']);
+        self::assertSame(70, $page['lastAppId']);
+    }
+
+    public function testFetchGameAppListThrowsSteamApiExceptionOnTransportErrorInsteadOfCrashing(): void
+    {
+        $this->httpClient->expects($this->once())->method('request')
+            ->willThrowException($this->createMock(TransportExceptionInterface::class));
+
+        $this->expectException(SteamApiException::class);
+
+        $this->client->fetchGameAppList(100, 10);
+    }
 }
