@@ -97,7 +97,7 @@ class ImportGamePricesCommand extends Command
             $result->countFree(),
             $result->countUnavailable(),
             $result->skippedCount,
-            $result->wrapped ? 'Дошли до конца каталога, начат новый круг. ' : '',
+            $result->startedNewDay ? 'Новый день — курсор сброшен, начат новый круг с самых популярных игр. ' : '',
             $result->lastSteamGameId,
             $result->lastPopularity ?? '—',
         ));

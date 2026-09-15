@@ -36,31 +36,39 @@ class PriceImportService
 
     /**
      * Импортирует цены следующей пачки игр, продолжая с сохранённого
-     * курсора. Если каталог закончился (пустая порция) — начинает новый
-     * круг с начала: цены должны обновляться циклически день за днём, а
-     * не один раз. Пауза между запросами — случайная величина в диапазоне
-     * [$minDelayMs, $maxDelayMs], чтобы не долбить Steam ровным ритмом.
+     * курсора. Первый запуск за календарный день сбрасывает курсор в
+     * начало списка (см. SteamPriceImportCursor::reset()) — каждый день
+     * начинаем заново с самых популярных игр, а не докручиваем вчерашний
+     * круг: игры, до которых очередь за день не дошла, просто остаются
+     * без свежего снимка на этот день. Пауза между запросами — случайная
+     * величина в диапазоне [$minDelayMs, $maxDelayMs], чтобы не долбить
+     * Steam ровным ритмом.
      */
     public function importNextBatch(int $limit, int $minDelayMs, int $maxDelayMs): PriceImportResult
     {
         $cursor = $this->cursorRepository->getOrCreate();
+        $today = new \DateTimeImmutable('today');
+
+        $startedNewDay = $cursor->getUpdatedAt() < $today;
+        if ($startedNewDay) {
+            $cursor->reset();
+            $this->entityManager->flush();
+        }
+
         $steamGames = $this->steamGameRepository->findBatchForPriceImport(
             $cursor->getLastPopularity(),
             $cursor->getLastSteamGameId(),
             $limit,
         );
 
-        $wrapped = false;
         if ($steamGames === []) {
-            $steamGames = $this->steamGameRepository->findBatchForPriceImport(null, 0, $limit);
-            $wrapped = true;
+            return new PriceImportResult(
+                prices: [],
+                lastSteamGameId: $cursor->getLastSteamGameId(),
+                startedNewDay: $startedNewDay,
+            );
         }
 
-        if ($steamGames === []) {
-            return new PriceImportResult(prices: [], lastSteamGameId: $cursor->getLastSteamGameId());
-        }
-
-        $today = new \DateTimeImmutable('today');
         $prices = [];
         $skipped = 0;
 
@@ -87,7 +95,7 @@ class PriceImportService
         $cursor->setPosition($lastPopularity, $lastId);
         $this->entityManager->flush();
 
-        return new PriceImportResult($prices, $skipped, $lastId, $wrapped, $lastPopularity);
+        return new PriceImportResult($prices, $skipped, $lastId, $startedNewDay, $lastPopularity);
     }
 
     /**

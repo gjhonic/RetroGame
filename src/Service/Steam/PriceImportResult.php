@@ -16,7 +16,7 @@ final class PriceImportResult
         public readonly array $prices,
         public readonly int $skippedCount = 0,
         public readonly int $lastSteamGameId = 0,
-        public readonly bool $wrapped = false,
+        public readonly bool $startedNewDay = false,
         public readonly ?int $lastPopularity = null,
     ) {
     }

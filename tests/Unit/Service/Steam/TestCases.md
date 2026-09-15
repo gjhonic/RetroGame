@@ -69,8 +69,9 @@
 | Курсор не в начале: выборка стартует с `(lastPopularity, lastSteamGameId)` | `testImportNextBatchUsesPersistedCursorAsStartingPoint` |
 | После пачки курсор сдвигается на `popularity`/id последней обработанной игры (порядок обхода — по убыванию `Game::popularity`, см. `SteamGameRepository::findBatchForPriceImport()`) | `testImportNextBatchAdvancesCursorToLastProcessedGamePopularityAndId` |
 | У последней обработанной игры нет `popularity` (`null`): в курсор сохраняется `-1` — не `null`, иначе обход зациклился бы на верхушке списка | `testImportNextBatchStoresPopularityAsMinusOneWhenLastGameHasNone` |
-| Пустая порция (конец каталога): повторный запрос с начала (`lastPopularity=null`), `wrapped=true`, курсор сдвигается на новый круг | `testImportNextBatchWrapsAroundToStartWhenCatalogEndReached` |
-| Каталог совсем пуст (обе выборки пустые): пустой результат, БД/rate limiter не трогаются | `testImportNextBatchReturnsEmptyResultWhenCatalogIsCompletelyEmpty` |
+| Пустая порция в середине дня (конец каталога достигнут раньше, чем истёк день): результат пустой, курсор НЕ сбрасывается на начало — "докрутка" в тот же день больше не происходит, кого не успели импортировать, тех не успели | `testImportNextBatchStopsWithoutWrappingWhenCatalogEndReachedMidDay` |
+| Первый запуск в новый календарный день (`updatedAt` курсора — вчера): курсор сбрасывается в начало списка (`lastPopularity=null`) ещё до выборки, `startedNewDay=true`, даже если вчера курсор был далеко не в начале | `testImportNextBatchResetsCursorOnFirstRunOfNewDay` |
+| Каталог совсем пуст (пустая выборка): пустой результат, БД/rate limiter не трогаются | `testImportNextBatchReturnsEmptyResultWhenCatalogIsCompletelyEmpty` |
 | `importPriceForGame()`: платная игра | `testImportPriceForGameReturnsPricedResult` |
 | `importPriceForGame()`: бесплатная игра, у `SteamGame` проставляется `priceFree=true` | `testImportPriceForGameReturnsFreeResult` |
 | `importPriceForGame()`: недоступна в РФ, у `SteamGame` `availableInRussia=false` | `testImportPriceForGameReturnsUnavailableResult` |

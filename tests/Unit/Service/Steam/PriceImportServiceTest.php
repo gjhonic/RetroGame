@@ -76,6 +76,12 @@ class PriceImportServiceTest extends TestCase
         return $steamGame;
     }
 
+    /** Переносит updatedAt курсора на вчера — имитирует первый запуск крона в новый день. */
+    private static function makeCursorUpdatedAtYesterday(SteamPriceImportCursor $cursor): void
+    {
+        (new \ReflectionProperty($cursor, 'updatedAt'))->setValue($cursor, new \DateTimeImmutable('yesterday'));
+    }
+
     public function testImportNextBatchMarksPricedGameWhenPriceOverviewPresent(): void
     {
         $game = new Game('Half-Life', 'half-life');
@@ -280,23 +286,42 @@ class PriceImportServiceTest extends TestCase
         self::assertSame(-1, $cursor->getLastPopularity());
     }
 
-    public function testImportNextBatchWrapsAroundToStartWhenCatalogEndReached(): void
+    public function testImportNextBatchStopsWithoutWrappingWhenCatalogEndReachedMidDay(): void
     {
         $cursor = (new SteamPriceImportCursor())->setPosition(500, 999);
         $this->cursorRepository = $this->createMock(SteamPriceImportCursorRepository::class);
         $this->cursorRepository->method('getOrCreate')->willReturn($cursor);
         $this->service = $this->newService();
 
-        $steamGame = self::makeSteamGame(5, 70, new Game('First In Catalog', 'first-in-catalog'));
-        $this->steamGameRepository->method('findBatchForPriceImport')->willReturnMap([
-            [500, 999, 5, []],
-            [null, 0, 5, [$steamGame]],
-        ]);
+        $this->steamGameRepository->expects($this->once())->method('findBatchForPriceImport')
+            ->with(500, 999, 5)
+            ->willReturn([]);
+
+        $result = $this->service->importNextBatch(5, 1000, 1000);
+
+        self::assertSame([], $result->prices);
+        self::assertFalse($result->startedNewDay);
+        self::assertSame(999, $cursor->getLastSteamGameId());
+        self::assertSame(500, $cursor->getLastPopularity());
+    }
+
+    public function testImportNextBatchResetsCursorOnFirstRunOfNewDay(): void
+    {
+        $cursor = (new SteamPriceImportCursor())->setPosition(500, 999);
+        self::makeCursorUpdatedAtYesterday($cursor);
+        $this->cursorRepository = $this->createMock(SteamPriceImportCursorRepository::class);
+        $this->cursorRepository->method('getOrCreate')->willReturn($cursor);
+        $this->service = $this->newService();
+
+        $steamGame = self::makeSteamGame(5, 70, new Game('Most Popular Today', 'most-popular-today'));
+        $this->steamGameRepository->expects($this->once())->method('findBatchForPriceImport')
+            ->with(null, 0, 5)
+            ->willReturn([$steamGame]);
         $this->steamClient->method('fetchAppDetailsForRussia')->willReturn(null);
 
         $result = $this->service->importNextBatch(5, 1000, 1000);
 
-        self::assertTrue($result->wrapped);
+        self::assertTrue($result->startedNewDay);
         self::assertSame(5, $cursor->getLastSteamGameId());
     }
 
@@ -312,7 +337,7 @@ class PriceImportServiceTest extends TestCase
 
         self::assertSame([], $result->prices);
         self::assertSame(0, $result->skippedCount);
-        self::assertFalse($result->wrapped);
+        self::assertFalse($result->startedNewDay);
     }
 
     public function testImportPriceForGameReturnsPricedResult(): void
