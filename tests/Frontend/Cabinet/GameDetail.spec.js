@@ -1,8 +1,16 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
-import GameDetail from '../../../assets/vue/Cabinet/GameDetail.vue';
 import TakeCreateModal from '../../../assets/vue/Cabinet/TakeCreateModal.vue';
 import { installFetchMock, mockFetchOnce, mockFetchRejectOnce } from '../support/mockFetch.js';
+
+// Line требует canvas.getContext('2d'), которого нет в jsdom, поэтому мокаем
+// весь модуль 'vue-chartjs' простой заглушкой — перехват на уровне импорта
+// работает надёжнее, чем VTU-стабы, для прямых ссылок в <script setup>.
+vi.mock('vue-chartjs', () => ({
+    Line: { name: 'LineStub', props: ['data', 'options'], template: '<div />' },
+}));
+
+const { default: GameDetail } = await import('../../../assets/vue/Cabinet/GameDetail.vue');
 
 const sampleGame = {
     id: 1,
@@ -47,15 +55,40 @@ function takesResponse(overrides = {}) {
     return { items: [{ ...sampleTake }], total: 1, page: 1, totalPages: 1, ...overrides };
 }
 
+function pricePoint(overrides = {}) {
+    return {
+        id: 1,
+        gameId: 1,
+        date: '2026-09-15',
+        priceKopecks: 199900,
+        currency: 'RUB',
+        isFree: false,
+        isAvailableInRussia: true,
+        store: 'Steam',
+        storeUrl: 'https://store.steampowered.com/app/70/',
+        createdAt: '2026-09-15 12:00:00',
+        ...overrides,
+    };
+}
+
 /** Реакции конкретного тэйка (в отличие от реакций самой игры над каруселью). */
 function takeCardReactions(wrapper) {
     return wrapper.get('.take-card').findAll('.take-reaction');
 }
 
-/** onMounted грузит сначала игру (/api/games/{slug}), потом тэйки (/api/takes?filters[game]=...). */
-function mountGameDetail(gameResponse = sampleGame, takesResp = takesResponse(), props = {}) {
+/**
+ * onMounted грузит сначала игру (/api/games/{slug}), потом параллельно тэйки
+ * (/api/takes?filters[game]=...) и историю цены (/api/games/{slug}/price-history).
+ */
+function mountGameDetail(
+    gameResponse = sampleGame,
+    takesResp = takesResponse(),
+    props = {},
+    priceHistoryResp = { items: [] },
+) {
     mockFetchOnce(gameResponse);
     mockFetchOnce(takesResp);
+    mockFetchOnce(priceHistoryResp);
 
     return mount(GameDetail, { props: { slug: 'half-life', isAuthenticated: true, ...props } });
 }
@@ -402,5 +435,53 @@ describe('Cabinet/GameDetail — лайк/дизлайк/избранное/ст
         expect(wrapper.get('.game-actions__favorite').attributes('disabled')).toBeDefined();
         expect(wrapper.get('#playthroughStatus').attributes('disabled')).toBeDefined();
         expect(wrapper.get('.game-actions__login-link').attributes('href')).toBe('/login');
+    });
+});
+
+describe('Cabinet/GameDetail — цена и график', () => {
+    it('не показывает блок цены, если истории ещё нет', async () => {
+        const wrapper = mountGameDetail();
+        await flushPromises();
+
+        expect(wrapper.find('.game-price').exists()).toBe(false);
+    });
+
+    it('рендерит текущую цену (последнюю по дате) со ссылкой на магазин', async () => {
+        const wrapper = mountGameDetail(sampleGame, takesResponse(), {}, { items: [pricePoint()] });
+        await flushPromises();
+
+        expect(global.fetch).toHaveBeenCalledWith('/api/games/half-life/price-history');
+        expect(wrapper.get('.game-price').text()).toContain('1999.00 RUB');
+        const link = wrapper.get('.game-price__link');
+        expect(link.attributes('href')).toBe('https://store.steampowered.com/app/70/');
+        expect(link.text()).toBe('Steam');
+    });
+
+    it('показывает "Бесплатно"/"Недоступно в РФ" в зависимости от последнего снимка цены', async () => {
+        const wrapper = mountGameDetail(
+            sampleGame,
+            takesResponse(),
+            {},
+            { items: [pricePoint({ isFree: false, isAvailableInRussia: false, priceKopecks: null, store: null, storeUrl: null })] },
+        );
+        await flushPromises();
+
+        expect(wrapper.get('.game-price').text()).toContain('Недоступно в РФ');
+    });
+
+    it('передаёт в график подписи дат и цены в рублях, недоступные дни — null', async () => {
+        const history = {
+            items: [
+                pricePoint({ date: '2026-09-14', priceKopecks: 19900 }),
+                pricePoint({ date: '2026-09-15', isAvailableInRussia: false, priceKopecks: null }),
+            ],
+        };
+        const wrapper = mountGameDetail(sampleGame, takesResponse(), {}, history);
+        await flushPromises();
+
+        const chart = wrapper.findComponent({ name: 'LineStub' });
+
+        expect(chart.props('data').labels).toEqual(['14.09', '15.09']);
+        expect(chart.props('data').datasets[0].data).toEqual([199, null]);
     });
 });

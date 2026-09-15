@@ -8,19 +8,24 @@ use App\Entity\Enum\GamePlaythroughStatus;
 use App\Entity\Enum\GameReactionType;
 use App\Entity\Game;
 use App\Entity\GameFavorite;
+use App\Entity\GamePrice;
 use App\Entity\GameReaction;
 use App\Entity\GameStatus;
 use App\Entity\Genre;
 use App\Entity\Platform;
 use App\Entity\Publisher;
+use App\Entity\SteamGame;
 use App\Entity\User;
 use App\Repository\GameFavoriteRepository;
+use App\Repository\GamePriceRepository;
 use App\Repository\GameReactionRepository;
 use App\Repository\GameRepository;
 use App\Repository\GameStatusRepository;
 use App\Repository\GenreRepository;
 use App\Repository\PlatformRepository;
+use App\Repository\SteamGameRepository;
 use App\Service\Game\GameMapper;
+use App\Service\GamePrice\GamePriceMapper;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -42,7 +47,10 @@ class GameApiControllerTest extends TestCase
     private GameStatusRepository&MockObject $gameStatusRepository;
     private GenreRepository&MockObject $genreRepository;
     private PlatformRepository&MockObject $platformRepository;
+    private SteamGameRepository&MockObject $steamGameRepository;
+    private GamePriceRepository&MockObject $gamePriceRepository;
     private GameMapper $gameMapper;
+    private GamePriceMapper $gamePriceMapper;
     private GameApiController $controller;
 
     protected function setUp(): void
@@ -53,7 +61,10 @@ class GameApiControllerTest extends TestCase
         $this->gameStatusRepository = $this->createMock(GameStatusRepository::class);
         $this->genreRepository = $this->createMock(GenreRepository::class);
         $this->platformRepository = $this->createMock(PlatformRepository::class);
+        $this->steamGameRepository = $this->createMock(SteamGameRepository::class);
+        $this->gamePriceRepository = $this->createMock(GamePriceRepository::class);
         $this->gameMapper = new GameMapper();
+        $this->gamePriceMapper = new GamePriceMapper();
 
         $this->controller = new GameApiController();
         // AbstractController::json() проверяет container->has('serializer') — пустой
@@ -357,6 +368,99 @@ class GameApiControllerTest extends TestCase
             $this->gameStatusRepository,
             $this->gameMapper,
             null,
+        );
+    }
+
+    public function testPriceHistoryReturnsOrderedItemsWithStoreLink(): void
+    {
+        $game = new Game('Half-Life', 'half-life');
+        $steamGame = new SteamGame(70);
+        $steamGame->setGame($game);
+        $older = (new GamePrice($game, new \DateTimeImmutable('2026-09-14')))->markPriced(199900, 'RUB');
+        $newer = (new GamePrice($game, new \DateTimeImmutable('2026-09-15')))->markFree();
+
+        $this->gameRepository->expects($this->once())
+            ->method('findOneBy')
+            ->with(['slug' => 'half-life'])
+            ->willReturn($game);
+        $this->steamGameRepository->expects($this->once())
+            ->method('findOneByGame')
+            ->with($game)
+            ->willReturn($steamGame);
+        $this->gamePriceRepository->expects($this->once())
+            ->method('findHistoryForGame')
+            ->with($game)
+            ->willReturn([$older, $newer]);
+
+        $response = $this->controller->priceHistory(
+            'half-life',
+            $this->gameRepository,
+            $this->steamGameRepository,
+            $this->gamePriceRepository,
+            $this->gamePriceMapper,
+            $this->gameMapper,
+        );
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertCount(2, $data['items']);
+        self::assertSame('2026-09-14', $data['items'][0]['date']);
+        self::assertSame('2026-09-15', $data['items'][1]['date']);
+        self::assertTrue($data['items'][1]['isFree']);
+        self::assertSame('Steam', $data['items'][0]['store']);
+        self::assertSame('https://store.steampowered.com/app/70/', $data['items'][0]['storeUrl']);
+    }
+
+    public function testPriceHistoryReturnsEmptyItemsWhenNoHistory(): void
+    {
+        $game = new Game('New Game', 'new-game');
+        $this->gameRepository->method('findOneBy')->willReturn($game);
+        $this->steamGameRepository->method('findOneByGame')->willReturn(null);
+        $this->gamePriceRepository->method('findHistoryForGame')->willReturn([]);
+
+        $response = $this->controller->priceHistory(
+            'new-game',
+            $this->gameRepository,
+            $this->steamGameRepository,
+            $this->gamePriceRepository,
+            $this->gamePriceMapper,
+            $this->gameMapper,
+        );
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertSame([], $data['items']);
+    }
+
+    public function testPriceHistoryThrowsNotFoundExceptionForUnknownSlug(): void
+    {
+        $this->gameRepository->method('findOneBy')->willReturn(null);
+
+        $this->expectException(NotFoundHttpException::class);
+
+        $this->controller->priceHistory(
+            'unknown-slug',
+            $this->gameRepository,
+            $this->steamGameRepository,
+            $this->gamePriceRepository,
+            $this->gamePriceMapper,
+            $this->gameMapper,
+        );
+    }
+
+    public function testPriceHistoryThrowsNotFoundExceptionForGameWithHiddenGenre(): void
+    {
+        $game = new Game('NSFW Game', 'nsfw-game');
+        $game->addGenre(new Genre('Сексуальный контент'));
+        $this->gameRepository->method('findOneBy')->willReturn($game);
+
+        $this->expectException(NotFoundHttpException::class);
+
+        $this->controller->priceHistory(
+            'nsfw-game',
+            $this->gameRepository,
+            $this->steamGameRepository,
+            $this->gamePriceRepository,
+            $this->gamePriceMapper,
+            $this->gameMapper,
         );
     }
 }

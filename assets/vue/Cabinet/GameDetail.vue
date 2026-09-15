@@ -52,6 +52,22 @@
             </div>
         </dl>
 
+        <div v-if="currentPrice" class="game-price">
+            <p class="game-price__current">
+                <strong>Цена:</strong> {{ currentPriceText }}
+                <a
+                    v-if="currentPrice.storeUrl"
+                    :href="currentPrice.storeUrl"
+                    target="_blank"
+                    rel="noopener"
+                    class="game-price__link"
+                >{{ currentPrice.store }}</a>
+            </p>
+            <div class="game-price__chart">
+                <Line :data="priceChartData" :options="lineOptions" />
+            </div>
+        </div>
+
         <template v-if="game.screenshotUrls.length > 0">
             <h2 class="game-detail__subtitle">Скриншоты</h2>
             <div class="screenshot-carousel">
@@ -209,8 +225,21 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { Line } from 'vue-chartjs';
+import {
+    Chart as ChartJS,
+    Title,
+    Tooltip,
+    Legend,
+    LineElement,
+    PointElement,
+    LinearScale,
+    CategoryScale,
+} from 'chart.js';
 import TakeCard from './TakeCard.vue';
 import TakeCreateModal from './TakeCreateModal.vue';
+
+ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, LinearScale, CategoryScale);
 
 const props = defineProps({
     slug: { type: String, required: true },
@@ -220,6 +249,55 @@ const props = defineProps({
 const game = ref(null);
 const loading = ref(true);
 const error = ref(null);
+
+const priceHistory = ref([]);
+
+/** Текущая цена — последний (по дате) элемент истории, отдельного эндпоинта не нужно. */
+const currentPrice = computed(() => {
+    return priceHistory.value.length > 0 ? priceHistory.value[priceHistory.value.length - 1] : null;
+});
+
+const currentPriceText = computed(() => {
+    if (!currentPrice.value) {
+        return null;
+    }
+
+    if (currentPrice.value.isFree) {
+        return 'Бесплатно';
+    }
+
+    if (!currentPrice.value.isAvailableInRussia) {
+        return 'Недоступно в РФ';
+    }
+
+    return `${(currentPrice.value.priceKopecks / 100).toFixed(2)} ${currentPrice.value.currency}`;
+});
+
+const priceChartData = computed(() => ({
+    labels: priceHistory.value.map((point) => formatChartDate(point.date)),
+    datasets: [
+        {
+            label: 'Цена, ₽',
+            borderColor: '#0d6efd',
+            backgroundColor: '#0d6efd',
+            spanGaps: false,
+            data: priceHistory.value.map((point) => (point.isAvailableInRussia ? point.priceKopecks / 100 : null)),
+        },
+    ],
+}));
+
+const lineOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true } },
+};
+
+function formatChartDate(date) {
+    const [, month, day] = date.split('-');
+
+    return `${day}.${month}`;
+}
 
 const takes = ref([]);
 const takesLoading = ref(false);
@@ -386,6 +464,20 @@ function onTakeCreated(take) {
     modalOpen.value = false;
 }
 
+async function loadPriceHistory(slug) {
+    try {
+        const response = await fetch(`/api/games/${slug}/price-history`);
+
+        if (!response.ok) {
+            return;
+        }
+
+        priceHistory.value = (await response.json()).items;
+    } catch {
+        // История цены не загрузилась — страница игры отображается нормально, просто без графика.
+    }
+}
+
 async function loadTakes(gameId) {
     takesLoading.value = true;
     takesError.value = null;
@@ -419,6 +511,7 @@ onMounted(async () => {
         game.value = await response.json();
         document.title = `${game.value.name} — RetroGame`;
         loadTakes(game.value.id);
+        loadPriceHistory(props.slug);
     } catch (e) {
         error.value = e.message;
     } finally {

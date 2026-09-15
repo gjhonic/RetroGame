@@ -76,6 +76,23 @@
     margin: 0;
 }
 
+.game-price {
+    margin: 24px 0 0;
+}
+
+.game-price__current {
+    margin: 0 0 12px;
+}
+
+.game-price__link {
+    margin-left: 6px;
+    color: var(--color-accent);
+}
+
+.game-price__chart {
+    height: 220px;
+}
+
 .screenshot-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));

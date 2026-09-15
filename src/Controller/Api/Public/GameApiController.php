@@ -2,14 +2,18 @@
 
 namespace App\Controller\Api\Public;
 
+use App\Entity\GamePrice;
 use App\Entity\User;
 use App\Repository\GameFavoriteRepository;
+use App\Repository\GamePriceRepository;
 use App\Repository\GameReactionRepository;
 use App\Repository\GameRepository;
 use App\Repository\GameStatusRepository;
 use App\Repository\GenreRepository;
 use App\Repository\PlatformRepository;
+use App\Repository\SteamGameRepository;
 use App\Service\Game\GameMapper;
+use App\Service\GamePrice\GamePriceMapper;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -261,5 +265,68 @@ class GameApiController extends AbstractController
             $myFavorite,
             $myStatus?->getStatus()->value,
         ));
+    }
+
+    /**
+     * История цены игры по дням — для графика на карточке игры. Магазин
+     * сейчас всегда Steam; storeUrl строится из привязанного
+     * SteamGame::steamAppId (null, если игра не привязана к Steam).
+     */
+    #[Route('/{slug}/price-history', name: 'app_api_game_price_history', methods: ['GET'])]
+    #[OA\Parameter(
+        name: 'slug',
+        description: 'Slug игры',
+        in: 'path',
+        required: true,
+        schema: new OA\Schema(type: 'string'),
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'История цены игры по дням (от старых к новым)',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'items', type: 'array', items: new OA\Items(
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', nullable: true),
+                        new OA\Property(property: 'gameId', type: 'integer', nullable: true),
+                        new OA\Property(property: 'date', type: 'string'),
+                        new OA\Property(property: 'priceKopecks', type: 'integer', nullable: true),
+                        new OA\Property(property: 'currency', type: 'string'),
+                        new OA\Property(property: 'isFree', type: 'boolean'),
+                        new OA\Property(property: 'isAvailableInRussia', type: 'boolean'),
+                        new OA\Property(property: 'store', type: 'string', nullable: true),
+                        new OA\Property(property: 'storeUrl', type: 'string', nullable: true),
+                        new OA\Property(property: 'createdAt', type: 'string'),
+                    ],
+                    type: 'object',
+                )),
+            ],
+            type: 'object',
+        ),
+    )]
+    #[OA\Response(response: 404, description: 'Игра не найдена')]
+    public function priceHistory(
+        string $slug,
+        GameRepository $gameRepository,
+        SteamGameRepository $steamGameRepository,
+        GamePriceRepository $gamePriceRepository,
+        GamePriceMapper $gamePriceMapper,
+        GameMapper $gameMapper,
+    ): JsonResponse {
+        $game = $gameRepository->findOneBy(['slug' => $slug]);
+
+        if ($game === null || $gameMapper->isHiddenFromPublic($game)) {
+            throw $this->createNotFoundException('Игра не найдена.');
+        }
+
+        $steamAppId = $steamGameRepository->findOneByGame($game)?->getSteamAppId();
+        $history = $gamePriceRepository->findHistoryForGame($game);
+
+        return $this->json([
+            'items' => array_map(
+                static fn (GamePrice $price): array => $gamePriceMapper->toApi($price, $steamAppId),
+                $history,
+            ),
+        ]);
     }
 }
