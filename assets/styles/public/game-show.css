@@ -95,7 +95,7 @@
 }
 
 .game-price__current {
-    margin: 0 0 12px;
+    margin: 0;
 }
 
 .game-price__store {
@@ -132,6 +132,7 @@ a.game-price__store:hover {
 }
 
 .game-price__chart {
+    margin-top: 24px;
     height: 220px;
 }
 

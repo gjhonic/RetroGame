@@ -56,27 +56,26 @@
             <div v-if="currentPrice" class="game-price">
                 <p v-if="currentPrice.isFree" class="game-price__free">Игра бесплатная</p>
 
-                <template v-else>
-                    <p v-if="!currentPrice.isAvailableInRussia" class="game-price__warning">
-                        Игра не доступна в РФ
-                    </p>
-                    <p v-else class="game-price__current">
-                        <a
-                            v-if="currentPrice.storeUrl"
-                            :href="currentPrice.storeUrl"
-                            target="_blank"
-                            rel="noopener"
-                            class="game-price__store"
-                        >{{ currentPrice.store }}</a>
-                        <span v-else class="game-price__store">{{ currentPrice.store }}</span>:
-                        <span class="game-price__amount">{{ currentPriceText }}</span>
-                    </p>
+                <p v-else-if="!currentPrice.isAvailableInRussia" class="game-price__warning">
+                    Игра не доступна в РФ
+                </p>
 
-                    <div class="game-price__chart">
-                        <Line :data="priceChartData" :options="lineOptions" />
-                    </div>
-                </template>
+                <p v-else class="game-price__current">
+                    <a
+                        v-if="currentPrice.storeUrl"
+                        :href="currentPrice.storeUrl"
+                        target="_blank"
+                        rel="noopener"
+                        class="game-price__store"
+                    >{{ currentPrice.store }}</a>
+                    <span v-else class="game-price__store">{{ currentPrice.store }}</span>:
+                    <span class="game-price__amount">{{ currentPriceText }}</span>
+                </p>
             </div>
+        </div>
+
+        <div v-if="currentPrice && !currentPrice.isFree" class="game-price__chart">
+            <Line :data="priceChartData" :options="lineOptions" />
         </div>
 
         <template v-if="game.screenshotUrls.length > 0">
