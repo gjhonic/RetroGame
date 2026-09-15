@@ -13,6 +13,13 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class GameRepository extends ServiceEntityRepository
 {
+    /**
+     * Максимум лет "вперёд" от текущего года, допустимый для releaseDate в
+     * публичном каталоге — часть игр из Steam приходит с некорректной
+     * (явно ошибочной) датой релиза в далёком будущем (например, 9988 год).
+     */
+    private const int MAX_FUTURE_RELEASE_YEARS = 2;
+
     /** Регистрирует репозиторий для сущности Game. */
     public function __construct(ManagerRegistry $registry)
     {
@@ -159,7 +166,8 @@ class GameRepository extends ServiceEntityRepository
         $row = $this->getEntityManager()->getConnection()->fetchAssociative(
             'SELECT EXTRACT(YEAR FROM MIN(release_date))::int AS min, EXTRACT(YEAR FROM MAX(release_date))::int AS max
              FROM game
-             WHERE release_date IS NOT NULL',
+             WHERE release_date IS NOT NULL AND release_date < :maxReleaseDate',
+            ['maxReleaseDate' => $this->maxPublicReleaseDate()->format('Y-m-d')],
         );
 
         return $row === false || $row['min'] === null
@@ -173,6 +181,7 @@ class GameRepository extends ServiceEntityRepository
     private function applyPublicFilters(QueryBuilder $qb, array $filters): void
     {
         $this->excludeHiddenPublicGenres($qb);
+        $this->excludeUnrealisticReleaseDates($qb);
 
         // LOWER() с обеих сторон — LIKE в PostgreSQL по умолчанию регистрозависим.
         if (($filters['name'] ?? '') !== '') {
@@ -218,6 +227,21 @@ class GameRepository extends ServiceEntityRepository
 
         $qb->andWhere($qb->expr()->notIn('g.id', $subQb->getDQL()))
             ->setParameter('hiddenGenreNames', GameMapper::HIDDEN_PUBLIC_GENRE_NAMES);
+    }
+
+    /** Исключает из публичной выборки игры с заведомо ошибочной датой релиза далеко в будущем. */
+    private function excludeUnrealisticReleaseDates(QueryBuilder $qb): void
+    {
+        $qb->andWhere($qb->expr()->orX(
+            $qb->expr()->isNull('g.releaseDate'),
+            $qb->expr()->lt('g.releaseDate', ':maxPublicReleaseDate'),
+        ))->setParameter('maxPublicReleaseDate', $this->maxPublicReleaseDate());
+    }
+
+    /** Верхняя граница (исключительно) правдоподобной даты релиза для публичного каталога. */
+    private function maxPublicReleaseDate(): \DateTimeImmutable
+    {
+        return new \DateTimeImmutable(((int) date('Y') + self::MAX_FUTURE_RELEASE_YEARS + 1) . '-01-01');
     }
 
     /**
