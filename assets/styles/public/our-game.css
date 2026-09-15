@@ -239,6 +239,8 @@
 
 .our-game-post-modal__content {
     max-width: none;
+    max-height: 60vh;
+    overflow-y: auto;
 }
 
 .our-game-post-modal__content img {

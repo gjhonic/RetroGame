@@ -3,7 +3,12 @@ framework:
     secret: '%env(APP_SECRET)%'
 
     # Note that the session will be started ONLY if you read or write from it.
-    session: true
+    # cookie_lifetime/gc_maxlifetime подняты с дефолтных 24 минут (php.ini
+    # session.gc_maxlifetime=1440) до 2 недель — иначе сессия веб-кабинета
+    # обрывается почти сразу после короткого простоя.
+    session:
+        cookie_lifetime: 1209600
+        gc_maxlifetime: 1209600
 
     #esi: true
     #fragments: true

@@ -16,7 +16,7 @@ class Publisher implements NamedEntityInterface
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255, unique: true)]
+    #[ORM\Column(type: 'text', unique: true)]
     private string $name;
 
     /**

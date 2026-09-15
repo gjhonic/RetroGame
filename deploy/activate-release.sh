@@ -81,6 +81,6 @@ sudo systemctl reload php8.4-fpm
 # (см. docs/DEPLOY.md, п. 4). По одному релизу за вызов — под судоерс-
 # wildcard-правило, рассчитанное на один путь-аргумент.
 cd "$DEPLOY_PATH/releases"
-ls -1t | tail -n "+$((KEEP_RELEASES + 1))" | xargs -r -n1 sudo rm -rf
+ls -1t | tail -n "+$((KEEP_RELEASES + 1))" | sed "s#^#$PWD/#" | xargs -r -n1 sudo rm -rf
 
 echo "Релиз $RELEASE активирован."

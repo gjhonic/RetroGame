@@ -96,7 +96,14 @@ class CronTrackingListener
             memory_get_peak_usage(true),
             $this->currentErrorMessage,
         );
-        $this->entityManager->flush();
+
+        try {
+            $this->entityManager->flush();
+        } catch (\Throwable) {
+            // EntityManager мог быть уже закрыт исключением из самой команды (например,
+            // DBAL-ошибкой при flush в её собственном коде) — падать здесь не нужно:
+            // это заслонило бы в логе крона настоящую причину сбоя своим стектрейсом.
+        }
 
         $this->detachLogFile();
         $this->currentRun = null;
