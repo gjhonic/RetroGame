@@ -21,3 +21,12 @@
 # несколько дней, когда докрутится очередь. Игры, до которых очередь за день
 # не дошла, остаются без свежего снимка — это ожидаемо.
 */10 * * * * /usr/bin/php /var/www/retrogame/current/bin/console app:games:import-prices --limit=100 --min-delay-ms=1000 --max-delay-ms=3000 --env=prod >> /var/www/retrogame/shared/var/log/cron-games-import-prices.log 2>&1
+
+# Проверка наличия игр на ggsel.net (HTML-скрапинг, публичного API нет) —
+# раз в 30 минут, порциями по 20 штук с паузой 1.5 с между запросами.
+# Курсор идёт по убыванию популярности игры (см. Service\Ggsel\GameImportService)
+# и не сбрасывается по дням: обход пропускает игры, для которых уже есть
+# найденная ссылка (GgselGame), поэтому круг по каталогу естественным
+# образом ускоряется со временем, а к не найденным ранее играм обход
+# возвращается сам, когда доходит до конца списка.
+*/30 * * * * /usr/bin/php /var/www/retrogame/current/bin/console app:games:import-ggsel --limit=20 --delay-ms=1500 --env=prod >> /var/www/retrogame/shared/var/log/cron-games-import-ggsel.log 2>&1
