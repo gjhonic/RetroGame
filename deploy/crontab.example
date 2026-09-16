@@ -22,6 +22,12 @@
 # не дошла, остаются без свежего снимка — это ожидаемо.
 */10 * * * * /usr/bin/php /var/www/retrogame/current/bin/console app:games:import-prices --limit=100 --min-delay-ms=1000 --max-delay-ms=3000 --env=prod >> /var/www/retrogame/shared/var/log/cron-games-import-prices.log 2>&1
 
+# Очистка промежуточных снимков цены игр — раз в неделю (по понедельникам),
+# обрабатывает окно из последних 2 недель: для каждой игры внутри непрерывной
+# серии одинаковой цены оставляет только первую и последнюю запись (цену до
+# и после изменения), остальные снимки удаляет.
+0 3 * * 1 /usr/bin/php /var/www/retrogame/current/bin/console app:games:cleanup-prices --weeks=2 --env=prod >> /var/www/retrogame/shared/var/log/cron-games-cleanup-prices.log 2>&1
+
 # Проверка наличия игр на ggsel.net (HTML-скрапинг, публичного API нет) —
 # раз в 30 минут, порциями по 20 штук с паузой 1.5 с между запросами.
 # Курсор идёт по убыванию популярности игры (см. Service\Ggsel\GameImportService)
