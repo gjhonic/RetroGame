@@ -12,10 +12,12 @@ PHP 8.4, Symfony 8.1 (Twig, Forms, Validator, Doctrine ORM, Security, Mailer), C
 
 ## Структура
 
-- `src/Controller/Public` — тонкие Twig-контроллеры
-- `src/Controller/Api` — JSON API
+- `src/Controller/Cabinet`, `src/Controller/Admin` — тонкие Twig-контроллеры (кабинет — единый для всех, включая неавторизованных; админка — `ROLE_MODERATOR`+)
+- `src/Controller/Api/{Public,Cabinet,Admin}` — JSON API по тем же трём зонам доступа
+- `src/Service/<Модуль>` — бизнес-логика, `src/Dto/<Модуль>` — тела запросов API
 - `src/Entity`, `src/Repository` — Doctrine
-- `config/`, `templates/`, `assets/vue/`, `tests/` (PHPUnit), `migrations/`
+- `assets/vue/{Cabinet,Admin}` — Vue-компоненты, зеркалят зоны Twig-контроллеров
+- `config/`, `templates/`, `tests/` (PHPUnit), `migrations/`
 
 ## Команды
 
@@ -30,4 +32,4 @@ PHP 8.4, Symfony 8.1 (Twig, Forms, Validator, Doctrine ORM, Security, Mailer), C
 
 ## Правила
 
-Подробности в `.claude/rules/`: [modules.md](.claude/rules/modules.md) (модули/классы), [frontend.md](.claude/rules/frontend.md) (Vue+API), [tests.md](.claude/rules/tests.md) (тесты), [git.md](.claude/rules/git.md) (ветки/PR). Локальные правила (не коммитятся) — `.claude/rules/local/`.
+Подробности в `.claude/rules/`: [architecture.md](.claude/rules/architecture.md) (карта модулей), [modules.md](.claude/rules/modules.md) (конвенции классов), [frontend.md](.claude/rules/frontend.md) (Vue+API), [tests.md](.claude/rules/tests.md) (тесты), [git.md](.claude/rules/git.md) (ветки/PR). Локальные правила (не коммитятся) — `.claude/rules/local/`.
