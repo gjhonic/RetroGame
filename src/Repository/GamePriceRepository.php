@@ -39,4 +39,24 @@ class GamePriceRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * Все снимки цен за период [from, to], упорядоченные по игре и дате —
+     * для GamePriceCleanupService: последовательные записи одной игры идут
+     * подряд, что позволяет группировать их без отдельного запроса на игру.
+     *
+     * @return array<int, GamePrice>
+     */
+    public function findAllInRangeOrderedByGame(\DateTimeImmutable $from, \DateTimeImmutable $to): array
+    {
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.date >= :from')
+            ->andWhere('p.date <= :to')
+            ->setParameter('from', $from)
+            ->setParameter('to', $to)
+            ->addOrderBy('p.game', 'ASC')
+            ->addOrderBy('p.date', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }
