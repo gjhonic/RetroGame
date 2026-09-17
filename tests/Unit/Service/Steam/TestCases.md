@@ -61,10 +61,10 @@
 | Кейс | Метод теста |
 |---|---|
 | Есть `price_overview.final`: снимок помечается платным, `priceKopecks` верен, у `SteamGame` `availableInRussia=true` | `testImportNextBatchMarksPricedGameWhenPriceOverviewPresent` |
-| `is_free=true`: снимок помечается бесплатным, `priceKopecks=0`, у `SteamGame` проставляется `priceFree=true` (исключает игру из будущих пачек, см. `SteamGameRepository::findBatchForPriceImport()`) | `testImportNextBatchMarksFreeGameWhenIsFreeTrue` |
-| Платная игра: `SteamGame::priceFree` остаётся `false` | `testImportNextBatchLeavesPriceFreeFalseWhenGameIsPaid` |
+| `is_free=true`: снимок помечается бесплатным, `priceKopecks=0`, у `Game` проставляется `isFree=true` (исключает игру из будущих пачек, см. `SteamGameRepository::findBatchForPriceImport()`) | `testImportNextBatchMarksFreeGameWhenIsFreeTrue` |
+| Платная игра: `Game::isFree` остаётся `false` | `testImportNextBatchLeavesGameNotFreeWhenGameIsPaid` |
 | Steam ответил `success=false` для RU (`details=null`): снимок помечается недоступным, у `SteamGame` `availableInRussia=false` | `testImportNextBatchMarksUnavailableWhenDetailsAreNull` |
-| Игра ранее была недоступна (`availableInRussia=false`), в этот раз появилась цена: статус на `SteamGame` восстанавливается в `true` (в отличие от `priceFree`, доступность не одноразовая метка — обновляется в обе стороны) | `testImportNextBatchRestoresSteamGameAvailabilityWhenGameBecomesAvailableAgain` |
+| Игра ранее была недоступна (`availableInRussia=false`), в этот раз появилась цена: статус на `SteamGame` восстанавливается в `true` (в отличие от `Game::isFree`, доступность не одноразовая метка — обновляется в обе стороны) | `testImportNextBatchRestoresSteamGameAvailabilityWhenGameBecomesAvailableAgain` |
 | Ответ есть, но нет `price_overview` и не бесплатная: снимок помечается недоступным | `testImportNextBatchMarksUnavailableWhenNoPriceOverviewAndNotFree` |
 | `SteamApiException` на одной игре в пачке: она пропускается (`skippedCount`), обработка остальных продолжается | `testImportNextBatchSkipsGameOnSteamApiExceptionAndContinuesWithRest` |
 | Снимок за сегодня уже существует: обновляется та же сущность, `persist()` не вызывается повторно | `testImportNextBatchUpdatesExistingPriceRecordForSameDayInsteadOfCreatingNew` |
@@ -76,7 +76,7 @@
 | Первый запуск в новый календарный день (`updatedAt` курсора — вчера): курсор сбрасывается в начало списка (`lastPopularity=null`) ещё до выборки, `startedNewDay=true`, даже если вчера курсор был далеко не в начале | `testImportNextBatchResetsCursorOnFirstRunOfNewDay` |
 | Каталог совсем пуст (пустая выборка): пустой результат, БД/rate limiter не трогаются | `testImportNextBatchReturnsEmptyResultWhenCatalogIsCompletelyEmpty` |
 | `importPriceForGame()`: платная игра | `testImportPriceForGameReturnsPricedResult` |
-| `importPriceForGame()`: бесплатная игра, у `SteamGame` проставляется `priceFree=true` | `testImportPriceForGameReturnsFreeResult` |
+| `importPriceForGame()`: бесплатная игра, у `Game` проставляется `isFree=true` | `testImportPriceForGameReturnsFreeResult` |
 | `importPriceForGame()`: недоступна в РФ, у `SteamGame` `availableInRussia=false` | `testImportPriceForGameReturnsUnavailableResult` |
 | `importPriceForGame()`: `SteamApiException` → `null`, ничего не персистится | `testImportPriceForGameReturnsNullOnSteamApiException` |
 

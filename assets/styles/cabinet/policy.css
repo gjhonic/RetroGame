@@ -1,0 +1,51 @@
+/* Страница "Политика сайта" (templates/cabinet/policy/index.html.twig) */
+
+.policy {
+    max-width: 760px;
+    margin: 24px auto 64px;
+}
+
+.policy__title {
+    margin: 0;
+    font-size: 2rem;
+}
+
+.policy__updated {
+    margin: 6px 0 32px;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+}
+
+.policy__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: policy-item;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.policy__list > li {
+    counter-increment: policy-item;
+    padding: 20px 24px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background-color: var(--color-surface);
+}
+
+.policy__list h2 {
+    margin: 0 0 10px;
+    font-size: 1.1rem;
+}
+
+.policy__list h2::before {
+    content: counter(policy-item) ". ";
+    color: var(--color-accent);
+}
+
+.policy__list p {
+    margin: 0;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+}

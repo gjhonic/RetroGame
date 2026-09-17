@@ -33,49 +33,173 @@
 
         <p v-if="game.description" class="game-detail__description">{{ game.description }}</p>
 
-        <div class="game-info">
-            <dl class="game-facts">
-                <div v-if="game.developers.length > 0" class="game-facts__row">
-                    <dt>Разработчик</dt>
-                    <dd>{{ game.developers.join(', ') }}</dd>
+        <div class="game-panels">
+            <div class="game-panels__facts">
+                <div class="info-card">
+                    <h3 class="info-card__title">Об игре</h3>
+                    <dl class="game-facts">
+                        <div v-if="game.developers.length > 0" class="game-facts__row">
+                            <dt>Разработчик</dt>
+                            <dd>{{ game.developers.join(', ') }}</dd>
+                        </div>
+                        <div v-if="game.publishers.length > 0" class="game-facts__row">
+                            <dt>Издатель</dt>
+                            <dd>{{ game.publishers.join(', ') }}</dd>
+                        </div>
+                        <div v-if="game.genres.length > 0" class="game-facts__row">
+                            <dt>Жанры</dt>
+                            <dd>{{ game.genres.join(', ') }}</dd>
+                        </div>
+                        <div v-if="game.platforms.length > 0" class="game-facts__row">
+                            <dt>Платформы</dt>
+                            <dd>{{ game.platforms.join(', ') }}</dd>
+                        </div>
+                    </dl>
                 </div>
-                <div v-if="game.publishers.length > 0" class="game-facts__row">
-                    <dt>Издатель</dt>
-                    <dd>{{ game.publishers.join(', ') }}</dd>
-                </div>
-                <div v-if="game.genres.length > 0" class="game-facts__row">
-                    <dt>Жанры</dt>
-                    <dd>{{ game.genres.join(', ') }}</dd>
-                </div>
-                <div v-if="game.platforms.length > 0" class="game-facts__row">
-                    <dt>Платформы</dt>
-                    <dd>{{ game.platforms.join(', ') }}</dd>
-                </div>
-            </dl>
+            </div>
 
-            <div v-if="currentPrice" class="game-price">
-                <p v-if="currentPrice.isFree" class="game-price__free">Игра бесплатная</p>
+            <div v-if="hasAnyPriceData" class="game-panels__prices">
+                <div class="price-card">
+                    <div class="price-card__group">
+                        <h3 class="price-card__group-title">Steam</h3>
 
-                <p v-else-if="!currentPrice.isAvailableInRussia" class="game-price__warning">
-                    Игра не доступна в РФ
-                </p>
+                        <p v-if="steamPriceText" class="price-card__row">
+                            <button
+                                v-if="steamPrice.storeUrl"
+                                type="button"
+                                class="price-card__link"
+                                @click="openLinkWarning(steamPrice.storeUrl)"
+                            >Steam</button>
+                            <span v-else class="price-card__link">Steam</span>:
+                            <span class="price-card__amount">{{ steamPriceText }}</span>
+                        </p>
+                        <p v-else class="price-card__row price-card__row--muted">
+                            {{ steamPriceFallbackText }}
+                        </p>
+                    </div>
 
-                <p v-else class="game-price__current">
-                    <a
-                        v-if="currentPrice.storeUrl"
-                        :href="currentPrice.storeUrl"
-                        target="_blank"
-                        rel="noopener"
-                        class="game-price__store"
-                    >{{ currentPrice.store }}</a>
-                    <span v-else class="game-price__store">{{ currentPrice.store }}</span>:
-                    <span class="game-price__amount">{{ currentPriceText }}</span>
-                </p>
+                    <div class="price-card__group">
+                        <h3 class="price-card__group-title">Plati Market</h3>
+
+                        <p v-if="platiSellers.length === 0" class="price-card__row price-card__row--muted">
+                            Нет данных
+                        </p>
+                        <p v-for="seller in platiSellers" :key="seller.url" class="price-card__row">
+                            <button
+                                type="button"
+                                class="price-card__link"
+                                @click="openLinkWarning(seller.url)"
+                            >{{ seller.sellerName }}</button>:
+                            <span class="price-card__amount">{{ sellerPriceText(seller) }}</span>
+                        </p>
+                    </div>
+
+                    <div v-if="steamPrice.isFree" class="price-banner price-banner--good">
+                        Игра бесплатная
+                    </div>
+                    <div v-else-if="!steamPrice.isAvailableInRussia" class="price-banner price-banner--warning">
+                        Игра не доступна в РФ
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div v-if="currentPrice && !currentPrice.isFree" class="game-price__chart game-price">
-            <Line :data="priceChartData" :options="lineOptions" />
+        <div v-if="hasAnyPriceData && !steamPrice.isFree" class="price-chart">
+            <div class="price-chart__header">
+                <h3 class="price-chart__title">История цены</h3>
+                <button
+                    type="button"
+                    class="price-chart__expand"
+                    aria-label="Открыть график на весь экран"
+                    title="Открыть на весь экран"
+                    @click="chartModalOpen = true"
+                >⛶</button>
+            </div>
+            <div class="price-chart__content">
+                <div class="price-chart__canvas">
+                    <Line :data="priceChartData" :options="lineOptions" />
+                </div>
+                <div class="price-chart__legend">
+                    <h4 class="price-chart__legend-title">Магазины</h4>
+                    <ul class="price-chart__legend-list">
+                        <li v-for="item in chartLegendItems" :key="item.label" class="price-chart__legend-item">
+                            <span class="price-chart__legend-swatch" :style="{ backgroundColor: item.color }"></span>
+                            {{ item.label }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="chartModalOpen" class="modal-overlay" @click="closeChartModalOnOverlayClick">
+            <div class="modal-window modal-window--wide">
+                <div class="modal-window__header">
+                    <h2 class="modal-window__title">История цены — {{ game.name }}</h2>
+                    <button
+                        type="button"
+                        class="modal-window__close"
+                        aria-label="Закрыть"
+                        @click="chartModalOpen = false"
+                    >✕</button>
+                </div>
+                <div class="modal-window__body">
+                    <div class="price-chart__content price-chart__content--large">
+                        <div class="price-chart__canvas">
+                            <Line :data="priceChartData" :options="lineOptions" />
+                        </div>
+                        <div class="price-chart__legend">
+                            <h4 class="price-chart__legend-title">Магазины</h4>
+                            <ul class="price-chart__legend-list">
+                                <li
+                                    v-for="item in chartLegendItems"
+                                    :key="item.label"
+                                    class="price-chart__legend-item"
+                                >
+                                    <span
+                                        class="price-chart__legend-swatch"
+                                        :style="{ backgroundColor: item.color }"
+                                    ></span>
+                                    {{ item.label }}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="pendingLinkUrl" class="modal-overlay" @click="closeLinkWarningOnOverlayClick">
+            <div class="modal-window">
+                <div class="modal-window__header">
+                    <h2 class="modal-window__title">Ты покидаешь тёплый ламповый RetroGame 🚀</h2>
+                    <button
+                        type="button"
+                        class="modal-window__close"
+                        aria-label="Закрыть"
+                        @click="closeLinkWarning"
+                    >✕</button>
+                </div>
+                <div class="modal-window__body">
+                    <p>
+                        Дальше — чужая территория: <strong>{{ pendingLinkHost }}</strong>. Мы просто агрегатор цен
+                        с лапками 🐾 и туда не заглядываем, поэтому за честность продавца, качество товара и
+                        доставку ключа не отвечаем.
+                    </p>
+                    <p>Иди осторожно, проверяй продавца и не благодари потом сложными словами.</p>
+                    <div class="modal-window__footer">
+                        <button type="button" class="btn btn--secondary" @click="closeLinkWarning">
+                            Остаться тут
+                        </button>
+                        <a
+                            :href="pendingLinkUrl"
+                            target="_blank"
+                            rel="noopener"
+                            class="btn btn--primary"
+                            @click="closeLinkWarning"
+                        >Перейти всё равно</a>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <template v-if="game.screenshotUrls.length > 0">
@@ -260,20 +384,44 @@ const game = ref(null);
 const loading = ref(true);
 const error = ref(null);
 
-const priceHistory = ref([]);
+// Цвета линий графика — фиксированный порядок (не перекрашиваются при
+// смене состава продавцов), подобраны и проверены на разделимость (CVD/
+// контраст на тёмном фоне сайта) через dataviz-скилл.
+const CHART_COLOR_STEAM = '#3987e5';
+const CHART_COLORS_PLATI = ['#d95926', '#199e70', '#c98500'];
 
-/** Текущая цена — последний (по дате) элемент истории, отдельного эндпоинта не нужно. */
-const currentPrice = computed(() => {
-    return priceHistory.value.length > 0 ? priceHistory.value[priceHistory.value.length - 1] : null;
+const steamPrice = ref(null);
+const platiSellers = ref([]);
+
+/** Есть ли хоть какая-то история цены (Steam или plati.market) — иначе карточка цен и график не показываются. */
+const hasAnyPriceData = computed(() => {
+    return (steamPrice.value?.history?.length > 0) || platiSellers.value.some((seller) => seller.history.length > 0);
 });
 
-const currentPriceText = computed(() => {
-    if (!currentPrice.value || currentPrice.value.priceKopecks === null) {
+const steamPriceText = computed(() => {
+    if (!steamPrice.value || steamPrice.value.priceKopecks === null || steamPrice.value.isFree) {
         return null;
     }
 
-    return formatPriceRub(currentPrice.value.priceKopecks);
+    return formatPriceRub(steamPrice.value.priceKopecks);
 });
+
+/** Что показать в группе Steam, если платной цены нет: бесплатно / недоступна в РФ / нет данных вовсе. */
+const steamPriceFallbackText = computed(() => {
+    if (!steamPrice.value || steamPrice.value.history.length === 0) {
+        return 'Нет данных';
+    }
+
+    if (steamPrice.value.isFree) {
+        return 'Бесплатно';
+    }
+
+    return steamPrice.value.isAvailableInRussia ? 'Нет данных' : 'Недоступна в РФ';
+});
+
+function sellerPriceText(seller) {
+    return seller.priceKopecks === null ? 'нет данных' : formatPriceRub(seller.priceKopecks);
+}
 
 /** X XXX руб — рубли без копеек, тысячи отделены пробелом. */
 function formatPriceRub(priceKopecks) {
@@ -282,24 +430,64 @@ function formatPriceRub(priceKopecks) {
     return `${new Intl.NumberFormat('ru-RU').format(rubles)} руб`;
 }
 
-const priceChartData = computed(() => ({
-    labels: priceHistory.value.map((point) => formatChartDate(point.date)),
-    datasets: [
-        {
-            label: 'Цена, ₽',
-            borderColor: '#0d6efd',
-            backgroundColor: '#0d6efd',
-            spanGaps: false,
-            data: priceHistory.value.map((point) => (point.isAvailableInRussia ? point.priceKopecks / 100 : null)),
-        },
-    ],
-}));
+/** Строит датасет графика: цена в рублях по общей оси дат, пропуски (нет снимка на эту дату) — null, без соединения линией. */
+function buildChartDataset(label, history, dates, color) {
+    const priceByDate = new Map(history.map((point) => [point.date, point.priceKopecks]));
+
+    return {
+        label,
+        borderColor: color,
+        backgroundColor: color,
+        spanGaps: false,
+        data: dates.map((date) => {
+            const priceKopecks = priceByDate.get(date);
+
+            return priceKopecks === undefined || priceKopecks === null ? null : priceKopecks / 100;
+        }),
+    };
+}
+
+const priceChartData = computed(() => {
+    const dateSet = new Set();
+    (steamPrice.value?.history ?? []).forEach((point) => dateSet.add(point.date));
+    platiSellers.value.forEach((seller) => seller.history.forEach((point) => dateSet.add(point.date)));
+    const dates = Array.from(dateSet).sort();
+
+    const datasets = [];
+    if (steamPrice.value?.history.length > 0) {
+        datasets.push(buildChartDataset('Steam', steamPrice.value.history, dates, CHART_COLOR_STEAM));
+    }
+    platiSellers.value.forEach((seller, index) => {
+        if (seller.history.length === 0) {
+            return;
+        }
+
+        datasets.push(buildChartDataset(
+            `Plati: ${seller.sellerName}`,
+            seller.history,
+            dates,
+            CHART_COLORS_PLATI[index % CHART_COLORS_PLATI.length],
+        ));
+    });
+
+    return { labels: dates.map(formatChartDate), datasets };
+});
+
+/** Легенда графика вынесена в отдельный HTML-блок (см. .price-chart__legend) — свой заголовок, свои отступы. */
+const chartLegendItems = computed(() => {
+    return priceChartData.value.datasets.map((dataset) => ({ label: dataset.label, color: dataset.borderColor }));
+});
 
 const lineOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: { y: { beginAtZero: true } },
+    plugins: {
+        legend: { display: false },
+    },
+    scales: {
+        y: { beginAtZero: true, ticks: { color: '#9098a8' }, grid: { color: 'rgba(255, 255, 255, 0.08)' } },
+        x: { ticks: { color: '#9098a8' }, grid: { display: false } },
+    },
 };
 
 function formatChartDate(date) {
@@ -315,6 +503,20 @@ const modalOpen = ref(false);
 
 const lightboxOpen = ref(false);
 const currentIndex = ref(0);
+const chartModalOpen = ref(false);
+const pendingLinkUrl = ref(null);
+
+const pendingLinkHost = computed(() => {
+    if (!pendingLinkUrl.value) {
+        return '';
+    }
+
+    try {
+        return new URL(pendingLinkUrl.value).hostname;
+    } catch {
+        return pendingLinkUrl.value;
+    }
+});
 
 const reactionPending = ref(false);
 const favoritePending = ref(false);
@@ -357,6 +559,26 @@ function closeOnOverlayClick(event) {
     }
 }
 
+function closeChartModalOnOverlayClick(event) {
+    if (event.target === event.currentTarget) {
+        chartModalOpen.value = false;
+    }
+}
+
+function openLinkWarning(url) {
+    pendingLinkUrl.value = url;
+}
+
+function closeLinkWarning() {
+    pendingLinkUrl.value = null;
+}
+
+function closeLinkWarningOnOverlayClick(event) {
+    if (event.target === event.currentTarget) {
+        closeLinkWarning();
+    }
+}
+
 function nextImage() {
     const count = game.value.screenshotUrls.length;
     currentIndex.value = (currentIndex.value + 1) % count;
@@ -368,6 +590,18 @@ function prevImage() {
 }
 
 function onKeydown(event) {
+    if (event.key === 'Escape' && pendingLinkUrl.value) {
+        closeLinkWarning();
+
+        return;
+    }
+
+    if (event.key === 'Escape' && chartModalOpen.value) {
+        chartModalOpen.value = false;
+
+        return;
+    }
+
     if (!lightboxOpen.value) {
         return;
     }
@@ -481,7 +715,9 @@ async function loadPriceHistory(slug) {
             return;
         }
 
-        priceHistory.value = (await response.json()).items;
+        const data = await response.json();
+        steamPrice.value = data.steam;
+        platiSellers.value = data.plati;
     } catch {
         // История цены не загрузилась — страница игры отображается нормально, просто без графика.
     }

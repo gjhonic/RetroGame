@@ -1,0 +1,10 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Plati-игра — Админка — RetroGame{% endblock %}
+{% block admin_title %}Plati-игра{% endblock %}
+
+{% block body %}
+    <a href="{{ path('admin_plati_game_index') }}" class="d-inline-block mb-3 link-secondary">← Назад к списку Plati-игр</a>
+
+    <div {{ vue_component('Admin/PlatiGameDetail', { id: id }) }}></div>
+{% endblock %}

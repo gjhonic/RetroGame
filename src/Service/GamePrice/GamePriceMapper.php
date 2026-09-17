@@ -31,4 +31,34 @@ class GamePriceMapper
             'createdAt' => $price->getCreatedAt()->format('Y-m-d H:i:s'),
         ];
     }
+
+    /**
+     * Сводка цены в Steam для карточки игры на публичной странице:
+     * текущее состояние (по последнему снимку) + история для графика.
+     * Отдельно от toApi() — той нужен полный снимок на конкретный день
+     * (админка), этой — только то, что показывает карточка.
+     *
+     * @param array<int, GamePrice> $history история от старых к новым (см. GamePriceRepository::findHistoryForGame())
+     *
+     * @return array<string, mixed>
+     */
+    public function toPublicSummary(array $history, ?int $steamAppId): array
+    {
+        $latest = $history === [] ? null : $history[array_key_last($history)];
+
+        return [
+            'isFree' => $latest?->isFree() ?? false,
+            'isAvailableInRussia' => $latest?->isAvailableInRussia() ?? true,
+            'priceKopecks' => $latest?->getPriceKopecks(),
+            'store' => $steamAppId !== null ? self::STEAM_STORE_LABEL : null,
+            'storeUrl' => $steamAppId !== null ? sprintf(self::STEAM_STORE_URL_TEMPLATE, $steamAppId) : null,
+            'history' => array_map(self::toHistoryPoint(...), $history),
+        ];
+    }
+
+    /** @return array{date: string, priceKopecks: int|null} */
+    private static function toHistoryPoint(GamePrice $price): array
+    {
+        return ['date' => $price->getDate()->format('Y-m-d'), 'priceKopecks' => $price->getPriceKopecks()];
+    }
 }
