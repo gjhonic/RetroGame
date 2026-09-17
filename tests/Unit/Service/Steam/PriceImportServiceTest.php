@@ -113,10 +113,10 @@ class PriceImportServiceTest extends TestCase
         self::assertTrue($price->isFree());
         self::assertTrue($price->isAvailableInRussia());
         self::assertSame(0, $price->getPriceKopecks());
-        self::assertTrue($steamGame->isPriceFree());
+        self::assertTrue($game->isFree());
     }
 
-    public function testImportNextBatchLeavesPriceFreeFalseWhenGameIsPaid(): void
+    public function testImportNextBatchLeavesGameNotFreeWhenGameIsPaid(): void
     {
         $game = new Game('Half-Life', 'half-life');
         $steamGame = self::makeSteamGame(1, 10, $game);
@@ -127,7 +127,7 @@ class PriceImportServiceTest extends TestCase
 
         $this->service->importNextBatch(5, 1000, 1000);
 
-        self::assertFalse($steamGame->isPriceFree());
+        self::assertFalse($game->isFree());
     }
 
     public function testImportNextBatchMarksUnavailableWhenDetailsAreNull(): void
@@ -357,14 +357,15 @@ class PriceImportServiceTest extends TestCase
 
     public function testImportPriceForGameReturnsFreeResult(): void
     {
-        $steamGame = self::makeSteamGame(1, 20, new Game('Free Game', 'free-game'));
+        $game = new Game('Free Game', 'free-game');
+        $steamGame = self::makeSteamGame(1, 20, $game);
         $this->steamClient->method('fetchAppDetailsForRussia')->willReturn(['is_free' => true]);
 
         $price = $this->service->importPriceForGame($steamGame);
 
         self::assertNotNull($price);
         self::assertTrue($price->isFree());
-        self::assertTrue($steamGame->isPriceFree());
+        self::assertTrue($game->isFree());
     }
 
     public function testImportPriceForGameReturnsUnavailableResult(): void

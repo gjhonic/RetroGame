@@ -73,6 +73,18 @@ class Game implements HasSteamDetailsInterface
     #[ORM\Column(nullable: true)]
     private ?float $avgPopularity = null;
 
+    /**
+     * Игра точно бесплатна (подтверждено импортом цены —
+     * App\Service\Steam\PriceImportService). Раз проставившись, больше не
+     * сбрасывается: бесплатная игра платной не становится, а сама проверка
+     * цены каждый раз дорогая (запрос к Steam) — такие игры сразу
+     * отсекаются из SteamGameRepository::findBatchForPriceImport(). Общее
+     * поле для игры вне зависимости от источника цены (раньше жило в
+     * SteamGame — перенесено, т.к. это свойство самой игры, а не Steam-записи).
+     */
+    #[ORM\Column]
+    private bool $isFree = false;
+
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $createdAt;
 
@@ -318,6 +330,21 @@ class Game implements HasSteamDetailsInterface
     public function getAvgPopularity(): ?float
     {
         return $this->avgPopularity;
+    }
+
+    /** Подтверждено ли, что игра бесплатна (см. Service\Steam\PriceImportService). */
+    public function isFree(): bool
+    {
+        return $this->isFree;
+    }
+
+    /** Фиксирует, что игра бесплатна — исключает её из дальнейшего импорта цен. */
+    public function markFree(): static
+    {
+        $this->isFree = true;
+        $this->touch();
+
+        return $this;
     }
 
     /** popularity / число полных лет с релиза (не меньше 1) — null, если нет popularity или даты релиза. */

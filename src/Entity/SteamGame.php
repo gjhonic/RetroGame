@@ -51,17 +51,8 @@ class SteamGame
     private int $attempts = 0;
 
     /**
-     * Игра точно бесплатна (подтверждено импортом цены — App\Service\Steam\PriceImportService).
-     * Раз проставившись, больше не сбрасывается: бесплатная игра платной не
-     * становится, а сама проверка цены каждый раз дорогая (запрос к Steam) —
-     * такие игры сразу отсекаются из SteamGameRepository::findBatchForPriceImport().
-     */
-    #[ORM\Column]
-    private bool $priceFree = false;
-
-    /**
      * Доступна ли игра для покупки в российском Steam (последний известный
-     * статус из PriceImportService) — в отличие от priceFree это не
+     * статус из PriceImportService) — в отличие от Game::isFree это не
      * одноразовая метка: регион-лок может как появиться, так и сняться,
      * поэтому значение обновляется при каждом импорте цены в обе стороны.
      * До первой проверки цены считается доступной (оптимистичное значение
@@ -157,21 +148,6 @@ class SteamGame
     public function getAttempts(): int
     {
         return $this->attempts;
-    }
-
-    /** Подтверждено ли, что игра бесплатна (см. PriceImportService). */
-    public function isPriceFree(): bool
-    {
-        return $this->priceFree;
-    }
-
-    /** Фиксирует, что игра бесплатна — исключает её из дальнейшего импорта цен. */
-    public function markPriceFree(): static
-    {
-        $this->priceFree = true;
-        $this->updatedAt = new \DateTimeImmutable();
-
-        return $this;
     }
 
     /** Доступна ли игра для покупки в российском Steam (последний известный статус). */
