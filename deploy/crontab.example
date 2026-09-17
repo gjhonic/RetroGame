@@ -28,11 +28,22 @@
 # и после изменения), остальные снимки удаляет.
 0 3 * * 1 /usr/bin/php /var/www/retrogame/current/bin/console app:games:cleanup-prices --weeks=2 --env=prod >> /var/www/retrogame/shared/var/log/cron-games-cleanup-prices.log 2>&1
 
-# Проверка наличия игр на ggsel.net (HTML-скрапинг, публичного API нет) —
-# раз в 30 минут, порциями по 20 штук с паузой 1.5 с между запросами.
-# Курсор идёт по убыванию популярности игры (см. Service\Ggsel\GameImportService)
+# Проверка наличия игр на plati.market — раз в 10 минут, порциями по 100 штук
+# с паузой 0.5 с между запросами. Источник — публичный JSON Web API Digiseller
+# (api.digiseller.ru/api/products/search2, owner=1 — plati.market), не HTML-
+# скрапинг: запросы не требуют браузерного контекста и не упираются в
+# антибот-защиту (см. Service\Plati\PlatiClient — там же объяснение, почему
+# изначально предполагавшийся ggsel.net для этого не подошёл, там Qrator).
+# Курсор идёт по убыванию популярности игры (см. Service\Plati\GameImportService)
 # и не сбрасывается по дням: обход пропускает игры, для которых уже есть
-# найденная ссылка (GgselGame), поэтому круг по каталогу естественным
+# найденная ссылка (PlatiGame), поэтому круг по каталогу естественным
 # образом ускоряется со временем, а к не найденным ранее играм обход
 # возвращается сам, когда доходит до конца списка.
-*/30 * * * * /usr/bin/php /var/www/retrogame/current/bin/console app:games:import-ggsel --limit=20 --delay-ms=1500 --env=prod >> /var/www/retrogame/shared/var/log/cron-games-import-ggsel.log 2>&1
+*/10 * * * * /usr/bin/php /var/www/retrogame/current/bin/console app:games:import-plati --limit=100 --delay-ms=500 --env=prod >> /var/www/retrogame/shared/var/log/cron-games-import-plati.log 2>&1
+
+# Импорт цен игр на plati.market — раз в 10 минут, порциями по 100 штук,
+# только для уже найденных игр (app:games:import-plati). Курсор идёт по
+# убыванию популярности игры и сбрасывается каждый день (см.
+# Service\Plati\PriceImportService) — тот же приём, что и у
+# app:games:import-prices (Steam).
+*/10 * * * * /usr/bin/php /var/www/retrogame/current/bin/console app:games:import-plati-prices --limit=100 --delay-ms=500 --env=prod >> /var/www/retrogame/shared/var/log/cron-games-import-plati-prices.log 2>&1

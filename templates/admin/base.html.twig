@@ -117,7 +117,7 @@
                         </ul>
 
                         {# Источники импорта игр — сгруппированы отдельно от "База данных": каждый
-                           источник (Steam, ggsel.net, ...) даёт свой набор записей по опубликованным
+                           источник (Steam, Plati, ...) даёт свой набор записей по опубликованным
                            играм, и со временем их станет больше. #}
                         <h6 class="sidebar-heading d-flex align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
                             <span>Источники импорта</span>
@@ -133,10 +133,10 @@
                             </li>
                             <li class="nav-item">
                                 <a
-                                    class="nav-link {{ app.request.attributes.get('_route') starts with 'admin_ggsel_game_' ? 'active' : '' }}"
-                                    href="{{ path('admin_ggsel_game_index') }}"
+                                    class="nav-link {{ app.request.attributes.get('_route') starts with 'admin_plati_game_' ? 'active' : '' }}"
+                                    href="{{ path('admin_plati_game_index') }}"
                                 >
-                                    🛒 Ggsel-игры
+                                    🛒 Plati-игры
                                 </a>
                             </li>
                         </ul>

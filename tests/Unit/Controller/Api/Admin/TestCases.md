@@ -113,11 +113,11 @@
 | Детали записи по `id`: ссылка на игру (`gameId`/`gameName`) и `rawData` возвращаются как есть | `testShowReturnsFullDetailWithGameLinkAndRawData` |
 | Несуществующий `id` → `NotFoundHttpException` | `testShowThrowsNotFoundExceptionForUnknownId` |
 
-## GgselGameApiControllerTest.php
+## PlatiGameApiControllerTest.php
 
 | Кейс | Метод теста |
 |---|---|
-| Список записей ggsel: страница по умолчанию (сортировка `createdAt DESC`, `perPage=25`), название/обложка связанной игры в ответе | `testListReturnsPageWithDefaultSortingAndPagination` |
+| Список записей plati: страница по умолчанию (сортировка `createdAt DESC`, `perPage=25`), название/обложка связанной игры в ответе | `testListReturnsPageWithDefaultSortingAndPagination` |
 | `filters[...]`/`sortBy`/`sortDir`/`perPage` из query передаются в репозиторий (значения фильтров триммятся, неизвестные ключи фильтров отбрасываются) | `testListPassesFiltersAndSortingToRepository` |
 | Неизвестный `sortBy` → сортировка по `createdAt`; `perPage` вне диапазона клампится до максимума | `testListFallsBackToCreatedAtSortingForUnknownSortByAndClampsPerPage` |
 | Запрошенная страница выходит за `totalPages`: значение клампится до последней доступной | `testListClampsRequestedPageToTotalPages` |
