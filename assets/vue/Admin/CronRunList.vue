@@ -70,7 +70,17 @@
                         Сбросить масштаб
                     </button>
                 </div>
-                <p class="text-muted small mb-3">Колесо мыши — зум, зажать и потянуть — сдвинуть по времени.</p>
+                <p class="text-muted small mb-2">Колесо мыши — зум, зажать и потянуть — сдвинуть по времени.</p>
+                <p class="text-muted small mb-3">
+                    Заливка отрезка — цвет крона (как у точки в названии строки), рамка — статус запуска:
+                    <span v-for="(color, status) in STATUS_COLORS" :key="status" class="d-inline-flex align-items-center gap-1 ms-2">
+                        <span
+                            class="d-inline-block rounded-circle"
+                            :style="{ width: '8px', height: '8px', border: `4px solid ${color}` }"
+                        ></span>
+                        {{ statusLabel(status) }}
+                    </span>
+                </p>
 
                 <div v-if="timelineLoading" class="d-flex align-items-center gap-2 text-muted py-4">
                     <div class="spinner-border spinner-border-sm" role="status"></div>
@@ -79,7 +89,46 @@
                 <div v-else-if="timelineRuns.length === 0" class="text-muted py-4">
                     За выбранный период запусков не было.
                 </div>
-                <div v-show="!timelineLoading && timelineRuns.length > 0" ref="timelineEl" class="cron-timeline"></div>
+                <div
+                    v-else
+                    ref="timelineViewportEl"
+                    class="cron-timeline"
+                    :class="{ 'cron-timeline--dragging': timelineDragging }"
+                    @wheel.prevent="onTimelineWheel"
+                    @mousedown="onTimelineDragStart"
+                >
+                    <div class="cron-timeline-row cron-timeline-axis">
+                        <div class="cron-timeline-row-label"></div>
+                        <div class="cron-timeline-row-track">
+                            <span
+                                v-for="tick in timelineAxisTicks"
+                                :key="tick.position"
+                                class="cron-timeline-tick"
+                                :style="{ left: tick.position + '%' }"
+                            >{{ tick.label }}</span>
+                        </div>
+                    </div>
+
+                    <div v-for="group in timelineGroupRows" :key="group.command" class="cron-timeline-row">
+                        <div class="cron-timeline-row-label">
+                            <span
+                                v-if="group.cronColor"
+                                class="d-inline-block rounded-circle me-1"
+                                :style="{ width: '8px', height: '8px', backgroundColor: group.cronColor }"
+                            ></span>
+                            {{ group.cronName || group.command }}
+                        </div>
+                        <div class="cron-timeline-row-track">
+                            <div
+                                v-for="run in group.runs"
+                                :key="run.id"
+                                class="cron-timeline-bar"
+                                :style="timelineBarStyle(run)"
+                                :title="timelineBarTitle(run)"
+                            ></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -214,34 +263,12 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useVueTable, getCoreRowModel } from '@tanstack/vue-table';
 import Modal from 'bootstrap/js/dist/modal';
-import { DataSet, Timeline } from 'vis-timeline/standalone';
-import 'vis-timeline/styles/vis-timeline-graph2d.min.css';
 
 const STATUS_LABELS = { success: 'Успешно', failed: 'Ошибка', running: 'Выполняется' };
 const STATUS_COLORS = { success: '#198754', failed: '#dc3545', running: '#6c757d' };
-
-// vis-timeline санитизирует HTML-строки в content (вырезает style/class) — строим
-// DOM-узел напрямую, чтобы получить цветной маркер и заодно не думать об экранировании.
-function buildGroupLabel(run) {
-    const wrapper = document.createElement('span');
-    wrapper.className = 'd-inline-flex align-items-center gap-1';
-
-    if (run.cronColor) {
-        const dot = document.createElement('span');
-        dot.className = 'd-inline-block rounded-circle';
-        dot.style.width = '8px';
-        dot.style.height = '8px';
-        dot.style.backgroundColor = run.cronColor;
-        wrapper.appendChild(dot);
-    }
-
-    wrapper.appendChild(document.createTextNode(run.cronName || run.command));
-
-    return wrapper;
-}
 
 const columnLabels = {
     command: 'Команда',
@@ -360,73 +387,142 @@ const statCards = computed(() => {
     ];
 });
 
-const timelineEl = ref(null);
-const timelineItems = new DataSet();
-const timelineGroups = new DataSet();
-let timelineInstance = null;
-
-function initTimeline() {
-    timelineInstance = new Timeline(timelineEl.value, timelineItems, timelineGroups, {
-        stack: false,
-        selectable: false,
-        zoomMin: 60 * 1000,
-        zoomable: true,
-        moveable: true,
-        margin: { item: 10, axis: 10 },
-        tooltip: { followMouse: true, overflowMethod: 'cap' },
-    });
-    updateTimelineWindow();
-}
-
-// Одна строка (группа) на команду — все её запуски рисуются на этой строке
-// отдельными отрезками, а не размазываются по разным строкам.
-function updateTimelineData() {
-    const groupsByCommand = new Map();
-    for (const run of timelineRuns.value) {
-        if (!groupsByCommand.has(run.command)) {
-            groupsByCommand.set(run.command, { id: run.command, content: buildGroupLabel(run) });
-        }
-    }
-
-    timelineGroups.clear();
-    timelineGroups.add([...groupsByCommand.values()]);
-
-    timelineItems.clear();
-    timelineItems.add(timelineRuns.value.map((run) => {
-        const color = STATUS_COLORS[run.status] ?? '#6c757d';
-
-        return {
-            id: run.id,
-            group: run.command,
-            start: new Date(run.startedAt),
-            end: run.finishedAt ? new Date(run.finishedAt) : new Date(),
-            content: '',
-            title: `${formatDuration(run.durationMs)} — ${new Date(run.startedAt).toLocaleString('ru-RU')}`,
-            style: `background-color: ${color}; border-color: ${color};`,
-        };
-    }));
-}
-
-// Таймлайн по умолчанию показывает выбранный в фильтре диапазон дат целиком
-// (даже если запусков в нём мало) — иначе непонятно, за какой период смотрим.
-function updateTimelineWindow() {
-    if (timelineInstance === null) {
-        return;
-    }
-
+// Базовое окно таймлайна — выбранный в фильтре диапазон дат целиком (даже
+// если запусков в нём мало), иначе непонятно, за какой период смотрим. Если
+// фильтр дат не задан — берём диапазон от первого до последнего запуска.
+const baseTimelineWindow = computed(() => {
     const from = parseDatetimeLocal(filters.dateFrom);
     const to = parseDatetimeLocal(filters.dateTo);
 
     if (from && to) {
-        timelineInstance.setWindow(from, to, { animation: false });
-    } else {
-        timelineInstance.fit({ animation: false });
+        return { from, to };
     }
+
+    const starts = timelineRuns.value.map((run) => new Date(run.startedAt).getTime());
+    if (starts.length === 0) {
+        return { from: dayAgo, to: now };
+    }
+
+    return { from: new Date(Math.min(...starts)), to: new Date() };
+});
+
+// Пользователь может приблизить/сдвинуть таймлайн колесом мыши/перетаскиванием
+// (см. onTimelineWheel/onTimelineDragStart) — тогда используется это окно
+// вместо базового, пока фильтры/данные не изменятся или не нажата «Сбросить масштаб».
+const timelineZoomWindow = ref(null);
+const timelineWindow = computed(() => timelineZoomWindow.value ?? baseTimelineWindow.value);
+
+const timelineViewportEl = ref(null);
+const timelineDragging = ref(false);
+const TIMELINE_LABEL_WIDTH = 200;
+
+function timelineTrackRect() {
+    const rect = timelineViewportEl.value.getBoundingClientRect();
+
+    return { left: rect.left + TIMELINE_LABEL_WIDTH, width: rect.width - TIMELINE_LABEL_WIDTH };
 }
 
 function resetTimelineZoom() {
-    updateTimelineWindow();
+    timelineZoomWindow.value = null;
 }
+
+function onTimelineWheel(event) {
+    const { from, to } = timelineWindow.value;
+    const totalMs = to.getTime() - from.getTime();
+    const { left, width } = timelineTrackRect();
+    const fraction = Math.min(1, Math.max(0, (event.clientX - left) / width));
+    const centerMs = from.getTime() + fraction * totalMs;
+
+    const zoomFactor = event.deltaY > 0 ? 1.2 : 1 / 1.2;
+    const newTotalMs = Math.max(60 * 1000, totalMs * zoomFactor);
+    const newFromMs = centerMs - fraction * newTotalMs;
+
+    timelineZoomWindow.value = { from: new Date(newFromMs), to: new Date(newFromMs + newTotalMs) };
+}
+
+function onTimelineDragStart(event) {
+    const { from, to } = timelineWindow.value;
+    const startX = event.clientX;
+    const startFromMs = from.getTime();
+    const startToMs = to.getTime();
+    const { width } = timelineTrackRect();
+
+    timelineDragging.value = true;
+
+    function onMove(moveEvent) {
+        const deltaMs = ((moveEvent.clientX - startX) / width) * (startToMs - startFromMs);
+        timelineZoomWindow.value = { from: new Date(startFromMs - deltaMs), to: new Date(startToMs - deltaMs) };
+    }
+
+    function onUp() {
+        timelineDragging.value = false;
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+    }
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+}
+
+// Одна строка (группа) на команду — все её запуски рисуются на этой строке
+// отдельными отрезками, а не размазываются по разным строкам. Группы
+// сортируются по имени/команде (а не по порядку первой встречи в выборке),
+// иначе при каждой перезагрузке данных строки менялись местами и было
+// непонятно, какой отрезок к какой команде относится.
+const timelineGroupRows = computed(() => {
+    const groupsByCommand = new Map();
+    for (const run of timelineRuns.value) {
+        if (!groupsByCommand.has(run.command)) {
+            groupsByCommand.set(run.command, { command: run.command, cronName: run.cronName, cronColor: run.cronColor, runs: [] });
+        }
+        groupsByCommand.get(run.command).runs.push(run);
+    }
+
+    return [...groupsByCommand.values()].sort((a, b) => {
+        return (a.cronName || a.command).localeCompare(b.cronName || b.command, 'ru');
+    });
+});
+
+function timelineBarStyle(run) {
+    const { from, to } = timelineWindow.value;
+    const totalMs = to.getTime() - from.getTime();
+    const start = new Date(run.startedAt).getTime();
+    const end = run.finishedAt ? new Date(run.finishedAt).getTime() : Date.now();
+
+    const clamp = (value) => Math.min(100, Math.max(0, value));
+    const left = clamp(((start - from.getTime()) / totalMs) * 100);
+    const right = clamp(((end - from.getTime()) / totalMs) * 100);
+
+    // Заливка — цвет крона (тот же, что и точка у названия строки), чтобы
+    // отрезок было легко соотнести со своей строкой. Статус запуска при этом
+    // показывает цветная рамка отрезка.
+    const fill = run.cronColor || '#adb5bd';
+    const border = STATUS_COLORS[run.status] ?? '#6c757d';
+
+    return {
+        left: `${left}%`,
+        width: `max(4px, ${right - left}%)`,
+        backgroundColor: fill,
+        borderColor: border,
+    };
+}
+
+function timelineBarTitle(run) {
+    return `${run.cronName || run.command}: ${statusLabel(run.status)}, ${formatDuration(run.durationMs)} — ${new Date(run.startedAt).toLocaleString('ru-RU')}`;
+}
+
+const timelineAxisTicks = computed(() => {
+    const { from, to } = timelineWindow.value;
+    const totalMs = to.getTime() - from.getTime();
+    const tickCount = 6;
+
+    return Array.from({ length: tickCount + 1 }, (_, i) => {
+        const position = (i / tickCount) * 100;
+        const time = new Date(from.getTime() + (totalMs * i) / tickCount);
+
+        return { position, label: time.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) };
+    });
+});
 
 function downloadLogUrl(id) {
     return `/api/admin/cron-runs/${id}/log?download=1`;
@@ -541,6 +637,7 @@ async function loadTimeline() {
 
         const data = await response.json();
         timelineRuns.value = data.items;
+        resetTimelineZoom();
     } catch (e) {
         error.value = e.message;
     } finally {
@@ -596,21 +693,11 @@ watch(pageSize, () => {
     loadRuns();
 });
 
-watch(timelineRuns, () => {
-    updateTimelineData();
-    updateTimelineWindow();
-});
-
 onMounted(async () => {
     logModal = new Modal(logModalEl.value);
-    initTimeline();
     loadCommands();
     loadTimeline();
     await loadRuns();
-});
-
-onBeforeUnmount(() => {
-    timelineInstance?.destroy();
 });
 </script>
 
@@ -621,7 +708,58 @@ onBeforeUnmount(() => {
 }
 
 .cron-timeline {
-    min-height: 120px;
+    border-top: 1px solid var(--bs-border-color);
+    cursor: grab;
+    user-select: none;
+}
+
+.cron-timeline--dragging {
+    cursor: grabbing;
+}
+
+.cron-timeline-row {
+    display: flex;
+    align-items: stretch;
+    border-bottom: 1px solid var(--bs-border-color);
+    min-height: 34px;
+}
+
+.cron-timeline-row-label {
+    flex: 0 0 200px;
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    border-right: 1px solid var(--bs-border-color);
+}
+
+.cron-timeline-row-track {
+    position: relative;
+    flex: 1 1 auto;
+}
+
+.cron-timeline-bar {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 16px;
+    min-width: 4px;
+    border-radius: 3px;
+    border: 3px solid;
+    box-sizing: border-box;
+}
+
+.cron-timeline-axis {
+    min-height: 24px;
+}
+
+.cron-timeline-tick {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    color: var(--bs-secondary-color);
+    white-space: nowrap;
 }
 
 .cron-log-content {
