@@ -13,6 +13,8 @@ use App\Entity\GameReaction;
 use App\Entity\GameStatus;
 use App\Entity\Genre;
 use App\Entity\Platform;
+use App\Entity\PlatiGame;
+use App\Entity\PlatiGamePrice;
 use App\Entity\Publisher;
 use App\Entity\SteamGame;
 use App\Entity\User;
@@ -23,9 +25,12 @@ use App\Repository\GameRepository;
 use App\Repository\GameStatusRepository;
 use App\Repository\GenreRepository;
 use App\Repository\PlatformRepository;
+use App\Repository\PlatiGamePriceRepository;
+use App\Repository\PlatiGameRepository;
 use App\Repository\SteamGameRepository;
 use App\Service\Game\GameMapper;
 use App\Service\GamePrice\GamePriceMapper;
+use App\Service\PlatiGame\PlatiGameMapper;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -49,8 +54,11 @@ class GameApiControllerTest extends TestCase
     private PlatformRepository&MockObject $platformRepository;
     private SteamGameRepository&MockObject $steamGameRepository;
     private GamePriceRepository&MockObject $gamePriceRepository;
+    private PlatiGameRepository&MockObject $platiGameRepository;
+    private PlatiGamePriceRepository&MockObject $platiGamePriceRepository;
     private GameMapper $gameMapper;
     private GamePriceMapper $gamePriceMapper;
+    private PlatiGameMapper $platiGameMapper;
     private GameApiController $controller;
 
     protected function setUp(): void
@@ -63,8 +71,12 @@ class GameApiControllerTest extends TestCase
         $this->platformRepository = $this->createMock(PlatformRepository::class);
         $this->steamGameRepository = $this->createMock(SteamGameRepository::class);
         $this->gamePriceRepository = $this->createMock(GamePriceRepository::class);
+        $this->platiGameRepository = $this->createMock(PlatiGameRepository::class);
+        $this->platiGameRepository->method('findByGame')->willReturn([]);
+        $this->platiGamePriceRepository = $this->createMock(PlatiGamePriceRepository::class);
         $this->gameMapper = new GameMapper();
         $this->gamePriceMapper = new GamePriceMapper();
+        $this->platiGameMapper = new PlatiGameMapper();
 
         $this->controller = new GameApiController();
         // AbstractController::json() проверяет container->has('serializer') — пустой
@@ -398,19 +410,56 @@ class GameApiControllerTest extends TestCase
             $this->steamGameRepository,
             $this->gamePriceRepository,
             $this->gamePriceMapper,
+            $this->platiGameRepository,
+            $this->platiGamePriceRepository,
+            $this->platiGameMapper,
             $this->gameMapper,
         );
         $data = json_decode((string) $response->getContent(), true);
 
-        self::assertCount(2, $data['items']);
-        self::assertSame('2026-09-14', $data['items'][0]['date']);
-        self::assertSame('2026-09-15', $data['items'][1]['date']);
-        self::assertTrue($data['items'][1]['isFree']);
-        self::assertSame('Steam', $data['items'][0]['store']);
-        self::assertSame('https://store.steampowered.com/app/70/', $data['items'][0]['storeUrl']);
+        self::assertCount(2, $data['steam']['history']);
+        self::assertSame('2026-09-14', $data['steam']['history'][0]['date']);
+        self::assertSame('2026-09-15', $data['steam']['history'][1]['date']);
+        self::assertTrue($data['steam']['isFree']);
+        self::assertSame('Steam', $data['steam']['store']);
+        self::assertSame('https://store.steampowered.com/app/70/', $data['steam']['storeUrl']);
+        self::assertSame([], $data['plati']);
     }
 
-    public function testPriceHistoryReturnsEmptyItemsWhenNoHistory(): void
+    public function testPriceHistoryIncludesPlatiSellersWithTheirOwnHistory(): void
+    {
+        $game = new Game('Half-Life', 'half-life');
+        $this->gameRepository->method('findOneBy')->willReturn($game);
+        $this->steamGameRepository->method('findOneByGame')->willReturn(null);
+        $this->gamePriceRepository->method('findHistoryForGame')->willReturn([]);
+
+        $platiGame = new PlatiGame($game, 'https://plati.market/itm/1', 'DarkAwe');
+        $this->platiGameRepository = $this->createMock(PlatiGameRepository::class);
+        $this->platiGameRepository->method('findByGame')->willReturn([$platiGame]);
+        $price = (new PlatiGamePrice($platiGame, new \DateTimeImmutable('2026-09-15')))->markPriced(17400);
+        $this->platiGamePriceRepository->method('findHistoryForPlatiGame')->willReturn([$price]);
+
+        $response = $this->controller->priceHistory(
+            'half-life',
+            $this->gameRepository,
+            $this->steamGameRepository,
+            $this->gamePriceRepository,
+            $this->gamePriceMapper,
+            $this->platiGameRepository,
+            $this->platiGamePriceRepository,
+            $this->platiGameMapper,
+            $this->gameMapper,
+        );
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertCount(1, $data['plati']);
+        self::assertSame('DarkAwe', $data['plati'][0]['sellerName']);
+        self::assertSame('https://plati.market/itm/1', $data['plati'][0]['url']);
+        self::assertSame(17400, $data['plati'][0]['priceKopecks']);
+        self::assertSame([['date' => '2026-09-15', 'priceKopecks' => 17400]], $data['plati'][0]['history']);
+    }
+
+    public function testPriceHistoryReturnsEmptyHistoryWhenNoData(): void
     {
         $game = new Game('New Game', 'new-game');
         $this->gameRepository->method('findOneBy')->willReturn($game);
@@ -423,11 +472,15 @@ class GameApiControllerTest extends TestCase
             $this->steamGameRepository,
             $this->gamePriceRepository,
             $this->gamePriceMapper,
+            $this->platiGameRepository,
+            $this->platiGamePriceRepository,
+            $this->platiGameMapper,
             $this->gameMapper,
         );
         $data = json_decode((string) $response->getContent(), true);
 
-        self::assertSame([], $data['items']);
+        self::assertSame([], $data['steam']['history']);
+        self::assertSame([], $data['plati']);
     }
 
     public function testPriceHistoryThrowsNotFoundExceptionForUnknownSlug(): void
@@ -442,6 +495,9 @@ class GameApiControllerTest extends TestCase
             $this->steamGameRepository,
             $this->gamePriceRepository,
             $this->gamePriceMapper,
+            $this->platiGameRepository,
+            $this->platiGamePriceRepository,
+            $this->platiGameMapper,
             $this->gameMapper,
         );
     }
@@ -460,6 +516,9 @@ class GameApiControllerTest extends TestCase
             $this->steamGameRepository,
             $this->gamePriceRepository,
             $this->gamePriceMapper,
+            $this->platiGameRepository,
+            $this->platiGamePriceRepository,
+            $this->platiGameMapper,
             $this->gameMapper,
         );
     }
