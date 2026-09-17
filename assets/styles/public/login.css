@@ -152,3 +152,19 @@
     color: var(--color-accent);
     font-weight: 600;
 }
+
+.auth-form__consent {
+    margin: 0;
+    font-size: 0.8125rem;
+    text-align: center;
+    color: var(--color-text-muted);
+}
+
+.auth-form__consent a {
+    color: var(--color-text-muted);
+    text-decoration: underline;
+}
+
+.auth-form__consent a:hover {
+    color: var(--color-accent);
+}

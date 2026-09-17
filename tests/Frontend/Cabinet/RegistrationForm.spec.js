@@ -16,6 +16,13 @@ beforeEach(() => {
 });
 
 describe('Cabinet/RegistrationForm', () => {
+    it('показывает ссылку на политику сайта рядом с кнопкой регистрации', () => {
+        const wrapper = mount(RegistrationForm);
+
+        const link = wrapper.get('.auth-form__consent a');
+        expect(link.attributes('href')).toBe('/policy');
+    });
+
     it('отправляет данные формы на /api/register и показывает успех при 201', async () => {
         mockFetchOnce({ id: 1, email: 'gjhonic@example.test' }, { status: 201 });
         const wrapper = mount(RegistrationForm);
