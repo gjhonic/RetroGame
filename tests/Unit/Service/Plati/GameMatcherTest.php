@@ -55,6 +55,19 @@ class GameMatcherTest extends TestCase
         self::assertCount(1, $matches);
     }
 
+    public function testMatchingItemsExcludesOfflineAccountListings(): void
+    {
+        $items = [
+            self::item('Black Myth: Wukong Deluxe БЕЗ ОЧЕРЕДИ Steam ОФЛАЙН', 500),
+            self::item('Black Myth: Wukong +ВЫБОР STEAM•RU АВТОДОСТАВКА 0%', 50),
+        ];
+
+        $matches = $this->matcher->matchingItems('Black Myth: Wukong', $items);
+
+        self::assertCount(1, $matches);
+        self::assertSame('Black Myth: Wukong +ВЫБОР STEAM•RU АВТОДОСТАВКА 0%', $matches[0]->name);
+    }
+
     public function testTopMatchesReturnsMatchesSortedByMostSoldDescending(): void
     {
         $items = [

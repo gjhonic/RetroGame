@@ -25,6 +25,7 @@
 |---|---|
 | Объявления без названия игры в тексте отбрасываются | `testMatchingItemsKeepsOnlyItemsContainingGameNameInTitle` |
 | Совпадение устойчиво к апострофу | `testMatchingItemsIsApostropheInsensitive` |
+| Объявления офлайн-аккаунтов (не ключ/гифт) отбрасываются даже при совпадении по названию | `testMatchingItemsExcludesOfflineAccountListings` |
 | Совпадения сортируются по убыванию продаж | `testTopMatchesReturnsMatchesSortedByMostSoldDescending` |
 | Результат ограничен лимитом | `testTopMatchesLimitsResultCount` |
 | Нет совпадений — пустой массив | `testTopMatchesReturnsEmptyArrayWhenNoItemsMatch` |
