@@ -2,7 +2,7 @@
 
 namespace App\Controller\Api\Public;
 
-use App\Entity\GamePrice;
+use App\Entity\PlatiGame;
 use App\Entity\User;
 use App\Repository\GameFavoriteRepository;
 use App\Repository\GamePriceRepository;
@@ -11,9 +11,12 @@ use App\Repository\GameRepository;
 use App\Repository\GameStatusRepository;
 use App\Repository\GenreRepository;
 use App\Repository\PlatformRepository;
+use App\Repository\PlatiGamePriceRepository;
+use App\Repository\PlatiGameRepository;
 use App\Repository\SteamGameRepository;
 use App\Service\Game\GameMapper;
 use App\Service\GamePrice\GamePriceMapper;
+use App\Service\PlatiGame\PlatiGameMapper;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -268,9 +271,10 @@ class GameApiController extends AbstractController
     }
 
     /**
-     * История цены игры по дням — для графика на карточке игры. Магазин
-     * сейчас всегда Steam; storeUrl строится из привязанного
-     * SteamGame::steamAppId (null, если игра не привязана к Steam).
+     * Цены игры для карточки на публичной странице: текущее состояние и
+     * история по дням (для графика) отдельно по Steam и по каждому
+     * найденному продавцу на plati.market (см. класс-докблок PlatiGame —
+     * у одной игры может быть несколько продавцов, у каждого своя цена).
      */
     #[Route('/{slug}/price-history', name: 'app_api_game_price_history', methods: ['GET'])]
     #[OA\Parameter(
@@ -282,21 +286,35 @@ class GameApiController extends AbstractController
     )]
     #[OA\Response(
         response: 200,
-        description: 'История цены игры по дням (от старых к новым)',
+        description: 'Цены игры в Steam и на plati.market: текущее состояние и история по дням',
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'items', type: 'array', items: new OA\Items(
+                new OA\Property(property: 'steam', properties: [
+                    new OA\Property(property: 'isFree', type: 'boolean'),
+                    new OA\Property(property: 'isAvailableInRussia', type: 'boolean'),
+                    new OA\Property(property: 'priceKopecks', type: 'integer', nullable: true),
+                    new OA\Property(property: 'store', type: 'string', nullable: true),
+                    new OA\Property(property: 'storeUrl', type: 'string', nullable: true),
+                    new OA\Property(property: 'history', type: 'array', items: new OA\Items(
+                        properties: [
+                            new OA\Property(property: 'date', type: 'string'),
+                            new OA\Property(property: 'priceKopecks', type: 'integer', nullable: true),
+                        ],
+                        type: 'object',
+                    )),
+                ], type: 'object'),
+                new OA\Property(property: 'plati', type: 'array', items: new OA\Items(
                     properties: [
-                        new OA\Property(property: 'id', type: 'integer', nullable: true),
-                        new OA\Property(property: 'gameId', type: 'integer', nullable: true),
-                        new OA\Property(property: 'date', type: 'string'),
+                        new OA\Property(property: 'sellerName', type: 'string'),
+                        new OA\Property(property: 'url', type: 'string'),
                         new OA\Property(property: 'priceKopecks', type: 'integer', nullable: true),
-                        new OA\Property(property: 'currency', type: 'string'),
-                        new OA\Property(property: 'isFree', type: 'boolean'),
-                        new OA\Property(property: 'isAvailableInRussia', type: 'boolean'),
-                        new OA\Property(property: 'store', type: 'string', nullable: true),
-                        new OA\Property(property: 'storeUrl', type: 'string', nullable: true),
-                        new OA\Property(property: 'createdAt', type: 'string'),
+                        new OA\Property(property: 'history', type: 'array', items: new OA\Items(
+                            properties: [
+                                new OA\Property(property: 'date', type: 'string'),
+                                new OA\Property(property: 'priceKopecks', type: 'integer', nullable: true),
+                            ],
+                            type: 'object',
+                        )),
                     ],
                     type: 'object',
                 )),
@@ -311,6 +329,9 @@ class GameApiController extends AbstractController
         SteamGameRepository $steamGameRepository,
         GamePriceRepository $gamePriceRepository,
         GamePriceMapper $gamePriceMapper,
+        PlatiGameRepository $platiGameRepository,
+        PlatiGamePriceRepository $platiGamePriceRepository,
+        PlatiGameMapper $platiGameMapper,
         GameMapper $gameMapper,
     ): JsonResponse {
         $game = $gameRepository->findOneBy(['slug' => $slug]);
@@ -320,13 +341,20 @@ class GameApiController extends AbstractController
         }
 
         $steamAppId = $steamGameRepository->findOneByGame($game)?->getSteamAppId();
-        $history = $gamePriceRepository->findHistoryForGame($game);
+        $steamHistory = $gamePriceRepository->findHistoryForGame($game);
+
+        $platiGames = $platiGameRepository->findByGame($game);
+        $plati = array_map(
+            static fn (PlatiGame $platiGame): array => $platiGameMapper->toPublicPriceSummary(
+                $platiGame,
+                $platiGamePriceRepository->findHistoryForPlatiGame($platiGame),
+            ),
+            $platiGames,
+        );
 
         return $this->json([
-            'items' => array_map(
-                static fn (GamePrice $price): array => $gamePriceMapper->toApi($price, $steamAppId),
-                $history,
-            ),
+            'steam' => $gamePriceMapper->toPublicSummary($steamHistory, $steamAppId),
+            'plati' => $plati,
         ]);
     }
 }

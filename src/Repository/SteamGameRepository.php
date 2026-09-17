@@ -38,9 +38,9 @@ class SteamGameRepository extends ServiceEntityRepository
      * обновлялись цены у игр, которые реально смотрят пользователи, а не в
      * порядке появления в каталоге (см. App\Entity\SteamPriceImportCursor).
      * INNER JOIN по game сам по себе исключает DLC/pending/failed записи.
-     * Игры с подтверждённым SteamGame::priceFree сразу отсекаются — бесплатная
+     * Игры с подтверждённым Game::isFree сразу отсекаются — бесплатная
      * игра платной не становится, а повторный запрос к Steam ради этого
-     * ничего не даёт, только тратит дневной бюджет пачки (см. markPriceFree()).
+     * ничего не даёт, только тратит дневной бюджет пачки (см. Game::markFree()).
      *
      * Keyset-постраничность (не OFFSET — деградирует на больших таблицах) по
      * составному ключу (popularity, id): $afterPopularity === null означает
@@ -60,7 +60,7 @@ class SteamGameRepository extends ServiceEntityRepository
         $qb = $this->createQueryBuilder('s')
             ->addSelect('game')
             ->join('s.game', 'game')
-            ->andWhere('s.priceFree = false')
+            ->andWhere('game.isFree = false')
             ->addOrderBy($effectivePopularity, 'DESC')
             ->addOrderBy('s.id', 'ASC')
             ->setMaxResults($limit);

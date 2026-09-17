@@ -20,8 +20,9 @@
 | Авторизованный пользователь: `myReaction`/`myFavorite`/`myStatus` подмешиваются из соответствующих репозиториев | `testShowIncludesCurrentUserReactionFavoriteAndStatus` |
 | Несуществующий slug → `NotFoundHttpException` | `testShowThrowsNotFoundExceptionForUnknownSlug` |
 | Игра с жанром "Сексуальный контент" → `NotFoundHttpException` (скрыта из публичной части) | `testShowThrowsNotFoundExceptionForGameWithHiddenGenre` |
-| `GET /{slug}/price-history` — история по датам как из репозитория, каждый элемент со `store`/`storeUrl` | `testPriceHistoryReturnsOrderedItemsWithStoreLink` |
-| `GET /{slug}/price-history` — истории ещё нет: `items: []` | `testPriceHistoryReturnsEmptyItemsWhenNoHistory` |
+| `GET /{slug}/price-history` — `steam.history` по датам как из репозитория, `store`/`storeUrl` из привязанного SteamGame | `testPriceHistoryReturnsOrderedItemsWithStoreLink` |
+| `GET /{slug}/price-history` — продавцы plati.market: своя история и `priceKopecks` у каждого (`PlatiGameRepository::findByGame()` + `PlatiGamePriceRepository::findHistoryForPlatiGame()`) | `testPriceHistoryIncludesPlatiSellersWithTheirOwnHistory` |
+| `GET /{slug}/price-history` — данных нет нигде: `steam.history: []`, `plati: []` | `testPriceHistoryReturnsEmptyHistoryWhenNoData` |
 | `GET /{slug}/price-history` с несуществующим slug → `NotFoundHttpException` | `testPriceHistoryThrowsNotFoundExceptionForUnknownSlug` |
 | `GET /{slug}/price-history` для игры с жанром "Сексуальный контент" → `NotFoundHttpException` | `testPriceHistoryThrowsNotFoundExceptionForGameWithHiddenGenre` |
 

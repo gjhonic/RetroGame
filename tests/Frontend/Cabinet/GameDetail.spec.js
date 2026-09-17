@@ -55,20 +55,34 @@ function takesResponse(overrides = {}) {
     return { items: [{ ...sampleTake }], total: 1, page: 1, totalPages: 1, ...overrides };
 }
 
-function pricePoint(overrides = {}) {
+function steamSummary(overrides = {}) {
     return {
-        id: 1,
-        gameId: 1,
-        date: '2026-09-15',
-        priceKopecks: 199900,
-        currency: 'RUB',
         isFree: false,
         isAvailableInRussia: true,
+        priceKopecks: 199900,
         store: 'Steam',
         storeUrl: 'https://store.steampowered.com/app/70/',
-        createdAt: '2026-09-15 12:00:00',
+        history: [{ date: '2026-09-15', priceKopecks: 199900 }],
         ...overrides,
     };
+}
+
+function platiSeller(overrides = {}) {
+    return {
+        sellerName: 'DarkAwe',
+        url: 'https://plati.market/itm/1',
+        priceKopecks: 17400,
+        history: [{ date: '2026-09-15', priceKopecks: 17400 }],
+        ...overrides,
+    };
+}
+
+function emptySteamSummary() {
+    return { isFree: false, isAvailableInRussia: true, priceKopecks: null, store: null, storeUrl: null, history: [] };
+}
+
+function priceHistoryResponse(overrides = {}) {
+    return { steam: steamSummary(), plati: [], ...overrides };
 }
 
 /** Реакции конкретного тэйка (в отличие от реакций самой игры над каруселью). */
@@ -84,7 +98,7 @@ function mountGameDetail(
     gameResponse = sampleGame,
     takesResp = takesResponse(),
     props = {},
-    priceHistoryResp = { items: [] },
+    priceHistoryResp = { steam: emptySteamSummary(), plati: [] },
 ) {
     mockFetchOnce(gameResponse);
     mockFetchOnce(takesResp);
@@ -438,64 +452,177 @@ describe('Cabinet/GameDetail — лайк/дизлайк/избранное/ст
     });
 });
 
-describe('Cabinet/GameDetail — цена и график', () => {
-    it('не показывает блок цены, если истории ещё нет', async () => {
+describe('Cabinet/GameDetail — карточка цен и график', () => {
+    it('не показывает карточку цены, если истории нет ни в Steam, ни на plati.market', async () => {
         const wrapper = mountGameDetail();
         await flushPromises();
 
-        expect(wrapper.find('.game-price').exists()).toBe(false);
+        expect(wrapper.find('.price-card').exists()).toBe(false);
     });
 
-    it('рендерит текущую цену (последнюю по дате) со ссылкой на магазин в формате "X XXX руб"', async () => {
-        const wrapper = mountGameDetail(sampleGame, takesResponse(), {}, { items: [pricePoint()] });
+    it('рендерит цену Steam в формате "X XXX руб", кнопка со ссылкой открывает предупреждение о переходе', async () => {
+        const wrapper = mountGameDetail(sampleGame, takesResponse(), {}, priceHistoryResponse());
         await flushPromises();
 
         expect(global.fetch).toHaveBeenCalledWith('/api/games/half-life/price-history');
-        expect(wrapper.get('.game-price').text()).toContain('1 999 руб');
-        const link = wrapper.get('.game-price__store');
-        expect(link.attributes('href')).toBe('https://store.steampowered.com/app/70/');
-        expect(link.text()).toBe('Steam');
+        expect(wrapper.get('.price-card').text()).toContain('1 999 руб');
+
+        expect(wrapper.find('.modal-overlay').exists()).toBe(false);
+        const button = wrapper.get('button.price-card__link');
+        expect(button.text()).toBe('Steam');
+        await button.trigger('click');
+
+        expect(wrapper.get('.modal-window__title').text()).toContain('покидаешь');
+        expect(wrapper.get('.modal-window').text()).toContain('store.steampowered.com');
+        const goLink = wrapper.get('.modal-window__footer a');
+        expect(goLink.attributes('href')).toBe('https://store.steampowered.com/app/70/');
+        expect(goLink.attributes('target')).toBe('_blank');
     });
 
-    it('показывает "Игра бесплатная" и не рендерит график для бесплатной игры', async () => {
-        const wrapper = mountGameDetail(
-            sampleGame,
-            takesResponse(),
-            {},
-            { items: [pricePoint({ isFree: true, priceKopecks: 0 })] },
-        );
+    it('показывает продавцов plati.market со своими ценами, клик по имени продавца открывает предупреждение с его ссылкой', async () => {
+        const wrapper = mountGameDetail(sampleGame, takesResponse(), {}, priceHistoryResponse({
+            plati: [
+                platiSeller({ sellerName: 'DarkAwe', url: 'https://plati.market/itm/1', priceKopecks: 17400 }),
+                platiSeller({ sellerName: 'IgorDeRish', url: 'https://plati.market/itm/2', priceKopecks: null }),
+            ],
+        }));
         await flushPromises();
 
-        expect(wrapper.get('.game-price').text()).toContain('Игра бесплатная');
+        const text = wrapper.get('.price-card').text();
+        expect(text).toContain('DarkAwe');
+        expect(text).toContain('174 руб');
+        expect(text).toContain('IgorDeRish');
+        expect(text).toContain('нет данных');
+
+        const buttons = wrapper.findAll('button.price-card__link');
+        const darkAweButton = buttons.find((b) => b.text() === 'DarkAwe');
+        await darkAweButton.trigger('click');
+
+        const goLink = wrapper.get('.modal-window__footer a');
+        expect(goLink.attributes('href')).toBe('https://plati.market/itm/1');
+    });
+
+    it('закрывает предупреждение о переходе кнопкой "Остаться тут"', async () => {
+        const wrapper = mountGameDetail(sampleGame, takesResponse(), {}, priceHistoryResponse());
+        await flushPromises();
+
+        await wrapper.get('button.price-card__link').trigger('click');
+        expect(wrapper.find('.modal-overlay').exists()).toBe(true);
+
+        await wrapper.get('.modal-window__footer button').trigger('click');
+        expect(wrapper.find('.modal-overlay').exists()).toBe(false);
+    });
+
+    it('показывает зелёный блок "Игра бесплатная" и не рендерит график для бесплатной игры', async () => {
+        const wrapper = mountGameDetail(sampleGame, takesResponse(), {}, priceHistoryResponse({
+            steam: steamSummary({
+                isFree: true,
+                priceKopecks: 0,
+                history: [{ date: '2026-09-15', priceKopecks: 0 }],
+            }),
+        }));
+        await flushPromises();
+
+        expect(wrapper.get('.price-banner--good').text()).toContain('Игра бесплатная');
         expect(wrapper.findComponent({ name: 'LineStub' }).exists()).toBe(false);
     });
 
-    it('показывает жёлтое предупреждение "Игра не доступна в РФ", график при этом остаётся', async () => {
-        const wrapper = mountGameDetail(
-            sampleGame,
-            takesResponse(),
-            {},
-            { items: [pricePoint({ isFree: false, isAvailableInRussia: false, priceKopecks: null, store: null, storeUrl: null })] },
-        );
+    it('показывает жёлтый блок "Игра не доступна в РФ", график при этом остаётся', async () => {
+        const wrapper = mountGameDetail(sampleGame, takesResponse(), {}, priceHistoryResponse({
+            steam: steamSummary({
+                isAvailableInRussia: false,
+                priceKopecks: null,
+                storeUrl: null,
+                history: [{ date: '2026-09-15', priceKopecks: null }],
+            }),
+        }));
         await flushPromises();
 
-        expect(wrapper.get('.game-price__warning').text()).toContain('Игра не доступна в РФ');
+        expect(wrapper.get('.price-banner--warning').text()).toContain('Игра не доступна в РФ');
         expect(wrapper.findComponent({ name: 'LineStub' }).exists()).toBe(true);
     });
 
-    it('передаёт в график подписи дат и цены в рублях, недоступные дни — null', async () => {
-        const history = {
-            items: [
-                pricePoint({ date: '2026-09-14', priceKopecks: 19900 }),
-                pricePoint({ date: '2026-09-15', isAvailableInRussia: false, priceKopecks: null }),
+    it('передаёт в график отдельные линии Steam и продавцов plati.market с подписями и легендой', async () => {
+        const wrapper = mountGameDetail(sampleGame, takesResponse(), {}, priceHistoryResponse({
+            steam: steamSummary({
+                history: [
+                    { date: '2026-09-14', priceKopecks: 19900 },
+                    { date: '2026-09-15', priceKopecks: null },
+                ],
+            }),
+            plati: [
+                platiSeller({
+                    sellerName: 'DarkAwe',
+                    history: [{ date: '2026-09-15', priceKopecks: 17400 }],
+                }),
             ],
-        };
-        const wrapper = mountGameDetail(sampleGame, takesResponse(), {}, history);
+        }));
         await flushPromises();
 
         const chart = wrapper.findComponent({ name: 'LineStub' });
+        const data = chart.props('data');
 
-        expect(chart.props('data').labels).toEqual(['14.09', '15.09']);
-        expect(chart.props('data').datasets[0].data).toEqual([199, null]);
+        expect(data.labels).toEqual(['14.09', '15.09']);
+        expect(data.datasets).toHaveLength(2);
+        expect(data.datasets[0].label).toBe('Steam');
+        expect(data.datasets[0].data).toEqual([199, null]);
+        expect(data.datasets[1].label).toBe('Plati: DarkAwe');
+        expect(data.datasets[1].data).toEqual([null, 174]);
+        // Цвета линий разные — легенда графика их не перепутает.
+        expect(data.datasets[0].borderColor).not.toBe(data.datasets[1].borderColor);
+    });
+
+    it('встроенная легенда Chart.js отключена — легенда выводится отдельным HTML-блоком', async () => {
+        const wrapper = mountGameDetail(sampleGame, takesResponse(), {}, priceHistoryResponse());
+        await flushPromises();
+
+        const chart = wrapper.findComponent({ name: 'LineStub' });
+        expect(chart.props('options').plugins.legend.display).toBe(false);
+    });
+
+    it('показывает блок легенды со своим заголовком и цветными метками серий', async () => {
+        const wrapper = mountGameDetail(sampleGame, takesResponse(), {}, priceHistoryResponse({
+            plati: [platiSeller({ sellerName: 'DarkAwe' })],
+        }));
+        await flushPromises();
+
+        expect(wrapper.get('.price-chart__legend-title').text()).toBe('Магазины');
+        const items = wrapper.findAll('.price-chart__legend-item');
+        expect(items).toHaveLength(2);
+        expect(items[0].text()).toContain('Steam');
+        expect(items[1].text()).toContain('Plati: DarkAwe');
+        expect(items[0].get('.price-chart__legend-swatch').attributes('style')).not.toBe(
+            items[1].get('.price-chart__legend-swatch').attributes('style'),
+        );
+    });
+
+    it('показывает название графика и кнопку раскрытия на весь экран', async () => {
+        const wrapper = mountGameDetail(sampleGame, takesResponse(), {}, priceHistoryResponse());
+        await flushPromises();
+
+        expect(wrapper.get('.price-chart__title').text()).toBe('История цены');
+        expect(wrapper.find('.modal-overlay').exists()).toBe(false);
+    });
+
+    it('клик по кнопке раскрытия открывает модалку с графиком на 80% ширины экрана', async () => {
+        const wrapper = mountGameDetail(sampleGame, takesResponse(), {}, priceHistoryResponse());
+        await flushPromises();
+
+        await wrapper.get('.price-chart__expand').trigger('click');
+
+        const modal = wrapper.get('.modal-window--wide');
+        expect(modal.exists()).toBe(true);
+        expect(wrapper.get('.modal-window__title').text()).toContain('Half-Life');
+        expect(wrapper.findAllComponents({ name: 'LineStub' })).toHaveLength(2);
+    });
+
+    it('закрывает модалку графика по кнопке закрытия', async () => {
+        const wrapper = mountGameDetail(sampleGame, takesResponse(), {}, priceHistoryResponse());
+        await flushPromises();
+
+        await wrapper.get('.price-chart__expand').trigger('click');
+        await wrapper.get('.modal-window__close').trigger('click');
+
+        expect(wrapper.find('.modal-overlay').exists()).toBe(false);
     });
 });

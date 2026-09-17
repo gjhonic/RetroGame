@@ -135,7 +135,7 @@ class PriceImportService
         $this->applyDetails($price, $details);
 
         if ($price->isFree()) {
-            $steamGame->markPriceFree();
+            $game->markFree();
         }
 
         $steamGame->setAvailableInRussia($price->isAvailableInRussia());

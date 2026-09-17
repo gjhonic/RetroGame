@@ -48,6 +48,10 @@
             <button type="submit" class="btn btn--primary" :disabled="submitting">
                 {{ submitting ? 'Регистрируем…' : 'Зарегистрироваться' }}
             </button>
+
+            <p class="auth-form__consent">
+                Регистрируясь, вы соглашаетесь с <a :href="policyUrl">политикой сайта</a>.
+            </p>
         </form>
 
         <p class="auth-card__footer">
@@ -60,6 +64,7 @@
 import { reactive, ref } from 'vue';
 
 const loginUrl = '/login';
+const policyUrl = '/policy';
 
 const form = reactive({
     nickname: '',
