@@ -12,6 +12,21 @@ namespace App\Service\Plati;
 class GameMatcher
 {
     /**
+     * Признаки офлайн-аккаунтов и подобных товаров, которые не являются
+     * ключом/подарком игры (нам нужны только они) — продавец даёт доступ
+     * к своему аккаунту с игрой вместо передачи игры покупателю. Реальный
+     * случай: у Black Myth: Wukong в топе по продажам оказались именно
+     * такие объявления по 100 руб. вместо ключа/гифта за полную цену.
+     */
+    private const array EXCLUDED_KEYWORDS = [
+        'офлайн',
+        'оффлайн',
+        'offline',
+        'аккаунт',
+        'account',
+    ];
+
+    /**
      * Среди совпадающих по названию объявлений (см. matchingItems())
      * возвращает до $limit самых продаваемых (cnt_sell), от большего к
      * меньшему — не самых дешёвых и не первых по порядку выдачи, а тех,
@@ -64,9 +79,24 @@ class GameMatcher
 
         return array_values(array_filter(
             $items,
-            static fn (PlatiSearchItem $item): bool => str_contains(self::normalize($item->name), $needle)
-                || str_contains(self::normalize($item->nameEng), $needle),
+            static fn (PlatiSearchItem $item): bool => (str_contains(self::normalize($item->name), $needle)
+                || str_contains(self::normalize($item->nameEng), $needle))
+                && !self::isAccountSale($item),
         ));
+    }
+
+    /** Определяет по названию объявления, что это офлайн-аккаунт, а не ключ/подарок (см. EXCLUDED_KEYWORDS). */
+    private static function isAccountSale(PlatiSearchItem $item): bool
+    {
+        $name = self::normalize($item->name) . ' ' . self::normalize($item->nameEng);
+
+        foreach (self::EXCLUDED_KEYWORDS as $keyword) {
+            if (str_contains($name, self::normalize($keyword))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
