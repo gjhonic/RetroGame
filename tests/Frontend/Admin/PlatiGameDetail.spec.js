@@ -11,6 +11,7 @@ const samplePlatiGame = {
     gameCoverImageUrl: '/uploads/games/1.jpg',
     url: 'https://plati.market/itm/half-life',
     sellerName: 'DarkAwe',
+    platiName: 'Half-Life STEAM Gift',
     createdAt: '2024-01-01 12:00:00',
     updatedAt: '2024-01-01 12:00:00',
 };
@@ -28,6 +29,7 @@ describe('Admin/PlatiGameDetail', () => {
         expect(global.fetch).toHaveBeenCalledWith('/api/admin/plati-games/42');
         expect(wrapper.text()).toContain('Half-Life');
         expect(wrapper.text()).toContain('DarkAwe');
+        expect(wrapper.text()).toContain('Half-Life STEAM Gift');
         expect(document.title).toBe('Half-Life — Админка — RetroGame');
     });
 
@@ -62,5 +64,36 @@ describe('Admin/PlatiGameDetail', () => {
         const wrapper = mount(PlatiGameDetail, { props: { id: 1 } });
 
         expect(wrapper.text()).toContain('Загружаем Plati-игру');
+    });
+});
+
+describe('Admin/PlatiGameDetail — удаление', () => {
+    it('запрашивает подтверждение и переходит к списку после удаления', async () => {
+        mockFetchOnce(samplePlatiGame);
+        const wrapper = mount(PlatiGameDetail, { props: { id: 42 } });
+        await flushPromises();
+
+        delete window.location;
+        window.location = { href: '' };
+        window.confirm = () => true;
+
+        mockFetchOnce(null, { status: 204 });
+        await wrapper.get('button.btn-outline-danger').trigger('click');
+        await flushPromises();
+
+        expect(global.fetch).toHaveBeenLastCalledWith('/api/admin/plati-games/42', { method: 'DELETE' });
+        expect(window.location.href).toBe('/admin/plati-games');
+    });
+
+    it('ничего не делает, если пользователь отменил подтверждение', async () => {
+        mockFetchOnce(samplePlatiGame);
+        const wrapper = mount(PlatiGameDetail, { props: { id: 42 } });
+        await flushPromises();
+
+        window.confirm = () => false;
+        await wrapper.get('button.btn-outline-danger').trigger('click');
+        await flushPromises();
+
+        expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 });

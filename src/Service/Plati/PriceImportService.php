@@ -2,6 +2,7 @@
 
 namespace App\Service\Plati;
 
+use App\Entity\Game;
 use App\Entity\PlatiGame;
 use App\Entity\PlatiGamePrice;
 use App\Repository\PlatiGamePriceRepository;
@@ -96,6 +97,30 @@ class PriceImportService
         $this->entityManager->flush();
 
         return new PriceImportResult($prices, $skipped, $lastId, $startedNewDay, $lastPopularity);
+    }
+
+    /**
+     * Импортирует цены всех уже найденных продавцов конкретной игры вне
+     * очереди крона — кнопка "Импортировать цены" в блоке Plati игры в
+     * админке. В отличие от importNextBatch() идёт не по курсору, а сразу
+     * по всем PlatiGame::findByGame() этой игры.
+     *
+     * @return array<int, PlatiGamePrice> снимки цены (продавцы, пропущенные
+     *                                     из-за сетевой ошибки, в результат не входят)
+     */
+    public function importPricesForGame(Game $game): array
+    {
+        $today = new \DateTimeImmutable('today');
+
+        $prices = [];
+        foreach ($this->platiGameRepository->findByGame($game) as $platiGame) {
+            $price = $this->fetchAndStorePrice($platiGame, $today);
+            if ($price !== null) {
+                $prices[] = $price;
+            }
+        }
+
+        return $prices;
     }
 
     /**

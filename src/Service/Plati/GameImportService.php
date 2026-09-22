@@ -34,8 +34,16 @@ class GameImportService
     /** Сколько объявлений смотреть на каждую игру — топ по релевантности поиска Digiseller. */
     private const int SEARCH_LIMIT = 10;
 
-    /** Сколько самых продаваемых совпавших продавцов сохранять на игру. */
+    /** Сколько самых продаваемых совпавших продавцов сохранять на игру при обходе кроном. */
     private const int TOP_SELLERS_LIMIT = 3;
+
+    /**
+     * Сколько продавцов сохранять при ручном импорте одной игры из
+     * админки (кнопка "Импортировать предложения" на карточке игры) — выше
+     * TOP_SELLERS_LIMIT, потому что это разовое действие модератора, а не
+     * дневной бюджет обхода всего каталога.
+     */
+    private const int MANUAL_IMPORT_SELLERS_LIMIT = 10;
 
     /** Принимает все зависимости, нужные для проверки игр на plati.market и сохранения результата. */
     public function __construct(
@@ -79,7 +87,7 @@ class GameImportService
         $results = [];
 
         foreach ($games as $i => $game) {
-            $results[] = $this->checkGame($game);
+            $results[] = $this->checkGame($game, self::TOP_SELLERS_LIMIT);
 
             if ($i !== array_key_last($games)) {
                 $this->rateLimiter->delay($delayMs);
@@ -96,8 +104,23 @@ class GameImportService
         return new ImportResult(results: $results, wrapped: $wrapped);
     }
 
-    /** Проверяет одну игру: поиск по названию, отбор совпадений, сохранение до TOP_SELLERS_LIMIT продавцов. */
-    private function checkGame(Game $game): PlatiCheckResult
+    /**
+     * Импортирует предложения по одной конкретной игре вне очереди крона —
+     * кнопка "Импортировать предложения" на карточке игры в админке.
+     * Сохраняет до MANUAL_IMPORT_SELLERS_LIMIT продавцов (больше, чем при
+     * обходе кроном) и сразу делает flush(), в отличие от checkGame() в
+     * составе importNextBatch(), где flush() один на всю пачку.
+     */
+    public function importForGame(Game $game): PlatiCheckResult
+    {
+        $result = $this->checkGame($game, self::MANUAL_IMPORT_SELLERS_LIMIT);
+        $this->entityManager->flush();
+
+        return $result;
+    }
+
+    /** Проверяет одну игру: поиск по названию, отбор совпадений, сохранение до $sellersLimit продавцов. */
+    private function checkGame(Game $game, int $sellersLimit): PlatiCheckResult
     {
         try {
             $items = $this->platiClient->search($game->getName(), self::SEARCH_LIMIT);
@@ -118,7 +141,7 @@ class GameImportService
             );
         }
 
-        $top = $this->gameMatcher->topMatches($game->getName(), $items, self::TOP_SELLERS_LIMIT);
+        $top = $this->gameMatcher->topMatches($game->getName(), $items, $sellersLimit);
         $platiGames = array_map(fn (PlatiSearchItem $item): PlatiGame => $this->storeSeller($game, $item), $top);
 
         return new PlatiCheckResult(
@@ -135,14 +158,17 @@ class GameImportService
     /** Создаёт или обновляет запись конкретного продавца по паре (игра, ссылка). */
     private function storeSeller(Game $game, PlatiSearchItem $item): PlatiGame
     {
+        $platiName = $item->name !== '' ? $item->name : $item->nameEng;
+
         $platiGame = $this->platiGameRepository->findOneByGameAndUrl($game, $item->url);
         if ($platiGame !== null) {
             $platiGame->setSellerName($item->sellerName);
+            $platiGame->setPlatiName($platiName);
 
             return $platiGame;
         }
 
-        $platiGame = new PlatiGame($game, $item->url, $item->sellerName);
+        $platiGame = new PlatiGame($game, $item->url, $item->sellerName, $platiName);
         $this->entityManager->persist($platiGame);
 
         return $platiGame;

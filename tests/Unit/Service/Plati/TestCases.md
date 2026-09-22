@@ -56,6 +56,10 @@
 | Пачка пуста и курсор не в начале списка: курсор сбрасывается, повторная выборка тоже пуста — пустой результат с `wrapped=true`, `flush()` не вызывается | `testImportNextBatchReturnsEmptyResultWhenNothingLeftToCheckEvenAfterWrap` |
 | Пачка пуста и курсор не в начале списка: курсор сбрасывается, повторная выборка находит игры — они проверяются в рамках этого же запуска, `wrapped=true` | `testImportNextBatchWrapsAndChecksGamesWhenBatchEmptyMidCursor` |
 | Пачка пуста, курсор уже в начале списка: пустой результат без сброса/повтора, `wrapped=false` | `testImportNextBatchReturnsEmptyResultWithoutWrapWhenCursorAlreadyAtStart` |
+| Название товара (`item.name`) сохраняется в `PlatiGame::platiName` | `testImportNextBatchStoresPlatiNameFromMatchedItemName` |
+| `item.name` пустой: `PlatiGame::platiName` берётся из `item.nameEng` | `testImportNextBatchFallsBackToNameEngForPlatiNameWhenNameIsEmpty` |
+| `importForGame()` (ручной импорт по кнопке из админки): сохраняется до 10 самых продаваемых совпадений вместо 3, `flush()` вызывается сразу | `testImportForGameSavesUpToTenSellersInsteadOfThree` |
+| `importForGame()` без совпадений: `PlatiCheckResult` не найден, `persist()` не вызывается, но `flush()` всё равно вызывается | `testImportForGameReturnsNotFoundResultWithoutFlushingPersistedEntitiesWhenNoMatches` |
 
 ## PriceImportServiceTest.php
 
@@ -80,3 +84,6 @@
 | У последней игры нет popularity (`null`): в курсор сохраняется `-1` | `testImportNextBatchStoresPopularityAsMinusOneWhenLastGameHasNone` |
 | Очередь пуста: пустой результат | `testImportNextBatchReturnsEmptyResultWhenQueueIsEmpty` |
 | Первый запуск за новый день: курсор сбрасывается в начало списка | `testImportNextBatchResetsCursorOnFirstRunOfNewDay` |
+| `importPricesForGame()` (кнопка "Импортировать цены" на карточке игры в админке): импортирует цены сразу у всех продавцов игры, а не по курсору | `testImportPricesForGameImportsPricesForAllSellersOfTheGame` |
+| `importPricesForGame()`: `PlatiApiException` на одном продавце пропускается, обработка остальных продолжается | `testImportPricesForGameSkipsSellersOnPlatiApiExceptionAndContinuesWithRest` |
+| `importPricesForGame()` у игры без продавцов: пустой результат, поиск не вызывается | `testImportPricesForGameReturnsEmptyArrayWhenGameHasNoSellers` |

@@ -7,14 +7,22 @@ use App\Entity\Developer;
 use App\Entity\Game;
 use App\Entity\Genre;
 use App\Entity\GamePrice;
+use App\Entity\PlatiGame;
+use App\Entity\PlatiGamePrice;
 use App\Entity\Platform;
 use App\Entity\Publisher;
 use App\Entity\SteamGame;
 use App\Repository\GamePriceRepository;
 use App\Repository\GameRepository;
+use App\Repository\PlatiGamePriceRepository;
+use App\Repository\PlatiGameRepository;
 use App\Repository\SteamGameRepository;
 use App\Service\Game\GameMapper;
 use App\Service\GamePrice\GamePriceMapper;
+use App\Service\Plati\GameImportService as PlatiGameImportService;
+use App\Service\Plati\PlatiCheckResult;
+use App\Service\Plati\PriceImportService as PlatiPriceImportService;
+use App\Service\PlatiGame\PlatiGameMapper;
 use App\Service\Steam\PriceImportService;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -34,9 +42,14 @@ class GameApiControllerTest extends TestCase
     private GameRepository&MockObject $gameRepository;
     private SteamGameRepository&MockObject $steamGameRepository;
     private GamePriceRepository&MockObject $gamePriceRepository;
+    private PlatiGameRepository&MockObject $platiGameRepository;
+    private PlatiGamePriceRepository&MockObject $platiGamePriceRepository;
     private PriceImportService&MockObject $priceImportService;
+    private PlatiGameImportService&MockObject $platiGameImportService;
+    private PlatiPriceImportService&MockObject $platiPriceImportService;
     private GameMapper $gameMapper;
     private GamePriceMapper $gamePriceMapper;
+    private PlatiGameMapper $platiGameMapper;
     private GameApiController $controller;
 
     protected function setUp(): void
@@ -44,9 +57,14 @@ class GameApiControllerTest extends TestCase
         $this->gameRepository = $this->createMock(GameRepository::class);
         $this->steamGameRepository = $this->createMock(SteamGameRepository::class);
         $this->gamePriceRepository = $this->createMock(GamePriceRepository::class);
+        $this->platiGameRepository = $this->createMock(PlatiGameRepository::class);
+        $this->platiGamePriceRepository = $this->createMock(PlatiGamePriceRepository::class);
         $this->priceImportService = $this->createMock(PriceImportService::class);
+        $this->platiGameImportService = $this->createMock(PlatiGameImportService::class);
+        $this->platiPriceImportService = $this->createMock(PlatiPriceImportService::class);
         $this->gameMapper = new GameMapper();
         $this->gamePriceMapper = new GamePriceMapper();
+        $this->platiGameMapper = new PlatiGameMapper();
 
         $this->controller = new GameApiController();
         // AbstractController::json() проверяет container->has('serializer') — пустой
@@ -164,13 +182,50 @@ class GameApiControllerTest extends TestCase
             ->method('find')
             ->with(42)
             ->willReturn($game);
+        $this->steamGameRepository->method('findOneByGame')->willReturn(null);
+        $this->platiGameRepository->method('findByGame')->willReturn([]);
 
-        $response = $this->controller->show(42, $this->gameRepository, $this->gameMapper);
+        $response = $this->controller->show(
+            42,
+            $this->gameRepository,
+            $this->gameMapper,
+            $this->steamGameRepository,
+            $this->platiGameRepository,
+        );
         $data = json_decode((string) $response->getContent(), true);
 
         self::assertSame('Day of Defeat', $data['name']);
         self::assertSame(['Valve'], $data['developers']);
         self::assertSame(['Экшены'], $data['genres']);
+        self::assertNull($data['steamGame']);
+        self::assertSame([], $data['platiGames']);
+    }
+
+    public function testShowIncludesLinkedSteamGameAndPlatiGames(): void
+    {
+        $game = new Game('Half-Life', 'half-life');
+        $steamGame = new SteamGame(70);
+        $steamGame->setGame($game);
+        $platiGame = new PlatiGame($game, 'https://plati.market/itm/123', 'BestSeller', 'Half-Life Steam Gift');
+
+        $this->gameRepository->method('find')->willReturn($game);
+        $this->steamGameRepository->method('findOneByGame')->willReturn($steamGame);
+        $this->platiGameRepository->method('findByGame')->willReturn([$platiGame]);
+
+        $response = $this->controller->show(
+            42,
+            $this->gameRepository,
+            $this->gameMapper,
+            $this->steamGameRepository,
+            $this->platiGameRepository,
+        );
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertSame(70, $data['steamGame']['steamAppId']);
+        self::assertCount(1, $data['platiGames']);
+        self::assertSame('BestSeller', $data['platiGames'][0]['sellerName']);
+        self::assertSame('Half-Life Steam Gift', $data['platiGames'][0]['platiName']);
+        self::assertSame('https://plati.market/itm/123', $data['platiGames'][0]['url']);
     }
 
     public function testShowThrowsNotFoundExceptionForUnknownId(): void
@@ -179,7 +234,13 @@ class GameApiControllerTest extends TestCase
 
         $this->expectException(NotFoundHttpException::class);
 
-        $this->controller->show(999, $this->gameRepository, $this->gameMapper);
+        $this->controller->show(
+            999,
+            $this->gameRepository,
+            $this->gameMapper,
+            $this->steamGameRepository,
+            $this->platiGameRepository,
+        );
     }
 
     public function testImportPriceReturnsPriceSnapshotOnSuccess(): void
@@ -273,13 +334,17 @@ class GameApiControllerTest extends TestCase
         self::assertNotEmpty($data['errors']['steam']);
     }
 
-    public function testPriceHistoryReturnsOrderedItemsWithStoreLink(): void
+    public function testPriceHistoryReturnsSteamAndPlatiHistory(): void
     {
         $game = new Game('Half-Life', 'half-life');
         $steamGame = new SteamGame(70);
         $steamGame->setGame($game);
         $older = (new GamePrice($game, new \DateTimeImmutable('2026-09-14')))->markPriced(199900);
         $newer = (new GamePrice($game, new \DateTimeImmutable('2026-09-15')))->markFree();
+
+        $platiGame = new PlatiGame($game, 'https://plati.market/itm/123', 'BestSeller', 'Half-Life Steam Gift');
+        $platiPrice = new PlatiGamePrice($platiGame, new \DateTimeImmutable('2026-09-15'));
+        $platiPrice->markPriced(150000);
 
         $this->gameRepository->expects($this->once())->method('find')->with(42)->willReturn($game);
         $this->steamGameRepository->expects($this->once())
@@ -290,6 +355,14 @@ class GameApiControllerTest extends TestCase
             ->method('findHistoryForGame')
             ->with($game)
             ->willReturn([$older, $newer]);
+        $this->platiGameRepository->expects($this->once())
+            ->method('findByGame')
+            ->with($game)
+            ->willReturn([$platiGame]);
+        $this->platiGamePriceRepository->expects($this->once())
+            ->method('findHistoryForPlatiGame')
+            ->with($platiGame)
+            ->willReturn([$platiPrice]);
 
         $response = $this->controller->priceHistory(
             42,
@@ -297,23 +370,30 @@ class GameApiControllerTest extends TestCase
             $this->steamGameRepository,
             $this->gamePriceRepository,
             $this->gamePriceMapper,
+            $this->platiGameRepository,
+            $this->platiGamePriceRepository,
+            $this->platiGameMapper,
         );
         $data = json_decode((string) $response->getContent(), true);
 
-        self::assertCount(2, $data['items']);
-        self::assertSame('2026-09-14', $data['items'][0]['date']);
-        self::assertSame('2026-09-15', $data['items'][1]['date']);
-        self::assertTrue($data['items'][1]['isFree']);
-        self::assertSame('Steam', $data['items'][0]['store']);
-        self::assertSame('https://store.steampowered.com/app/70/', $data['items'][0]['storeUrl']);
+        self::assertCount(2, $data['steam']['history']);
+        self::assertSame('2026-09-14', $data['steam']['history'][0]['date']);
+        self::assertTrue($data['steam']['isFree']);
+        self::assertSame('Steam', $data['steam']['store']);
+        self::assertSame('https://store.steampowered.com/app/70/', $data['steam']['storeUrl']);
+
+        self::assertCount(1, $data['plati']);
+        self::assertSame('BestSeller', $data['plati'][0]['sellerName']);
+        self::assertSame(150000, $data['plati'][0]['priceKopecks']);
     }
 
-    public function testPriceHistoryReturnsEmptyItemsWhenNoHistory(): void
+    public function testPriceHistoryReturnsEmptyHistoryWhenNoData(): void
     {
         $game = new Game('New Game', 'new-game');
         $this->gameRepository->method('find')->willReturn($game);
         $this->steamGameRepository->method('findOneByGame')->willReturn(null);
         $this->gamePriceRepository->method('findHistoryForGame')->willReturn([]);
+        $this->platiGameRepository->method('findByGame')->willReturn([]);
 
         $response = $this->controller->priceHistory(
             42,
@@ -321,10 +401,14 @@ class GameApiControllerTest extends TestCase
             $this->steamGameRepository,
             $this->gamePriceRepository,
             $this->gamePriceMapper,
+            $this->platiGameRepository,
+            $this->platiGamePriceRepository,
+            $this->platiGameMapper,
         );
         $data = json_decode((string) $response->getContent(), true);
 
-        self::assertSame([], $data['items']);
+        self::assertSame([], $data['steam']['history']);
+        self::assertSame([], $data['plati']);
     }
 
     public function testPriceHistoryThrowsNotFoundExceptionForUnknownGame(): void
@@ -339,6 +423,125 @@ class GameApiControllerTest extends TestCase
             $this->steamGameRepository,
             $this->gamePriceRepository,
             $this->gamePriceMapper,
+            $this->platiGameRepository,
+            $this->platiGamePriceRepository,
+            $this->platiGameMapper,
+        );
+    }
+
+    public function testImportPlatiReturnsUpdatedSellersListOnSuccess(): void
+    {
+        $game = new Game('Half-Life', 'half-life');
+        $platiGame = new PlatiGame($game, 'https://plati.market/itm/123', 'BestSeller', 'Half-Life Steam Gift');
+
+        $this->gameRepository->expects($this->once())->method('find')->with(42)->willReturn($game);
+        $this->platiGameImportService->expects($this->once())
+            ->method('importForGame')
+            ->with($game)
+            ->willReturn(new PlatiCheckResult(
+                $game,
+                [$platiGame],
+                'совпадений по названию: 1, сохранено продавцов: 1 (по убыванию продаж)',
+            ));
+        $this->platiGameRepository->expects($this->once())
+            ->method('findByGame')
+            ->with($game)
+            ->willReturn([$platiGame]);
+
+        $response = $this->controller->importPlati(
+            42,
+            $this->gameRepository,
+            $this->platiGameRepository,
+            $this->platiGameImportService,
+        );
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertTrue($data['found']);
+        self::assertStringContainsString('сохранено продавцов: 1', $data['message']);
+        self::assertCount(1, $data['platiGames']);
+        self::assertSame('BestSeller', $data['platiGames'][0]['sellerName']);
+        self::assertSame('Half-Life Steam Gift', $data['platiGames'][0]['platiName']);
+    }
+
+    public function testImportPlatiReturnsNotFoundReasonWhenNoMatches(): void
+    {
+        $game = new Game('Very Specific Game', 'very-specific-game');
+
+        $this->gameRepository->method('find')->willReturn($game);
+        $this->platiGameImportService->method('importForGame')
+            ->willReturn(new PlatiCheckResult($game, [], 'ничего не найдено по запросу'));
+        $this->platiGameRepository->method('findByGame')->willReturn([]);
+
+        $response = $this->controller->importPlati(
+            42,
+            $this->gameRepository,
+            $this->platiGameRepository,
+            $this->platiGameImportService,
+        );
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertFalse($data['found']);
+        self::assertSame('ничего не найдено по запросу', $data['message']);
+        self::assertSame([], $data['platiGames']);
+    }
+
+    public function testImportPlatiThrowsNotFoundExceptionForUnknownGame(): void
+    {
+        $this->gameRepository->method('find')->willReturn(null);
+        $this->platiGameImportService->expects($this->never())->method('importForGame');
+
+        $this->expectException(NotFoundHttpException::class);
+
+        $this->controller->importPlati(
+            999,
+            $this->gameRepository,
+            $this->platiGameRepository,
+            $this->platiGameImportService,
+        );
+    }
+
+    public function testImportPlatiPricesReturnsImportedAndSkippedCounts(): void
+    {
+        $game = new Game('Half-Life', 'half-life');
+        $seller1 = new PlatiGame($game, 'https://plati.market/itm/1', 'Seller1', 'Half-Life Gift');
+        $seller2 = new PlatiGame($game, 'https://plati.market/itm/2', 'Seller2', 'Half-Life Key');
+        $price = new PlatiGamePrice($seller1, new \DateTimeImmutable('2026-09-15'));
+        $price->markPriced(19900);
+
+        $this->gameRepository->expects($this->once())->method('find')->with(42)->willReturn($game);
+        $this->platiGameRepository->expects($this->once())
+            ->method('findByGame')
+            ->with($game)
+            ->willReturn([$seller1, $seller2]);
+        $this->platiPriceImportService->expects($this->once())
+            ->method('importPricesForGame')
+            ->with($game)
+            ->willReturn([$price]);
+
+        $response = $this->controller->importPlatiPrices(
+            42,
+            $this->gameRepository,
+            $this->platiGameRepository,
+            $this->platiPriceImportService,
+        );
+        $data = json_decode((string) $response->getContent(), true);
+
+        self::assertSame(1, $data['importedCount']);
+        self::assertSame(1, $data['skippedCount']);
+    }
+
+    public function testImportPlatiPricesThrowsNotFoundExceptionForUnknownGame(): void
+    {
+        $this->gameRepository->method('find')->willReturn(null);
+        $this->platiPriceImportService->expects($this->never())->method('importPricesForGame');
+
+        $this->expectException(NotFoundHttpException::class);
+
+        $this->controller->importPlatiPrices(
+            999,
+            $this->gameRepository,
+            $this->platiGameRepository,
+            $this->platiPriceImportService,
         );
     }
 }

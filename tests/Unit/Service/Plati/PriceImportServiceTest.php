@@ -69,7 +69,7 @@ class PriceImportServiceTest extends TestCase
     /** Создаёт PlatiGame с заданным id (обычно проставляется Doctrine при persist) — нужен курсору. */
     private static function makePlatiGame(int $id, Game $game, string $url = self::DEFAULT_URL): PlatiGame
     {
-        $platiGame = new PlatiGame($game, $url, 'Seller');
+        $platiGame = new PlatiGame($game, $url, 'Seller', 'Product title');
         (new \ReflectionProperty($platiGame, 'id'))->setValue($platiGame, $id);
 
         return $platiGame;
@@ -299,5 +299,60 @@ class PriceImportServiceTest extends TestCase
 
         self::assertTrue($result->startedNewDay);
         self::assertSame(5, $cursor->getLastPlatiGameId());
+    }
+
+    public function testImportPricesForGameImportsPricesForAllSellersOfTheGame(): void
+    {
+        $game = new Game('Half-Life', 'half-life');
+        $seller1 = self::makePlatiGame(1, $game, 'https://plati.market/itm/1');
+        $seller2 = self::makePlatiGame(2, $game, 'https://plati.market/itm/2');
+        $this->platiGameRepository->method('findByGame')->willReturn([$seller1, $seller2]);
+
+        $this->platiClient->method('search')->willReturnCallback(
+            static fn (): array => [
+                self::item('Half-Life STEAM Gift', 50, 199, 'https://plati.market/itm/1'),
+                self::item('Half-Life Key', 30, 250, 'https://plati.market/itm/2'),
+            ],
+        );
+
+        $prices = $this->service->importPricesForGame($game);
+
+        self::assertCount(2, $prices);
+        self::assertSame(19900, $prices[0]->getPriceKopecks());
+        self::assertSame(25000, $prices[1]->getPriceKopecks());
+    }
+
+    public function testImportPricesForGameSkipsSellersOnPlatiApiExceptionAndContinuesWithRest(): void
+    {
+        $game = new Game('Flaky Game', 'flaky-game');
+        $flakySeller = self::makePlatiGame(1, $game, 'https://plati.market/itm/1');
+        $okSeller = self::makePlatiGame(2, $game, 'https://plati.market/itm/2');
+        $this->platiGameRepository->method('findByGame')->willReturn([$flakySeller, $okSeller]);
+
+        $calls = 0;
+        $this->platiClient->method('search')->willReturnCallback(
+            static function () use (&$calls): array {
+                ++$calls;
+                if ($calls === 1) {
+                    throw new PlatiApiException('network error');
+                }
+
+                return [self::item('OK Gift', 10, 500, 'https://plati.market/itm/2')];
+            },
+        );
+
+        $prices = $this->service->importPricesForGame($game);
+
+        self::assertCount(1, $prices);
+        self::assertSame(50000, $prices[0]->getPriceKopecks());
+    }
+
+    public function testImportPricesForGameReturnsEmptyArrayWhenGameHasNoSellers(): void
+    {
+        $game = new Game('No Sellers', 'no-sellers');
+        $this->platiGameRepository->method('findByGame')->willReturn([]);
+        $this->platiClient->expects($this->never())->method('search');
+
+        self::assertSame([], $this->service->importPricesForGame($game));
     }
 }

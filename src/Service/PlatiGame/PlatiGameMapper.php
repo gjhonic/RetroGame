@@ -21,6 +21,7 @@ class PlatiGameMapper
             'gameCoverImageUrl' => $this->coverImageUrl($game),
             'url' => $platiGame->getUrl(),
             'sellerName' => $platiGame->getSellerName(),
+            'platiName' => $platiGame->getPlatiName(),
             'createdAt' => $platiGame->getCreatedAt()->format('Y-m-d H:i:s'),
             'updatedAt' => $platiGame->getUpdatedAt()->format('Y-m-d H:i:s'),
         ];
@@ -39,6 +40,7 @@ class PlatiGameMapper
             'gameCoverImageUrl' => $this->coverImageUrl($game),
             'url' => $platiGame->getUrl(),
             'sellerName' => $platiGame->getSellerName(),
+            'platiName' => $platiGame->getPlatiName(),
             'createdAt' => $platiGame->getCreatedAt()->format('Y-m-d H:i:s'),
             'updatedAt' => $platiGame->getUpdatedAt()->format('Y-m-d H:i:s'),
         ];

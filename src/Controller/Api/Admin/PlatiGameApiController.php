@@ -4,6 +4,7 @@ namespace App\Controller\Api\Admin;
 
 use App\Repository\PlatiGameRepository;
 use App\Service\PlatiGame\PlatiGameMapper;
+use Doctrine\ORM\EntityManagerInterface;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -21,10 +22,10 @@ class PlatiGameApiController extends AbstractController
     private const int MAX_PER_PAGE = 100;
 
     /** Колонки, по которым разрешена сортировка (см. PlatiGameRepository::applyAdminSort()). */
-    private const array SORTABLE_FIELDS = ['createdAt', 'updatedAt', 'game', 'sellerName'];
+    private const array SORTABLE_FIELDS = ['createdAt', 'updatedAt', 'game', 'sellerName', 'platiName'];
 
     /** Колонки, по которым разрешена фильтрация (query-параметр filters[<ключ>]). */
-    private const array FILTERABLE_FIELDS = ['game', 'url', 'sellerName'];
+    private const array FILTERABLE_FIELDS = ['game', 'url', 'sellerName', 'platiName'];
 
     /**
      * Страница списка найденных на plati.market игр для таблицы в админке
@@ -63,8 +64,14 @@ class PlatiGameApiController extends AbstractController
         schema: new OA\Schema(type: 'string'),
     )]
     #[OA\Parameter(
+        name: 'filters[platiName]',
+        description: 'Фильтр по названию товара на plati.market (подстрока)',
+        in: 'query',
+        schema: new OA\Schema(type: 'string'),
+    )]
+    #[OA\Parameter(
         name: 'sortBy',
-        description: 'Поле сортировки: createdAt, updatedAt, game, sellerName',
+        description: 'Поле сортировки: createdAt, updatedAt, game, sellerName, platiName',
         in: 'query',
         schema: new OA\Schema(type: 'string', default: 'createdAt'),
     )]
@@ -87,6 +94,7 @@ class PlatiGameApiController extends AbstractController
                         new OA\Property(property: 'gameCoverImageUrl', type: 'string', nullable: true),
                         new OA\Property(property: 'url', type: 'string'),
                         new OA\Property(property: 'sellerName', type: 'string'),
+                        new OA\Property(property: 'platiName', type: 'string'),
                         new OA\Property(property: 'createdAt', type: 'string'),
                         new OA\Property(property: 'updatedAt', type: 'string'),
                     ],
@@ -160,6 +168,7 @@ class PlatiGameApiController extends AbstractController
                 new OA\Property(property: 'gameCoverImageUrl', type: 'string', nullable: true),
                 new OA\Property(property: 'url', type: 'string'),
                 new OA\Property(property: 'sellerName', type: 'string'),
+                new OA\Property(property: 'platiName', type: 'string'),
                 new OA\Property(property: 'createdAt', type: 'string'),
                 new OA\Property(property: 'updatedAt', type: 'string'),
             ],
@@ -179,5 +188,38 @@ class PlatiGameApiController extends AbstractController
         }
 
         return $this->json($platiGameMapper->toDetail($platiGame));
+    }
+
+    /**
+     * Удаляет запись о найденном на plati.market товаре продавца — например,
+     * если объявление ложное или продавец подобран неверно (не тот товар).
+     * Связанная история цены (PlatiGamePrice) удаляется каскадно на уровне
+     * БД (ON DELETE CASCADE, см. класс-докблок PlatiGamePrice).
+     */
+    #[Route('/{id}', name: 'app_api_admin_plati_game_delete', methods: ['DELETE'], requirements: ['id' => '\d+'])]
+    #[OA\Parameter(
+        name: 'id',
+        description: 'ID записи',
+        in: 'path',
+        required: true,
+        schema: new OA\Schema(type: 'integer'),
+    )]
+    #[OA\Response(response: 204, description: 'Запись удалена')]
+    #[OA\Response(response: 404, description: 'Запись не найдена')]
+    public function delete(
+        int $id,
+        PlatiGameRepository $platiGameRepository,
+        EntityManagerInterface $entityManager,
+    ): JsonResponse {
+        $platiGame = $platiGameRepository->find($id);
+
+        if ($platiGame === null) {
+            throw $this->createNotFoundException('Запись не найдена.');
+        }
+
+        $entityManager->remove($platiGame);
+        $entityManager->flush();
+
+        return $this->json(null, 204);
     }
 }
