@@ -139,6 +139,7 @@ class PriceImportService
         }
 
         $steamGame->setAvailableInRussia($price->isAvailableInRussia());
+        $game->setAvailableInRussia($price->isAvailableInRussia());
 
         if ($isNew) {
             $this->entityManager->persist($price);

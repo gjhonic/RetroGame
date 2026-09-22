@@ -10,7 +10,6 @@ use App\Repository\GameReactionRepository;
 use App\Repository\GameRepository;
 use App\Repository\GameStatusRepository;
 use App\Repository\GenreRepository;
-use App\Repository\PlatformRepository;
 use App\Repository\PlatiGamePriceRepository;
 use App\Repository\PlatiGameRepository;
 use App\Repository\SteamGameRepository;
@@ -34,8 +33,11 @@ class GameApiController extends AbstractController
     /** Колонки, по которым разрешена сортировка (см. GameRepository::applyPublicSort()). */
     private const array SORTABLE_FIELDS = ['popularity', 'avgPopularity', 'metacriticScore', 'releaseYear', 'name'];
 
-    /** Колонки, по которым разрешена фильтрация (query-параметр filters[<ключ>]). */
-    private const array FILTERABLE_FIELDS = ['name', 'genre', 'platform', 'releaseYearFrom', 'releaseYearTo'];
+    /** Строковые поля фильтрации (query-параметр filters[<ключ>]). */
+    private const array FILTERABLE_STRING_FIELDS = ['name', 'releaseYearFrom', 'releaseYearTo'];
+
+    /** Булевы поля фильтрации (query-параметр filters[<ключ>]=1). */
+    private const array FILTERABLE_BOOL_FIELDS = ['onlyFree', 'unavailableInRussia'];
 
     /** Список игр с фильтрами, сортировкой и постраничной навигацией. */
     #[Route('', name: 'app_api_game_list', methods: ['GET'])]
@@ -52,16 +54,10 @@ class GameApiController extends AbstractController
         schema: new OA\Schema(type: 'string'),
     )]
     #[OA\Parameter(
-        name: 'filters[genre]',
-        description: 'Фильтр по ID жанра',
+        name: 'filters[genre][]',
+        description: 'Фильтр по ID жанра (множественный выбор — можно передать несколько значений)',
         in: 'query',
-        schema: new OA\Schema(type: 'integer'),
-    )]
-    #[OA\Parameter(
-        name: 'filters[platform]',
-        description: 'Фильтр по ID платформы',
-        in: 'query',
-        schema: new OA\Schema(type: 'integer'),
+        schema: new OA\Schema(type: 'array', items: new OA\Items(type: 'integer')),
     )]
     #[OA\Parameter(
         name: 'filters[releaseYearFrom]',
@@ -74,6 +70,18 @@ class GameApiController extends AbstractController
         description: 'Фильтр по году выхода: не позже',
         in: 'query',
         schema: new OA\Schema(type: 'integer'),
+    )]
+    #[OA\Parameter(
+        name: 'filters[onlyFree]',
+        description: 'Только бесплатные игры',
+        in: 'query',
+        schema: new OA\Schema(type: 'boolean'),
+    )]
+    #[OA\Parameter(
+        name: 'filters[unavailableInRussia]',
+        description: 'Только игры, недоступные в Steam для региона РФ',
+        in: 'query',
+        schema: new OA\Schema(type: 'boolean'),
     )]
     #[OA\Parameter(
         name: 'sortBy',
@@ -117,11 +125,28 @@ class GameApiController extends AbstractController
     {
         $rawFilters = $request->query->all('filters');
         $filters = [];
-        foreach (self::FILTERABLE_FIELDS as $field) {
+        foreach (self::FILTERABLE_STRING_FIELDS as $field) {
             $value = $rawFilters[$field] ?? null;
             if (\is_string($value) && trim($value) !== '') {
                 $filters[$field] = trim($value);
             }
+        }
+
+        foreach (self::FILTERABLE_BOOL_FIELDS as $field) {
+            if (filter_var($rawFilters[$field] ?? null, \FILTER_VALIDATE_BOOLEAN)) {
+                $filters[$field] = true;
+            }
+        }
+
+        $genreIds = array_values(array_unique(array_map(
+            static fn (mixed $id): int => (int) trim((string) $id),
+            array_filter(
+                \is_array($rawFilters['genre'] ?? null) ? $rawFilters['genre'] : [],
+                static fn (mixed $id): bool => \is_scalar($id) && ctype_digit(trim((string) $id)),
+            ),
+        )));
+        if ($genreIds !== []) {
+            $filters['genre'] = $genreIds;
         }
 
         $sortBy = $request->query->getString('sortBy', 'popularity');
@@ -162,24 +187,14 @@ class GameApiController extends AbstractController
                     ],
                     type: 'object',
                 )),
-                new OA\Property(property: 'platforms', type: 'array', items: new OA\Items(
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer'),
-                        new OA\Property(property: 'name', type: 'string'),
-                    ],
-                    type: 'object',
-                )),
                 new OA\Property(property: 'releaseYearMin', type: 'integer', nullable: true),
                 new OA\Property(property: 'releaseYearMax', type: 'integer', nullable: true),
             ],
             type: 'object',
         ),
     )]
-    public function filters(
-        GameRepository $gameRepository,
-        GenreRepository $genreRepository,
-        PlatformRepository $platformRepository,
-    ): JsonResponse {
+    public function filters(GameRepository $gameRepository, GenreRepository $genreRepository): JsonResponse
+    {
         $yearRange = $gameRepository->findPublicReleaseYearRange();
 
         $genres = array_filter(
@@ -192,10 +207,6 @@ class GameApiController extends AbstractController
                 static fn ($genre): array => ['id' => $genre->getId(), 'name' => $genre->getName()],
                 $genres,
             )),
-            'platforms' => array_map(
-                static fn ($platform): array => ['id' => $platform->getId(), 'name' => $platform->getName()],
-                $platformRepository->findBy([], ['name' => 'ASC']),
-            ),
             'releaseYearMin' => $yearRange['min'] ?? null,
             'releaseYearMax' => $yearRange['max'] ?? null,
         ]);

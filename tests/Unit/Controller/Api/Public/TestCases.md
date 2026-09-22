@@ -10,9 +10,12 @@
 | Список игр: форма ответа (`items/total/page/totalPages`), нормализация `coverImageUrl` (путь есть → с ведущим `/`, пути нет → `null`) | `testListReturnsNormalizedItemsAndPagination` |
 | Параметр `page` не передан: используется первая страница, `findBy` вызывается с `offset=0` | `testListDefaultsToFirstPageWhenPageIsMissing` |
 | Запрошенная страница выходит за `totalPages`: значение клампится до последней доступной | `testListClampsRequestedPageToTotalPages` |
-| Фильтры (`name`/`genre`/`releaseYearFrom`) и сортировка передаются в репозиторий обрезанными от пробелов, неизвестный ключ фильтра игнорируется | `testListPassesFiltersAndSortingToRepository` |
+| Фильтры (`name`/`releaseYearFrom`) и сортировка передаются в репозиторий обрезанными от пробелов, неизвестный ключ фильтра игнорируется | `testListPassesFiltersAndSortingToRepository` |
+| `filters[genre][]` (множественный выбор): нечисловые значения отфильтровываются, дубликаты схлопываются, значения приводятся к `int` | `testListPassesMultipleGenreIdsToRepository` |
+| `filters[onlyFree]`/`filters[unavailableInRussia]` со значением, распознаваемым как `true` (`FILTER_VALIDATE_BOOLEAN`) — передаются в репозиторий | `testListPassesOnlyFreeAndUnavailableInRussiaFiltersToRepository` |
+| `filters[onlyFree]`/`filters[unavailableInRussia]` со значением, распознаваемым как `false` (`'0'`, `'false'`) — не передаются в репозиторий | `testListIgnoresFalsyOnlyFreeAndUnavailableInRussiaFilters` |
 | Неизвестное поле/направление сортировки → используется сортировка по умолчанию (`popularity`, `DESC`) | `testListFallsBackToDefaultSortForUnknownSortField` |
-| Справочник фильтров: жанры/платформы (id+name) и диапазон годов выхода | `testFiltersReturnsGenresPlatformsAndReleaseYearRange` |
+| Справочник фильтров: жанры (id+name) и диапазон годов выхода (платформы в публичном каталоге больше не фильтруются — убраны из ответа) | `testFiltersReturnsGenresAndReleaseYearRange` |
 | Жанр "Сексуальный контент" не попадает в справочник фильтров (`GameMapper::HIDDEN_PUBLIC_GENRE_NAMES`) | `testFiltersExcludesHiddenPublicGenre` |
 | Нет игр с известной датой выхода → диапазон годов `null` | `testFiltersReturnsNullReleaseYearRangeWhenNoGamesHaveReleaseDate` |
 | Детали игры: разработчики/издатели/жанры/платформы возвращаются как массивы имён (`NamedEntityInterface::getName()`), счётчики лайков/дизлайков, для гостя `myReaction/myFavorite/myStatus` пустые | `testShowReturnsFullDetailWithRelatedEntityNames` |

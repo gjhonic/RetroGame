@@ -4,59 +4,122 @@
         <p v-if="!loading && !error">{{ total }} {{ gamesWord }} в базе</p>
     </div>
 
-    <div class="catalog-toolbar">
-        <input
-            v-model="filters.name"
-            type="search"
-            class="toolbar-input"
-            placeholder="Поиск по названию…"
-            @input="onNameInput"
-        >
-
-        <select v-model="filters.genre" class="toolbar-select" @change="applyFilters">
-            <option value="">Все жанры</option>
-            <option v-for="genre in filterOptions.genres" :key="genre.id" :value="String(genre.id)">
-                {{ genre.name }}
-            </option>
-        </select>
-
-        <select v-model="filters.platform" class="toolbar-select" @change="applyFilters">
-            <option value="">Все платформы</option>
-            <option v-for="platform in filterOptions.platforms" :key="platform.id" :value="String(platform.id)">
-                {{ platform.name }}
-            </option>
-        </select>
-
-        <div class="toolbar-year-range">
-            <input
-                v-model="filters.yearFrom"
-                type="number"
-                class="toolbar-input toolbar-input--year"
-                :placeholder="filterOptions.releaseYearMin ? String(filterOptions.releaseYearMin) : 'Год от'"
-                @change="applyFilters"
-            >
-            <span class="toolbar-year-range__dash">—</span>
-            <input
-                v-model="filters.yearTo"
-                type="number"
-                class="toolbar-input toolbar-input--year"
-                :placeholder="filterOptions.releaseYearMax ? String(filterOptions.releaseYearMax) : 'Год до'"
-                @change="applyFilters"
-            >
+    <div class="filters-panel">
+        <div class="filters-panel__header">
+            <h2 class="filters-panel__title">Фильтры</h2>
+            <button v-if="hasActiveFilters" type="button" class="toolbar-reset" @click="resetFilters">
+                Сбросить ✕
+            </button>
         </div>
 
-        <select v-model="sort" class="toolbar-select" @change="applyFilters">
-            <option value="popularity_desc">Сначала популярные</option>
-            <option value="avgPopularity_desc">По средней популярности</option>
-            <option value="metacriticScore_desc">Сначала высокая оценка</option>
-            <option value="releaseYear_desc">Сначала новые</option>
-            <option value="releaseYear_asc">Сначала старые</option>
-            <option value="name_asc">По алфавиту</option>
-        </select>
+        <div class="filters-panel__row">
+            <input
+                v-model="filters.name"
+                type="search"
+                class="toolbar-input"
+                aria-label="Поиск игр по названию"
+                placeholder="Поиск по названию…"
+                @input="onNameInput"
+            >
 
-        <button v-if="hasActiveFilters" type="button" class="toolbar-reset" @click="resetFilters">
-            Сбросить ✕
-        </button>
+            <div ref="genreFilterRef" class="dropdown-filter">
+                <button
+                    type="button"
+                    class="toolbar-select dropdown-filter__toggle dropdown-filter__toggle--genre"
+                    @click="toggleGenreDropdown"
+                >
+                    {{ genreFilterLabel }}
+                </button>
+                <div v-if="genreDropdownOpen" class="dropdown-filter__panel">
+                    <label v-for="genre in filterOptions.genres" :key="genre.id" class="dropdown-filter__option">
+                        <input v-model="filters.genres" type="checkbox" :value="String(genre.id)" @change="applyFilters">
+                        <span>{{ genre.name }}</span>
+                    </label>
+                    <p v-if="filterOptions.genres.length === 0" class="dropdown-filter__empty">Список жанров пуст</p>
+                </div>
+            </div>
+
+            <div ref="extraFilterRef" class="dropdown-filter">
+                <button
+                    type="button"
+                    class="toolbar-select dropdown-filter__toggle dropdown-filter__toggle--extra"
+                    @click="toggleExtraDropdown"
+                >
+                    Ещё фильтры<span v-if="extraFiltersCount">&nbsp;({{ extraFiltersCount }})</span>
+                </button>
+                <div v-if="extraDropdownOpen" class="dropdown-filter__panel">
+                    <label class="dropdown-filter__option">
+                        <input v-model="filters.onlyFree" type="checkbox" @change="applyFilters">
+                        <span>Бесплатные игры</span>
+                    </label>
+                    <label class="dropdown-filter__option">
+                        <input v-model="filters.unavailableInRussia" type="checkbox" @change="applyFilters">
+                        <span>Недоступные в РФ (в Steam)</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="filterOptions.releaseYearMin !== null" class="filters-panel__row filters-panel__row--year">
+            <div class="year-filter">
+                <div class="year-filter__labels">
+                    <span class="year-filter__value">{{ yearFromValue }}</span>
+                    <span class="year-filter__dash">—</span>
+                    <span class="year-filter__value">{{ yearToValue }}</span>
+                </div>
+                <div class="year-filter__slider">
+                    <div class="year-filter__track" />
+                    <div
+                        class="year-filter__range"
+                        :style="{
+                            left: yearPercent(yearFromValue) + '%',
+                            right: (100 - yearPercent(yearToValue)) + '%',
+                        }"
+                    />
+                    <span
+                        v-for="year in yearDots"
+                        :key="year"
+                        class="year-filter__dot"
+                        :class="{ 'year-filter__dot--active': isYearInRange(year) }"
+                        :style="{ left: yearPercent(year) + '%' }"
+                    />
+                    <input
+                        v-model.number="yearFromValue"
+                        type="range"
+                        class="year-filter__input year-filter__input--from" aria-label="Год выпуска от"
+                        :min="filterOptions.releaseYearMin"
+                        :max="filterOptions.releaseYearMax"
+                        @input="onYearFromInput"
+                        @change="applyFilters"
+                    >
+                    <input
+                        v-model.number="yearToValue"
+                        type="range"
+                        class="year-filter__input year-filter__input--to" aria-label="Год выпуска до"
+                        :min="filterOptions.releaseYearMin"
+                        :max="filterOptions.releaseYearMax"
+                        @input="onYearToInput"
+                        @change="applyFilters"
+                    >
+                </div>
+                <div class="year-filter__bounds">
+                    <span>{{ filterOptions.releaseYearMin }}</span>
+                    <span>{{ filterOptions.releaseYearMax }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="filters-panel__row filters-panel__row--sort">
+            <label class="filters-panel__sort-label" for="catalog-sort">Сортировать:</label>
+            <select id="catalog-sort" v-model="sort" class="toolbar-select" @change="applyFilters">
+                <option value="popularity_desc">Сначала популярные</option>
+                <option value="avgPopularity_desc">По средней популярности</option>
+                <option value="metacriticScore_desc">Сначала высокая оценка</option>
+                <option value="releaseYear_desc">Сначала новые</option>
+                <option value="releaseYear_asc">Сначала старые</option>
+                <option value="name_asc">По алфавиту</option>
+            </select>
+        </div>
     </div>
 
     <div v-if="loading" class="empty-state">
@@ -153,18 +216,120 @@ const totalPages = ref(1);
 const loading = ref(true);
 const error = ref(null);
 
-const filters = reactive({ name: '', genre: '', platform: '', yearFrom: '', yearTo: '' });
+const filters = reactive({
+    name: '',
+    genres: [],
+    yearFrom: '',
+    yearTo: '',
+    onlyFree: false,
+    unavailableInRussia: false,
+});
 const sort = ref(DEFAULT_SORT);
-const filterOptions = reactive({ genres: [], platforms: [], releaseYearMin: null, releaseYearMax: null });
+const filterOptions = reactive({ genres: [], releaseYearMin: null, releaseYearMax: null });
+
+const genreDropdownOpen = ref(false);
+const extraDropdownOpen = ref(false);
+const genreFilterRef = ref(null);
+const extraFilterRef = ref(null);
 
 let nameInputTimer = null;
 
 const gamesWord = computed(() => pluralizeGames(total.value));
 
 const hasActiveFilters = computed(() => (
-    filters.name !== '' || filters.genre !== '' || filters.platform !== ''
-        || filters.yearFrom !== '' || filters.yearTo !== '' || sort.value !== DEFAULT_SORT
+    filters.name !== ''
+        || filters.genres.length > 0
+        || filters.onlyFree
+        || filters.unavailableInRussia
+        || (filters.yearFrom !== '' && Number(filters.yearFrom) > (filterOptions.releaseYearMin ?? -Infinity))
+        || (filters.yearTo !== '' && Number(filters.yearTo) < (filterOptions.releaseYearMax ?? Infinity))
+        || sort.value !== DEFAULT_SORT
 ));
+
+const genreFilterLabel = computed(() => {
+    if (filters.genres.length === 0) {
+        return 'Все жанры';
+    }
+
+    if (filters.genres.length === 1) {
+        const genre = filterOptions.genres.find((item) => String(item.id) === filters.genres[0]);
+
+        return genre ? genre.name : 'Жанр (1)';
+    }
+
+    return `Жанры (${filters.genres.length})`;
+});
+
+const extraFiltersCount = computed(() => (
+    (filters.onlyFree ? 1 : 0) + (filters.unavailableInRussia ? 1 : 0)
+));
+
+/** Двусторонняя привязка ползунка "год от" — хранится строкой в filters.yearFrom, пока не выбран год — граница диапазона. */
+const yearFromValue = computed({
+    get: () => (filters.yearFrom !== '' ? Number(filters.yearFrom) : (filterOptions.releaseYearMin ?? 0)),
+    set: (value) => {
+        filters.yearFrom = String(value);
+    },
+});
+
+const yearToValue = computed({
+    get: () => (filters.yearTo !== '' ? Number(filters.yearTo) : (filterOptions.releaseYearMax ?? 0)),
+    set: (value) => {
+        filters.yearTo = String(value);
+    },
+});
+
+/** Не даёт ползунку "от" уйти правее ползунка "до" (два independent range-инпута на одном треке). */
+function onYearFromInput() {
+    if (yearFromValue.value > yearToValue.value) {
+        yearToValue.value = yearFromValue.value;
+    }
+}
+
+function onYearToInput() {
+    if (yearToValue.value < yearFromValue.value) {
+        yearFromValue.value = yearToValue.value;
+    }
+}
+
+/** Список годов для точек на полосе диапазона (см. https://stopgame.ru/games/catalog). */
+const yearDots = computed(() => {
+    const { releaseYearMin: min, releaseYearMax: max } = filterOptions;
+
+    return min === null || max === null
+        ? []
+        : Array.from({ length: max - min + 1 }, (_, i) => min + i);
+});
+
+function yearPercent(year) {
+    const { releaseYearMin: min, releaseYearMax: max } = filterOptions;
+
+    return min === null || max === null || max === min ? 0 : ((year - min) / (max - min)) * 100;
+}
+
+function isYearInRange(year) {
+    return year >= yearFromValue.value && year <= yearToValue.value;
+}
+
+function toggleGenreDropdown() {
+    extraDropdownOpen.value = false;
+    genreDropdownOpen.value = !genreDropdownOpen.value;
+}
+
+function toggleExtraDropdown() {
+    genreDropdownOpen.value = false;
+    extraDropdownOpen.value = !extraDropdownOpen.value;
+}
+
+/** Закрывает выпадающие панели фильтров при клике вне них. */
+function handleDocumentClick(event) {
+    if (genreDropdownOpen.value && genreFilterRef.value && !genreFilterRef.value.contains(event.target)) {
+        genreDropdownOpen.value = false;
+    }
+    if (extraDropdownOpen.value && extraFilterRef.value && !extraFilterRef.value.contains(event.target)) {
+        extraDropdownOpen.value = false;
+    }
+}
 
 /**
  * На мобильных экранах кнопок пагинации меньше (окно в 1 страницу вместо 5) —
@@ -257,17 +422,20 @@ function buildParams() {
     if (filters.name !== '') {
         params.set('filters[name]', filters.name);
     }
-    if (filters.genre !== '') {
-        params.set('filters[genre]', filters.genre);
-    }
-    if (filters.platform !== '') {
-        params.set('filters[platform]', filters.platform);
-    }
+    filters.genres.forEach((genreId) => {
+        params.append('filters[genre][]', genreId);
+    });
     if (filters.yearFrom !== '') {
         params.set('filters[releaseYearFrom]', filters.yearFrom);
     }
     if (filters.yearTo !== '') {
         params.set('filters[releaseYearTo]', filters.yearTo);
+    }
+    if (filters.onlyFree) {
+        params.set('filters[onlyFree]', '1');
+    }
+    if (filters.unavailableInRussia) {
+        params.set('filters[unavailableInRussia]', '1');
     }
 
     if (sort.value !== DEFAULT_SORT) {
@@ -303,6 +471,7 @@ async function loadPage(requestedPage) {
 
         const url = params.toString() !== '' ? `?${params}` : window.location.pathname;
         window.history.replaceState(null, '', url);
+        saveStateToStorage(params);
     } catch (e) {
         error.value = e.message;
     } finally {
@@ -329,23 +498,58 @@ function onNameInput() {
 
 function resetFilters() {
     filters.name = '';
-    filters.genre = '';
-    filters.platform = '';
+    filters.genres = [];
     filters.yearFrom = '';
     filters.yearTo = '';
+    filters.onlyFree = false;
+    filters.unavailableInRussia = false;
     sort.value = DEFAULT_SORT;
+    genreDropdownOpen.value = false;
+    extraDropdownOpen.value = false;
     loadPage(1);
 }
 
-/** Восстанавливает состояние из query-параметров URL, чтобы ссылка на отфильтрованный каталог была рабочей. */
+const FILTERS_STORAGE_KEY = 'gameCatalog.filters';
+
+/**
+ * Сохраняет последнее состояние фильтров/сортировки/страницы в sessionStorage —
+ * подстраховка на случай, если при возврате на каталог (кнопка "Назад" после
+ * перехода на страницу игры, ссылка в шапке и т.п.) query-параметры в URL не
+ * сохранились: без этого фильтры выглядели "сброшенными", хотя пользователь
+ * их не трогал.
+ */
+function saveStateToStorage(params) {
+    try {
+        window.sessionStorage.setItem(FILTERS_STORAGE_KEY, params.toString());
+    } catch {
+        // sessionStorage может быть недоступен (приватный режим и т.п.) — не критично.
+    }
+}
+
+function loadStateFromStorage() {
+    try {
+        return window.sessionStorage.getItem(FILTERS_STORAGE_KEY);
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Восстанавливает состояние из query-параметров URL, чтобы ссылка на
+ * отфильтрованный каталог была рабочей. Если в URL вообще нет query-строки
+ * (например, вернулись на каталог без сохранившихся параметров) — состояние
+ * восстанавливается из sessionStorage (см. saveStateToStorage()).
+ */
 function readStateFromUrl() {
-    const params = new URLSearchParams(window.location.search);
+    const queryString = window.location.search !== '' ? window.location.search.slice(1) : loadStateFromStorage() ?? '';
+    const params = new URLSearchParams(queryString);
 
     filters.name = params.get('filters[name]') ?? '';
-    filters.genre = params.get('filters[genre]') ?? '';
-    filters.platform = params.get('filters[platform]') ?? '';
+    filters.genres = params.getAll('filters[genre][]');
     filters.yearFrom = params.get('filters[releaseYearFrom]') ?? '';
     filters.yearTo = params.get('filters[releaseYearTo]') ?? '';
+    filters.onlyFree = params.get('filters[onlyFree]') === '1';
+    filters.unavailableInRussia = params.get('filters[unavailableInRussia]') === '1';
 
     const sortBy = params.get('sortBy');
     const sortDir = params.get('sortDir');
@@ -364,11 +568,10 @@ async function loadFilterOptions() {
 
         const data = await response.json();
         filterOptions.genres = data.genres;
-        filterOptions.platforms = data.platforms;
         filterOptions.releaseYearMin = data.releaseYearMin;
         filterOptions.releaseYearMax = data.releaseYearMax;
     } catch {
-        // Справочники фильтров не критичны для работы каталога — молча оставляем селекты пустыми.
+        // Справочники фильтров не критичны для работы каталога — молча оставляем список жанров пустым.
     }
 }
 
@@ -378,9 +581,12 @@ onMounted(() => {
     loadPage(initialPage);
 
     compactMediaQuery?.addEventListener('change', updateIsCompactPagination);
+    document.addEventListener('click', handleDocumentClick);
 });
 
 onUnmounted(() => {
+    clearTimeout(nameInputTimer);
     compactMediaQuery?.removeEventListener('change', updateIsCompactPagination);
+    document.removeEventListener('click', handleDocumentClick);
 });
 </script>

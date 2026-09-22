@@ -85,6 +85,16 @@ class Game implements HasSteamDetailsInterface
     #[ORM\Column]
     private bool $isFree = false;
 
+    /**
+     * Доступна ли игра в Steam для региона RU (денормализовано из последнего
+     * снимка цены — App\Service\Steam\PriceImportService, аналогично
+     * SteamGame::availableInRussia). В отличие от isFree — не одноразовая
+     * метка: обновляется в обе стороны, т.к. регион-лок может как
+     * появиться, так и снова исчезнуть.
+     */
+    #[ORM\Column]
+    private bool $isAvailableInRussia = true;
+
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $createdAt;
 
@@ -343,6 +353,20 @@ class Game implements HasSteamDetailsInterface
     {
         $this->isFree = true;
         $this->touch();
+
+        return $this;
+    }
+
+    /** Доступна ли игра в Steam для региона RU (см. PriceImportService). */
+    public function isAvailableInRussia(): bool
+    {
+        return $this->isAvailableInRussia;
+    }
+
+    /** Задаёт доступность игры в Steam для региона RU — обновляется в обе стороны. */
+    public function setAvailableInRussia(bool $isAvailableInRussia): static
+    {
+        $this->isAvailableInRussia = $isAvailableInRussia;
 
         return $this;
     }
