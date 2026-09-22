@@ -54,7 +54,7 @@ describe('Cabinet/Profile — шапка', () => {
         expect(global.fetch).toHaveBeenNthCalledWith(2, '/api/profile/player1/favorites');
         expect(global.fetch).toHaveBeenNthCalledWith(3, '/api/profile/player1/games?status=in_progress');
         expect(wrapper.get('.profile-header__nickname').text()).toBe('player1');
-        expect(wrapper.text()).toContain('Здесь скоро появится ваш девиз');
+        expect(wrapper.text()).toContain('Любимые миры, новые истории и свой стиль игры.');
     });
 
     it('без аватара показывает инициал ника', async () => {

@@ -1,8 +1,10 @@
 <template>
-    <div class="page-header">
-        <h1>Наши игры</h1>
-        <p v-if="!loading && !error">Игры, которые мы разрабатываем сами</p>
-    </div>
+    <header class="street-page-heading street-page-heading--studio">
+        <p class="street-eyebrow">RETROGAME ORIGINALS / СДЕЛАНО НАМИ</p>
+        <h1>Наши игры<span class="street-heading-mark" aria-hidden="true">✳</span></h1>
+        <p>Игры, которые мы разрабатываем сами. Пробуй, исследуй, делись впечатлениями.</p>
+        <span class="street-page-sticker" aria-hidden="true">MADE TO PLAY</span>
+    </header>
 
     <div v-if="loading" class="empty-state">
         <div class="empty-state__icon">⏳</div>
@@ -31,6 +33,7 @@
             <div v-else class="game-card__cover game-card__cover--placeholder">🚀</div>
 
             <div class="game-card__body">
+                <span class="street-card-label">RETROGAME ORIGINAL <span aria-hidden="true">↗</span></span>
                 <h2 class="game-card__title">{{ game.name }}</h2>
 
                 <div class="game-card__meta">

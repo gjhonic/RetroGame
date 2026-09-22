@@ -16,8 +16,9 @@
                 <div v-else class="avatar-upload__placeholder">{{ initial }}</div>
             </div>
             <div class="profile-header__info">
+                <p class="street-eyebrow">PLAYER PROFILE / В ИГРЕ</p>
                 <h1 class="profile-header__nickname">{{ user.nickname }}</h1>
-                <p class="profile-header__phrase">Здесь скоро появится ваш девиз — пока просто заглушка.</p>
+                <p class="profile-header__phrase">Любимые миры, новые истории и свой стиль игры.</p>
 
                 <div class="profile-header__follow">
                     <button type="button" class="profile-header__followers" @click="followers.open">

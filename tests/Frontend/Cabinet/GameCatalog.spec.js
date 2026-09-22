@@ -57,7 +57,7 @@ describe('Cabinet/GameCatalog', () => {
 
         expect(fetchCallParams(1).toString()).toBe('');
         expect(wrapper.text()).toContain('Half-Life');
-        expect(wrapper.text()).toContain('1 игра в базе');
+        expect(wrapper.text()).toContain('1 игра / бесконечно историй');
         expect(wrapper.text()).toContain('169,2');
         expect(wrapper.text()).toContain('тыс.');
     });

@@ -10,6 +10,7 @@
     </div>
 
     <div v-else class="our-game-detail">
+        <div class="street-detail-kicker">RETROGAME ORIGINAL</div>
         <div class="our-game-detail__banner">
             <img v-if="bannerUrl" :src="bannerUrl" :alt="game.name">
             <div v-else class="our-game-detail__banner our-game-detail__banner--placeholder">🚀</div>

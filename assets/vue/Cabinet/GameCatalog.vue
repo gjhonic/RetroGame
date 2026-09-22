@@ -1,7 +1,7 @@
 <template>
-    <div class="page-header">
-        <h1>Каталог игр</h1>
-        <p v-if="!loading && !error">{{ total }} {{ gamesWord }} в базе</p>
+    <div id="street-catalog" class="street-section-heading">
+        <h1>ВЫБИРАЙ СВОЁ<span>↙</span></h1>
+        <p v-if="!loading && !error">{{ total }} {{ gamesWord }} / бесконечно историй</p>
     </div>
 
     <div class="filters-panel">
@@ -156,6 +156,7 @@
                 <div v-else class="game-card__cover game-card__cover--placeholder">🎮</div>
 
                 <div class="game-card__body">
+                    <span class="street-card-label">{{ game.releaseYear || 'PLAY' }} <span>↗</span></span>
                     <h2 class="game-card__title">{{ game.name }}</h2>
 
                     <p v-if="game.description" class="game-card__description">{{ game.description }}</p>

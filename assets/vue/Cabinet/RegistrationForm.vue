@@ -6,7 +6,9 @@
     </template>
 
     <template v-else>
+        <p class="street-eyebrow">JOIN THE CLUB / ЗАЛЕТАЙ</p>
         <h1 class="auth-card__title">Регистрация</h1>
+        <p class="auth-card__subtitle">Создай профиль. Найди своих.</p>
 
         <p v-if="conflictError" class="alert alert--error">{{ conflictError }}</p>
         <p v-if="genericError" class="alert alert--error">{{ genericError }}</p>

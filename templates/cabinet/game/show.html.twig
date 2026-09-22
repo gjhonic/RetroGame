@@ -4,12 +4,16 @@
 
 {% block stylesheets %}
     {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/styles/public/game-index.css') }}">
     <link rel="stylesheet" href="{{ asset('build/styles/public/game-show.css') }}">
     <link rel="stylesheet" href="{{ asset('build/styles/cabinet/game-detail.css') }}">
 {% endblock %}
 
 {% block body %}
-    <a href="{{ path('app_game_index') }}" class="back-link">← Назад в каталог</a>
+    <div class="street-detail-nav">
+        <a href="{{ path('app_game_index') }}" class="back-link">↖ Все игры</a>
+        <span>НАЙДИ. ИГРАЙ. ОБСУЖДАЙ.</span>
+    </div>
 
     <div {{ vue_component('Cabinet/GameDetail', { slug: slug, isAuthenticated: is_granted('ROLE_USER') }) }}></div>
 {% endblock %}

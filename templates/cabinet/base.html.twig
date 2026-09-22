@@ -13,6 +13,8 @@
             <link rel="stylesheet" href="{{ asset('build/styles/cabinet/base.css') }}">
         {% endblock %}
 
+        <link rel="stylesheet" href="{{ asset('build/styles/public/street-play.css') }}">
+
         {% block javascripts %}
             {{ reprise_entry_script_tags('app') }}
         {% endblock %}
@@ -25,10 +27,10 @@
             </div>
         </header>
 
-        <input type="checkbox" id="cabinet-menu-toggle" class="cabinet-menu-toggle-checkbox">
+        <input type="checkbox" id="cabinet-menu-toggle" class="cabinet-menu-toggle-checkbox" aria-label="Открыть или закрыть меню" aria-controls="cabinet-sidebar">
 
         <div class="container cabinet-layout">
-            <aside class="cabinet-sidebar">
+            <aside id="cabinet-sidebar" class="cabinet-sidebar">
                 {% if is_granted('ROLE_USER') %}
                     <div class="cabinet-profile">
                         {% if app.user.avatarUrl %}
