@@ -104,6 +104,7 @@ class GameImportServiceTest extends TestCase
             'short_description' => 'A sci-fi shooter',
             'header_image' => 'https://example.test/header.jpg',
             'metacritic' => ['score' => 96],
+            'recommendations' => ['total' => 20],
         ]);
 
         $persisted = [];
@@ -349,7 +350,10 @@ class GameImportServiceTest extends TestCase
         $this->slugger->method('slug')->willReturn(new UnicodeString('portal'));
         $this->gameRepository->method('findOneBy')
             ->willReturn(new Game('Portal (another edition)', 'portal'));
-        $this->steamClient->method('fetchAppDetails')->willReturn(['name' => 'Portal']);
+        $this->steamClient->method('fetchAppDetails')->willReturn([
+            'name' => 'Portal',
+            'recommendations' => ['total' => 20],
+        ]);
 
         $result = $this->service->importNextBatch(5, 0, 1500);
 
@@ -366,7 +370,10 @@ class GameImportServiceTest extends TestCase
         $this->steamGameRepository->method('findOneBySteamAppId')->willReturn(null);
         $this->slugger->method('slug')->willReturn(new UnicodeString(''));
         $this->gameRepository->method('findOneBy')->willReturn(null);
-        $this->steamClient->method('fetchAppDetails')->willReturn(['name' => '???']);
+        $this->steamClient->method('fetchAppDetails')->willReturn([
+            'name' => '???',
+            'recommendations' => ['total' => 20],
+        ]);
 
         $result = $this->service->importNextBatch(5, 0, 1500);
 
@@ -386,6 +393,7 @@ class GameImportServiceTest extends TestCase
         $this->steamClient->method('fetchAppDetails')->willReturn([
             'name' => 'Half-Life',
             'header_image' => 'https://example.test/70/header.jpg',
+            'recommendations' => ['total' => 20],
         ]);
 
         $this->imageDownloader = $this->createMock(GameImageDownloader::class);
@@ -416,6 +424,7 @@ class GameImportServiceTest extends TestCase
         $this->steamClient->method('fetchAppDetails')->willReturn([
             'name' => 'No Cover Game',
             'header_image' => null,
+            'recommendations' => ['total' => 20],
         ]);
 
         $this->imageDownloader = $this->createMock(GameImageDownloader::class);
@@ -452,6 +461,7 @@ class GameImportServiceTest extends TestCase
                 ],
             ],
             'release_date' => ['coming_soon' => false, 'date' => '12 июл. 2010 г.'],
+            'recommendations' => ['total' => 20],
         ]);
 
         $result = $this->service->importNextBatch(5, 0, 1500);
@@ -475,7 +485,10 @@ class GameImportServiceTest extends TestCase
         $this->steamGameRepository->method('findOneBySteamAppId')->willReturn(null);
         $this->slugger->method('slug')->willReturn(new UnicodeString('minimal-game'));
         $this->gameRepository->method('findOneBy')->willReturn(null);
-        $this->steamClient->method('fetchAppDetails')->willReturn(['name' => 'Minimal Game']);
+        $this->steamClient->method('fetchAppDetails')->willReturn([
+            'name' => 'Minimal Game',
+            'recommendations' => ['total' => 20],
+        ]);
 
         $result = $this->service->importNextBatch(5, 0, 1500);
 
@@ -486,7 +499,7 @@ class GameImportServiceTest extends TestCase
         self::assertCount(0, $game->getPlatforms());
         self::assertNull($game->getScreenshotUrls());
         self::assertNull($game->getReleaseDate());
-        self::assertNull($game->getPopularity());
+        self::assertSame(20, $game->getPopularity());
     }
 
     public function testImportNextBatchExtractsPopularityFromRecommendationsTotal(): void
@@ -588,6 +601,7 @@ class GameImportServiceTest extends TestCase
         $this->steamClient->method('fetchAppDetails')->willReturn([
             'type' => 'game',
             'name' => 'Newly Imported Base',
+            'recommendations' => ['total' => 20],
         ]);
 
         $result = $this->service->importNextBatch(5, 0, 1500);
@@ -595,6 +609,74 @@ class GameImportServiceTest extends TestCase
         $game = self::requireGame($result->steamGames[0]->getGame());
         self::assertSame($game, $pendingDlc->getGame());
         self::assertNull($pendingDlc->getPendingBaseGameSteamAppId());
+    }
+
+    public function testImportNextBatchDoesNotCreateNewGameWhenRecommendationsBelowMinimum(): void
+    {
+        $this->steamGameRepository->method('findOneBySteamAppId')->willReturn(null);
+        $this->steamClient->method('fetchGameAppList')->willReturn([
+            'apps' => [['appid' => 904, 'name' => 'Obscure Asset Flip']],
+            'hasMore' => false,
+            'lastAppId' => 904,
+        ]);
+        $this->gameRepository->method('findOneBy')->willReturn(null);
+        $this->steamClient->method('fetchAppDetails')->willReturn([
+            'name' => 'Obscure Asset Flip',
+            'recommendations' => ['total' => 19],
+        ]);
+
+        $persisted = [];
+        $this->entityManager->method('persist')
+            ->willReturnCallback(function (object $entity) use (&$persisted): void {
+                $persisted[] = $entity;
+            });
+
+        $result = $this->service->importNextBatch(5, 0, 1500);
+
+        $steamGame = $result->steamGames[0];
+        self::assertSame(SteamGameStatus::Success, $steamGame->getStatus());
+        self::assertNull($steamGame->getGame());
+        self::assertCount(1, $persisted);
+        self::assertInstanceOf(SteamGame::class, $persisted[0]);
+    }
+
+    public function testImportNextBatchDoesNotCreateNewGameWhenRecommendationsAreAbsent(): void
+    {
+        $this->steamGameRepository->method('findOneBySteamAppId')->willReturn(null);
+        $this->steamClient->method('fetchGameAppList')->willReturn([
+            'apps' => [['appid' => 905, 'name' => 'No Reviews Yet']],
+            'hasMore' => false,
+            'lastAppId' => 905,
+        ]);
+        $this->gameRepository->method('findOneBy')->willReturn(null);
+        $this->steamClient->method('fetchAppDetails')->willReturn(['name' => 'No Reviews Yet']);
+
+        $result = $this->service->importNextBatch(5, 0, 1500);
+
+        self::assertNull($result->steamGames[0]->getGame());
+    }
+
+    public function testImportNextBatchStillUpdatesExistingGameWhenRecommendationsDropBelowMinimum(): void
+    {
+        $existingGame = new Game('Already Imported', 'already-imported');
+        $existingSteamGame = new SteamGame(906);
+        $existingSteamGame->setGame($existingGame);
+
+        $this->steamGameRepository->method('findOneBySteamAppId')->willReturn($existingSteamGame);
+        $this->steamClient->method('fetchGameAppList')->willReturn([
+            'apps' => [['appid' => 906, 'name' => 'Already Imported']],
+            'hasMore' => false,
+            'lastAppId' => 906,
+        ]);
+        $this->steamClient->method('fetchAppDetails')->willReturn([
+            'name' => 'Already Imported, Now Updated',
+            'recommendations' => ['total' => 5],
+        ]);
+
+        $result = $this->service->importNextBatch(5, 0, 1500);
+
+        self::assertSame($existingGame, $result->steamGames[0]->getGame());
+        self::assertSame('Already Imported, Now Updated', $existingGame->getName());
     }
 
     public function testImportNextBatchDoesNotCreateGameOrDlcForOtherTypes(): void

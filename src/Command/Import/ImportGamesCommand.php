@@ -137,7 +137,7 @@ class ImportGamesCommand extends Command
         }
 
         $io->writeln(sprintf(
-            '<comment>— appid %d: не игра и не DLC, пропущено</comment>',
+            '<comment>— appid %d: не игра/DLC или мало отзывов в Steam, пропущено</comment>',
             $steamGame->getSteamAppId(),
         ));
     }

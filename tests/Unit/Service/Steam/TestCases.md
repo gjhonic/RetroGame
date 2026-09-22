@@ -43,6 +43,9 @@
 | `type=dlc`, базовая игра ещё не импортирована: `Dlc.game` остаётся `null`, appid сохраняется в `pendingBaseGameSteamAppId` | `testImportNextBatchStoresDlcAsPendingWhenBaseGameNotImportedYet` |
 | Базовая игра импортирована после ранее сохранённого "ожидающего" DLC: `Dlc` доотвязывается автоматически | `testImportNextBatchRelinksPendingDlcsWhenBaseGameIsImported` |
 | `type` не `game`/`dlc` (например `movie`): ни `Game`, ни `Dlc` не создаются, персистится только `SteamGame` | `testImportNextBatchDoesNotCreateGameOrDlcForOtherTypes` |
+| Новая игра с `recommendations.total` ниже минимума (19 < 20): `Game` не создаётся, персистится только `SteamGame` со статусом `success` | `testImportNextBatchDoesNotCreateNewGameWhenRecommendationsBelowMinimum` |
+| Новая игра без поля `recommendations` в ответе Steam: расценивается как 0 отзывов, `Game` не создаётся | `testImportNextBatchDoesNotCreateNewGameWhenRecommendationsAreAbsent` |
+| Игра уже была импортирована ранее, но при повторном запуске `recommendations.total` ниже минимума: существующая `Game` всё равно обновляется (порог отсекает только создание новых игр) | `testImportNextBatchStillUpdatesExistingGameWhenRecommendationsDropBelowMinimum` |
 
 ## ImportResultTest.php
 
