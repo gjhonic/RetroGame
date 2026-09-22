@@ -24,8 +24,16 @@
     {% endif %}
 
     <div class="container auth-page">
+        <section class="street-auth-intro">
+            <p class="street-eyebrow">RETROGAME / МЕСТО ВСТРЕЧ ГЕЙМЕРОВ</p>
+            <h2>СВОИ ИГРЫ.<br><span>СВОИ ЛЮДИ.</span></h2>
+            <p>Собирай любимые игры, отмечай пройденное<br>и делись тем, что зацепило.</p>
+            <span class="street-auth-sticker" aria-hidden="true">PRESS START ↗</span>
+        </section>
         <div class="auth-card">
+            <p class="street-eyebrow">WELCOME BACK / СНОВА В ИГРЕ</p>
             <h1 class="auth-card__title">Вход</h1>
+            <p class="auth-card__subtitle">Твой следующий уровень начинается здесь.</p>
 
             {% if error %}
                 <p class="alert alert--error">{{ error.messageKey|trans(error.messageData, 'security') }}</p>

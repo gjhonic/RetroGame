@@ -37,6 +37,10 @@ class PlatiGame
     #[ORM\Column(length: 255)]
     private string $sellerName;
 
+    /** Название товара, как оно указано у продавца на plati.market (поле name/name_eng в ответе Digiseller) — может отличаться от Game::name. */
+    #[ORM\Column(length: 500)]
+    private string $platiName;
+
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $createdAt;
 
@@ -44,11 +48,12 @@ class PlatiGame
     private \DateTimeImmutable $updatedAt;
 
     /** Создаёт запись о найденном на plati.market товаре одного продавца. */
-    public function __construct(Game $game, string $url, string $sellerName)
+    public function __construct(Game $game, string $url, string $sellerName, string $platiName)
     {
         $this->game = $game;
         $this->url = $url;
         $this->sellerName = $sellerName;
+        $this->platiName = $platiName;
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
     }
@@ -90,6 +95,21 @@ class PlatiGame
     public function setSellerName(string $sellerName): static
     {
         $this->sellerName = $sellerName;
+        $this->updatedAt = new \DateTimeImmutable();
+
+        return $this;
+    }
+
+    /** Возвращает название товара, как оно указано у продавца на plati.market. */
+    public function getPlatiName(): string
+    {
+        return $this->platiName;
+    }
+
+    /** Обновляет название товара (например, если продавец изменил заголовок объявления). */
+    public function setPlatiName(string $platiName): static
+    {
+        $this->platiName = $platiName;
         $this->updatedAt = new \DateTimeImmutable();
 
         return $this;

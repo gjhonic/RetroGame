@@ -10,6 +10,7 @@ const samplePlatiGame = {
     gameCoverImageUrl: '/uploads/games/1.jpg',
     url: 'https://plati.market/itm/half-life',
     sellerName: 'DarkAwe',
+    platiName: 'Half-Life STEAM Gift',
     createdAt: '2024-01-01 12:00:00',
     updatedAt: '2024-01-01 12:00:00',
 };
@@ -78,6 +79,12 @@ describe('PlatiGameList — загрузка', () => {
 
         expect(link.attributes('target')).toBe('_blank');
     });
+
+    it('показывает название товара на plati.market', async () => {
+        const wrapper = await mountList();
+
+        expect(wrapper.text()).toContain('Half-Life STEAM Gift');
+    });
 });
 
 describe('PlatiGameList — фильтры по колонкам', () => {
@@ -94,6 +101,19 @@ describe('PlatiGameList — фильтры по колонкам', () => {
         expect(fetchCallParams(1).get('filters[game]')).toBe('Half-Life');
         expect(fetchCallParams(1).get('page')).toBe('1');
     });
+
+    it('отправляет запрос с фильтром по названию товара по клику на «Применить»', async () => {
+        const wrapper = await mountList();
+        mockFetchOnce(onePageResponse());
+
+        const platiNameTh = wrapper.get('th:nth-child(2)');
+        await platiNameTh.get('input[placeholder="Значение…"]').setValue('Steam Gift');
+        await platiNameTh.get('button.btn-primary').trigger('click');
+        await flushPromises();
+
+        expect(global.fetch).toHaveBeenCalledTimes(2);
+        expect(fetchCallParams(1).get('filters[platiName]')).toBe('Steam Gift');
+    });
 });
 
 describe('PlatiGameList — сортировка', () => {
@@ -101,7 +121,7 @@ describe('PlatiGameList — сортировка', () => {
         const wrapper = await mountList();
         mockFetchOnce(onePageResponse());
 
-        const createdAtHeader = wrapper.get('th:nth-child(4) span[role="button"]');
+        const createdAtHeader = wrapper.get('th:nth-child(5) span[role="button"]');
         await createdAtHeader.trigger('click');
         await flushPromises();
 

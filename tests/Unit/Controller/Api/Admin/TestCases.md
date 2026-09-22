@@ -98,9 +98,15 @@
 | `POST /{id}/import-price` с несуществующей игрой → `NotFoundHttpException` | `testImportPriceThrowsNotFoundExceptionForUnknownGame` |
 | `POST /{id}/import-price` для игры без привязки к Steam (`findOneByGame` → `null`) → `NotFoundHttpException`, `PriceImportService` не вызывается | `testImportPriceThrowsNotFoundExceptionWhenGameNotLinkedToSteam` |
 | `POST /{id}/import-price` — `PriceImportService` вернул `null` (сетевая ошибка Steam) → `502` с текстом ошибки | `testImportPriceReturnsBadGatewayWhenSteamRequestFails` |
-| `GET /{id}/price-history` — история по датам как из репозитория, каждый элемент со `store`/`storeUrl` | `testPriceHistoryReturnsOrderedItemsWithStoreLink` |
-| `GET /{id}/price-history` — истории ещё нет: `items: []` | `testPriceHistoryReturnsEmptyItemsWhenNoHistory` |
+| `GET /{id}` — привязанные `SteamGame`/`PlatiGame[]` (ссылки на связанные записи в админке) | `testShowIncludesLinkedSteamGameAndPlatiGames` |
+| `GET /{id}/price-history` — история по Steam и по каждому продавцу plati.market (тот же формат, что у публичного API) | `testPriceHistoryReturnsSteamAndPlatiHistory` |
+| `GET /{id}/price-history` — истории ещё нет: пустая история/`plati: []` | `testPriceHistoryReturnsEmptyHistoryWhenNoData` |
 | `GET /{id}/price-history` с несуществующей игрой → `NotFoundHttpException` | `testPriceHistoryThrowsNotFoundExceptionForUnknownGame` |
+| `POST /{id}/import-plati` — ручной импорт предложений plati.market по игре: `200` с `found`/`message`/актуальным списком продавцов | `testImportPlatiReturnsUpdatedSellersListOnSuccess` |
+| `POST /{id}/import-plati` — совпадений не найдено: `found: false`, причина из `PlatiCheckResult::reason` | `testImportPlatiReturnsNotFoundReasonWhenNoMatches` |
+| `POST /{id}/import-plati` с несуществующей игрой → `NotFoundHttpException`, сервис импорта не вызывается | `testImportPlatiThrowsNotFoundExceptionForUnknownGame` |
+| `POST /{id}/import-plati-prices` — импорт цен у всех продавцов игры: `200` с `importedCount`/`skippedCount` | `testImportPlatiPricesReturnsImportedAndSkippedCounts` |
+| `POST /{id}/import-plati-prices` с несуществующей игрой → `NotFoundHttpException`, сервис импорта не вызывается | `testImportPlatiPricesThrowsNotFoundExceptionForUnknownGame` |
 
 ## SteamGameApiControllerTest.php
 
@@ -121,8 +127,11 @@
 | `filters[...]`/`sortBy`/`sortDir`/`perPage` из query передаются в репозиторий (значения фильтров триммятся, неизвестные ключи фильтров отбрасываются) | `testListPassesFiltersAndSortingToRepository` |
 | Неизвестный `sortBy` → сортировка по `createdAt`; `perPage` вне диапазона клампится до максимума | `testListFallsBackToCreatedAtSortingForUnknownSortByAndClampsPerPage` |
 | Запрошенная страница выходит за `totalPages`: значение клампится до последней доступной | `testListClampsRequestedPageToTotalPages` |
-| Детали записи по `id`: ссылка на игру (`gameId`/`gameName`/`gameSlug`) и `url` возвращаются как есть | `testShowReturnsFullDetailWithGameLink` |
+| Детали записи по `id`: ссылка на игру (`gameId`/`gameName`/`gameSlug`), `url`/`platiName` возвращаются как есть | `testShowReturnsFullDetailWithGameLink` |
 | Несуществующий `id` → `NotFoundHttpException` | `testShowThrowsNotFoundExceptionForUnknownId` |
+| Фильтр `filters[platiName]` и сортировка по `platiName` передаются в репозиторий | `testListPassesPlatiNameFilterAndSortsByIt` |
+| `DELETE /{id}` — запись удаляется (`EntityManager::remove/flush`), `204` без тела; история цены (`PlatiGamePrice`) чистится каскадно на уровне БД (`ON DELETE CASCADE`) | `testDeleteRemovesPlatiGameAndReturns204` |
+| `DELETE /{id}` с несуществующей записью → `NotFoundHttpException`, `remove()` не вызывается | `testDeleteThrowsNotFoundExceptionForUnknownId` |
 
 ## UserApiControllerTest.php
 

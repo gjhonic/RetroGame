@@ -15,8 +15,10 @@ const sampleGame = {
 };
 
 const sampleFilterOptions = {
-    genres: [{ id: 1, name: 'Экшены' }],
-    platforms: [{ id: 2, name: 'Windows' }],
+    genres: [
+        { id: 1, name: 'Экшены' },
+        { id: 2, name: 'РПГ' },
+    ],
     releaseYearMin: 1998,
     releaseYearMax: 2024,
 };
@@ -40,10 +42,12 @@ function mountCatalog(gamesResponse = pageResponse()) {
 beforeEach(() => {
     installFetchMock();
     window.history.pushState(null, '', '/games');
+    window.sessionStorage.clear();
 });
 
 afterEach(() => {
     window.history.pushState(null, '', '/games');
+    window.sessionStorage.clear();
 });
 
 describe('Cabinet/GameCatalog', () => {
@@ -53,7 +57,7 @@ describe('Cabinet/GameCatalog', () => {
 
         expect(fetchCallParams(1).toString()).toBe('');
         expect(wrapper.text()).toContain('Half-Life');
-        expect(wrapper.text()).toContain('1 игра в базе');
+        expect(wrapper.text()).toContain('1 игра / бесконечно историй');
         expect(wrapper.text()).toContain('169,2');
         expect(wrapper.text()).toContain('тыс.');
     });
@@ -159,26 +163,6 @@ describe('Cabinet/GameCatalog', () => {
         expect(fetchCallParams(2).get('page')).toBe('5');
     });
 
-    it('заполняет селекты жанров/платформ из /api/games/filters', async () => {
-        const wrapper = mountCatalog();
-        await flushPromises();
-
-        expect(wrapper.find('.toolbar-select option[value="1"]').text()).toBe('Экшены');
-        expect(wrapper.find('.toolbar-select option[value="2"]').text()).toBe('Windows');
-    });
-
-    it('применяет фильтр по жанру и сбрасывает страницу на первую', async () => {
-        const wrapper = mountCatalog();
-        await flushPromises();
-
-        mockFetchOnce(pageResponse());
-        await wrapper.find('.toolbar-select').setValue('1');
-        await flushPromises();
-
-        expect(fetchCallParams(2).get('filters[genre]')).toBe('1');
-        expect(window.location.search).toContain('filters%5Bgenre%5D=1');
-    });
-
     it('дебаунсит поиск по названию', async () => {
         vi.useFakeTimers();
         const wrapper = mountCatalog();
@@ -193,15 +177,119 @@ describe('Cabinet/GameCatalog', () => {
         vi.useRealTimers();
     });
 
-    it('кнопка "Сбросить" появляется при активных фильтрах и очищает их', async () => {
+    it('открывает дропдаун жанров и показывает чекбоксы из /api/games/filters', async () => {
+        const wrapper = mountCatalog();
+        await flushPromises();
+
+        expect(wrapper.find('.dropdown-filter__toggle--genre').text()).toBe('Все жанры');
+        expect(wrapper.find('.dropdown-filter__panel').exists()).toBe(false);
+
+        await wrapper.find('.dropdown-filter__toggle--genre').trigger('click');
+
+        const labels = wrapper.findAll('.dropdown-filter__panel .dropdown-filter__option span');
+        expect(labels.map((l) => l.text())).toEqual(['Экшены', 'РПГ']);
+    });
+
+    it('выбор одного жанра применяет фильтр, сбрасывает страницу и меняет подпись кнопки', async () => {
+        const wrapper = mountCatalog();
+        await flushPromises();
+
+        await wrapper.find('.dropdown-filter__toggle--genre').trigger('click');
+        mockFetchOnce(pageResponse());
+        await wrapper.find('.dropdown-filter__panel input[type="checkbox"][value="1"]').setValue(true);
+        await flushPromises();
+
+        expect(fetchCallParams(2).getAll('filters[genre][]')).toEqual(['1']);
+        expect(wrapper.find('.dropdown-filter__toggle--genre').text()).toBe('Экшены');
+    });
+
+    it('выбор нескольких жанров передаёт несколько filters[genre][] и подпись со счётчиком', async () => {
+        const wrapper = mountCatalog();
+        await flushPromises();
+
+        await wrapper.find('.dropdown-filter__toggle--genre').trigger('click');
+        mockFetchOnce(pageResponse());
+        await wrapper.find('.dropdown-filter__panel input[type="checkbox"][value="1"]').setValue(true);
+        await flushPromises();
+
+        mockFetchOnce(pageResponse());
+        await wrapper.find('.dropdown-filter__panel input[type="checkbox"][value="2"]').setValue(true);
+        await flushPromises();
+
+        expect(fetchCallParams(3).getAll('filters[genre][]')).toEqual(['1', '2']);
+        expect(wrapper.find('.dropdown-filter__toggle--genre').text()).toBe('Жанры (2)');
+    });
+
+    it('дропдаун "Ещё фильтры": бесплатные и недоступные в РФ применяются как чекбоксы', async () => {
+        const wrapper = mountCatalog();
+        await flushPromises();
+
+        await wrapper.find('.dropdown-filter__toggle--extra').trigger('click');
+        const checkboxes = wrapper.findAll('.dropdown-filter__panel input[type="checkbox"]');
+
+        mockFetchOnce(pageResponse());
+        await checkboxes[0].setValue(true);
+        await flushPromises();
+
+        expect(fetchCallParams(2).get('filters[onlyFree]')).toBe('1');
+        expect(wrapper.find('.dropdown-filter__toggle--extra').text()).toContain('(1)');
+
+        mockFetchOnce(pageResponse());
+        await checkboxes[1].setValue(true);
+        await flushPromises();
+
+        expect(fetchCallParams(3).get('filters[unavailableInRussia]')).toBe('1');
+        expect(wrapper.find('.dropdown-filter__toggle--extra').text()).toContain('(2)');
+    });
+
+    it('передвижение ползунков года применяет filters[releaseYearFrom]/[releaseYearTo] по change', async () => {
+        const wrapper = mountCatalog();
+        await flushPromises();
+
+        const fromInput = wrapper.find('.year-filter__input--from');
+        const toInput = wrapper.find('.year-filter__input--to');
+
+        // setValue() сама триггерит и 'input', и 'change' (см. @vue/test-utils) — этого достаточно,
+        // чтобы применить фильтр (у нас @change="applyFilters"), доп. trigger('change') не нужен.
+        mockFetchOnce(pageResponse());
+        await fromInput.setValue(2005);
+        await flushPromises();
+
+        expect(fetchCallParams(2).get('filters[releaseYearFrom]')).toBe('2005');
+
+        mockFetchOnce(pageResponse());
+        await toInput.setValue(2010);
+        await flushPromises();
+
+        expect(fetchCallParams(3).get('filters[releaseYearTo]')).toBe('2010');
+    });
+
+    it('не даёт ползунку "от" уйти правее ползунка "до"', async () => {
+        const wrapper = mountCatalog();
+        await flushPromises();
+
+        const fromInput = wrapper.find('.year-filter__input--from');
+        const toInput = wrapper.find('.year-filter__input--to');
+
+        mockFetchOnce(pageResponse());
+        await toInput.setValue(2005);
+        await flushPromises();
+
+        mockFetchOnce(pageResponse());
+        await fromInput.setValue(2010);
+        await flushPromises();
+
+        expect(toInput.element.value).toBe('2010');
+    });
+
+    it('кнопка "Сбросить" появляется при активных фильтрах и очищает все фильтры', async () => {
         const wrapper = mountCatalog();
         await flushPromises();
 
         expect(wrapper.find('.toolbar-reset').exists()).toBe(false);
 
         mockFetchOnce(pageResponse());
-        const selects = wrapper.findAll('.toolbar-select');
-        await selects[2].setValue('metacriticScore_desc');
+        await wrapper.get('select.toolbar-select').setValue('metacriticScore_desc');
         await flushPromises();
 
         expect(wrapper.find('.toolbar-reset').exists()).toBe(true);
@@ -211,5 +299,41 @@ describe('Cabinet/GameCatalog', () => {
         await flushPromises();
 
         expect(fetchCallParams(3).toString()).toBe('');
+        expect(wrapper.find('.dropdown-filter__toggle--genre').text()).toBe('Все жанры');
+    });
+
+    it('сохраняет применённые фильтры в sessionStorage после успешной загрузки', async () => {
+        const wrapper = mountCatalog();
+        await flushPromises();
+
+        await wrapper.find('.dropdown-filter__toggle--genre').trigger('click');
+        mockFetchOnce(pageResponse());
+        await wrapper.find('.dropdown-filter__panel input[type="checkbox"][value="1"]').setValue(true);
+        await flushPromises();
+
+        expect(window.sessionStorage.getItem('gameCatalog.filters')).toBe('filters%5Bgenre%5D%5B%5D=1');
+    });
+
+    it('без query-параметров в URL восстанавливает фильтры из sessionStorage', async () => {
+        window.sessionStorage.setItem('gameCatalog.filters', 'filters%5Bgenre%5D%5B%5D=1&filters%5BonlyFree%5D=1');
+        window.history.pushState(null, '', '/games');
+
+        const wrapper = mountCatalog();
+        await flushPromises();
+
+        expect(fetchCallParams(1).getAll('filters[genre][]')).toEqual(['1']);
+        expect(fetchCallParams(1).get('filters[onlyFree]')).toBe('1');
+        expect(wrapper.find('.dropdown-filter__toggle--genre').text()).toBe('Экшены');
+    });
+
+    it('query-параметры в URL имеют приоритет над сохранённым в sessionStorage состоянием', async () => {
+        window.sessionStorage.setItem('gameCatalog.filters', 'filters%5BonlyFree%5D=1');
+        window.history.pushState(null, '', '/games?filters%5Bgenre%5D%5B%5D=2');
+
+        mountCatalog();
+        await flushPromises();
+
+        expect(fetchCallParams(1).getAll('filters[genre][]')).toEqual(['2']);
+        expect(fetchCallParams(1).get('filters[onlyFree]')).toBeNull();
     });
 });

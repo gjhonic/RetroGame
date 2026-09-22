@@ -83,6 +83,10 @@
                                     <span v-else>—</span>
                                 </template>
 
+                                <template v-else-if="cell.column.id === 'platiName'">
+                                    {{ row.original.platiName || '—' }}
+                                </template>
+
                                 <a
                                     v-else-if="cell.column.id === 'url'"
                                     :href="row.original.url"
@@ -138,6 +142,7 @@ import { useVueTable, getCoreRowModel } from '@tanstack/vue-table';
 
 const columnLabels = {
     gameName: 'Игра',
+    platiName: 'Название товара',
     url: 'Ссылка на plati.market',
     sellerName: 'Продавец',
     createdAt: 'Найдено',
@@ -148,6 +153,7 @@ const columnLabels = {
 // Ключ колонки на клиенте -> имя фильтра filters[<ключ>] на бэкенде.
 const filterParamNames = {
     gameName: 'game',
+    platiName: 'platiName',
     url: 'url',
     sellerName: 'sellerName',
 };
@@ -164,13 +170,14 @@ const total = ref(0);
 const totalPages = ref(1);
 const loading = ref(true);
 const error = ref(null);
-const filters = reactive({ gameName: '', url: '', sellerName: '' });
+const filters = reactive({ gameName: '', platiName: '', url: '', sellerName: '' });
 const sorting = ref([]);
 const pageIndex = ref(0);
 const pageSize = ref(25);
 
 const columns = [
     { id: 'gameName', accessorKey: 'gameName' },
+    { id: 'platiName', accessorKey: 'platiName' },
     { id: 'url', accessorKey: 'url', enableSorting: false },
     { id: 'sellerName', accessorKey: 'sellerName' },
     { id: 'createdAt', accessorKey: 'createdAt' },

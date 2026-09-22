@@ -7,6 +7,7 @@ use App\Entity\Game;
 use App\Entity\PlatiGame;
 use App\Repository\PlatiGameRepository;
 use App\Service\PlatiGame\PlatiGameMapper;
+use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -23,12 +24,14 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class PlatiGameApiControllerTest extends TestCase
 {
     private PlatiGameRepository&MockObject $platiGameRepository;
+    private EntityManagerInterface&MockObject $entityManager;
     private PlatiGameMapper $platiGameMapper;
     private PlatiGameApiController $controller;
 
     protected function setUp(): void
     {
         $this->platiGameRepository = $this->createMock(PlatiGameRepository::class);
+        $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->platiGameMapper = new PlatiGameMapper();
 
         $this->controller = new PlatiGameApiController();
@@ -41,7 +44,7 @@ class PlatiGameApiControllerTest extends TestCase
     {
         $game = (new Game('Half-Life', 'half-life'))->setCoverImagePath('uploads/games/1.jpg');
         (new \ReflectionProperty($game, 'id'))->setValue($game, 5);
-        $platiGame = new PlatiGame($game, 'https://plati.market/itm/half-life', 'DarkAwe');
+        $platiGame = new PlatiGame($game, 'https://plati.market/itm/half-life', 'DarkAwe', 'Half-Life STEAM Gift');
 
         $this->platiGameRepository->method('countForAdminList')->willReturn(1);
         $this->platiGameRepository->expects($this->once())
@@ -62,6 +65,7 @@ class PlatiGameApiControllerTest extends TestCase
             'gameCoverImageUrl' => '/uploads/games/1.jpg',
             'url' => 'https://plati.market/itm/half-life',
             'sellerName' => 'DarkAwe',
+            'platiName' => 'Half-Life STEAM Gift',
             'createdAt' => $platiGame->getCreatedAt()->format('Y-m-d H:i:s'),
             'updatedAt' => $platiGame->getUpdatedAt()->format('Y-m-d H:i:s'),
         ], $data['items'][0]);
@@ -80,6 +84,22 @@ class PlatiGameApiControllerTest extends TestCase
             'sortBy' => 'game',
             'sortDir' => 'asc',
             'perPage' => '10',
+        ]);
+        $this->controller->list($request, $this->platiGameRepository, $this->platiGameMapper);
+    }
+
+    public function testListPassesPlatiNameFilterAndSortsByIt(): void
+    {
+        $this->platiGameRepository->method('countForAdminList')->willReturn(0);
+        $this->platiGameRepository->expects($this->once())
+            ->method('findForAdminList')
+            ->with(['platiName' => 'steam gift'], 'platiName', 'ASC', 25, 0)
+            ->willReturn([]);
+
+        $request = new Request([
+            'filters' => ['platiName' => ' steam gift '],
+            'sortBy' => 'platiName',
+            'sortDir' => 'asc',
         ]);
         $this->controller->list($request, $this->platiGameRepository, $this->platiGameMapper);
     }
@@ -116,7 +136,7 @@ class PlatiGameApiControllerTest extends TestCase
     {
         $game = (new Game('Half-Life', 'half-life'))->setCoverImagePath('uploads/games/1.jpg');
         (new \ReflectionProperty($game, 'id'))->setValue($game, 5);
-        $platiGame = new PlatiGame($game, 'https://plati.market/itm/half-life', 'DarkAwe');
+        $platiGame = new PlatiGame($game, 'https://plati.market/itm/half-life', 'DarkAwe', 'Half-Life STEAM Gift');
 
         $this->platiGameRepository->expects($this->once())
             ->method('find')
@@ -131,6 +151,7 @@ class PlatiGameApiControllerTest extends TestCase
         self::assertSame('/uploads/games/1.jpg', $data['gameCoverImageUrl']);
         self::assertSame('https://plati.market/itm/half-life', $data['url']);
         self::assertSame('DarkAwe', $data['sellerName']);
+        self::assertSame('Half-Life STEAM Gift', $data['platiName']);
     }
 
     public function testShowThrowsNotFoundExceptionForUnknownId(): void
@@ -140,5 +161,29 @@ class PlatiGameApiControllerTest extends TestCase
         $this->expectException(NotFoundHttpException::class);
 
         $this->controller->show(999, $this->platiGameRepository, $this->platiGameMapper);
+    }
+
+    public function testDeleteRemovesPlatiGameAndReturns204(): void
+    {
+        $game = new Game('Half-Life', 'half-life');
+        $platiGame = new PlatiGame($game, 'https://plati.market/itm/half-life', 'DarkAwe', 'Half-Life STEAM Gift');
+
+        $this->platiGameRepository->expects($this->once())->method('find')->with(42)->willReturn($platiGame);
+        $this->entityManager->expects($this->once())->method('remove')->with($platiGame);
+        $this->entityManager->expects($this->once())->method('flush');
+
+        $response = $this->controller->delete(42, $this->platiGameRepository, $this->entityManager);
+
+        self::assertSame(204, $response->getStatusCode());
+    }
+
+    public function testDeleteThrowsNotFoundExceptionForUnknownId(): void
+    {
+        $this->platiGameRepository->method('find')->willReturn(null);
+        $this->entityManager->expects($this->never())->method('remove');
+
+        $this->expectException(NotFoundHttpException::class);
+
+        $this->controller->delete(999, $this->platiGameRepository, $this->entityManager);
     }
 }

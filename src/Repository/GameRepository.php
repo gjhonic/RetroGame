@@ -113,14 +113,16 @@ class GameRepository extends ServiceEntityRepository
     }
 
     /**
-     * Одна страница публичного каталога: поиск по названию, фильтры по жанру/
-     * платформе/диапазону года выхода и сортировка — всё на стороне БД. В
-     * отличие от findForAdminList() двухшаговый запрос по id не нужен: фильтр
-     * бьёт по одному конкретному жанру/платформе, а связь game-genre/
-     * game-platform для конкретной пары уникальна, так что join не даёт
-     * дублей строк и GROUP BY не требуется.
+     * Одна страница публичного каталога: поиск по названию, фильтры по жанрам
+     * (множественный выбор, пересечение — игра должна иметь ВСЕ выбранные
+     * жанры)/диапазону года выхода/бесплатности/доступности в РФ и сортировка —
+     * всё на стороне БД. Жанр — join + IN + HAVING (см. applyPublicFilters()),
+     * поэтому, в отличие от прежней версии с одним жанром, нужен двухшаговый
+     * запрос по id (как в findForAdminList()): join с несколькими жанрами
+     * даёт дублирующиеся строки Game, а LIMIT несовместим с одновременной
+     * группировкой по id на объектном запросе.
      *
-     * @param array<string, string> $filters
+     * @param array<string, mixed> $filters
      *
      * @return array<int, Game>
      */
@@ -131,28 +133,64 @@ class GameRepository extends ServiceEntityRepository
         int $limit,
         int $offset,
     ): array {
-        $qb = $this->createQueryBuilder('g');
-        $this->applyPublicFilters($qb, $filters);
-        $this->applyPublicSort($qb, $sortField, $sortDirection);
+        $ids = $this->findPublicCatalogIds($filters, $sortField, $sortDirection, $limit, $offset);
 
-        return $qb->addOrderBy('g.id', 'ASC')
-            ->setMaxResults($limit)
-            ->setFirstResult($offset)
+        if ($ids === []) {
+            return [];
+        }
+
+        $games = $this->createQueryBuilder('g')
+            ->where('g.id IN (:ids)')
+            ->setParameter('ids', $ids)
             ->getQuery()
             ->getResult();
+
+        $gamesById = [];
+        foreach ($games as $game) {
+            $gamesById[$game->getId()] = $game;
+        }
+
+        return array_map(static fn (int $id): Game => $gamesById[$id], $ids);
     }
 
     /**
      * Количество игр публичного каталога, подходящих под фильтры (для расчёта страниц).
+     * GROUP BY (а не COUNT(DISTINCT g.id)) — фильтр по нескольким жанрам считается
+     * через HAVING (см. applyPublicFilters()), а HAVING требует группировки.
      *
-     * @param array<string, string> $filters
+     * @param array<string, mixed> $filters
      */
     public function countForPublicCatalog(array $filters): int
     {
-        $qb = $this->createQueryBuilder('g')->select('COUNT(g.id)');
+        $qb = $this->createQueryBuilder('g')->select('g.id')->groupBy('g.id');
         $this->applyPublicFilters($qb, $filters);
 
-        return (int) $qb->getQuery()->getSingleScalarResult();
+        return \count($qb->getQuery()->getScalarResult());
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     *
+     * @return array<int, int>
+     */
+    private function findPublicCatalogIds(
+        array $filters,
+        string $sortField,
+        string $sortDirection,
+        int $limit,
+        int $offset,
+    ): array {
+        // GROUP BY (а не SELECT DISTINCT), чтобы можно было сортировать по
+        // полям g.*, не входящим в SELECT — см. findAdminListIds().
+        $qb = $this->createQueryBuilder('g')->select('g.id')->groupBy('g.id');
+        $this->applyPublicFilters($qb, $filters);
+        $this->applyPublicSort($qb, $sortField, $sortDirection);
+
+        $qb->addOrderBy('g.id', 'ASC')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset);
+
+        return array_column($qb->getQuery()->getScalarResult(), 'id');
     }
 
     /**
@@ -176,7 +214,7 @@ class GameRepository extends ServiceEntityRepository
     }
 
     /**
-     * @param array<string, string> $filters
+     * @param array<string, mixed> $filters
      */
     private function applyPublicFilters(QueryBuilder $qb, array $filters): void
     {
@@ -189,16 +227,16 @@ class GameRepository extends ServiceEntityRepository
                 ->setParameter('filterName', '%' . $filters['name'] . '%');
         }
 
-        if (($filters['genre'] ?? '') !== '' && ctype_digit($filters['genre'])) {
+        $genreIds = $filters['genre'] ?? [];
+        if (\is_array($genreIds) && $genreIds !== []) {
+            // Пересечение, а не объединение: игра должна иметь ВСЕ выбранные
+            // жанры, а не хотя бы один — отсюда HAVING по числу совпавших
+            // жанров, а не просто IN() (который дал бы "любой из").
             $qb->join('g.genres', 'filterGenres')
-                ->andWhere('filterGenres.id = :filterGenre')
-                ->setParameter('filterGenre', (int) $filters['genre']);
-        }
-
-        if (($filters['platform'] ?? '') !== '' && ctype_digit($filters['platform'])) {
-            $qb->join('g.platforms', 'filterPlatforms')
-                ->andWhere('filterPlatforms.id = :filterPlatform')
-                ->setParameter('filterPlatform', (int) $filters['platform']);
+                ->andWhere('filterGenres.id IN (:filterGenreIds)')
+                ->andHaving('COUNT(DISTINCT filterGenres.id) = :filterGenreCount')
+                ->setParameter('filterGenreIds', $genreIds)
+                ->setParameter('filterGenreCount', \count($genreIds));
         }
 
         if (($filters['releaseYearFrom'] ?? '') !== '' && ctype_digit($filters['releaseYearFrom'])) {
@@ -213,6 +251,14 @@ class GameRepository extends ServiceEntityRepository
                 'filterReleaseYearTo',
                 new \DateTimeImmutable(((int) $filters['releaseYearTo'] + 1) . '-01-01'),
             );
+        }
+
+        if (($filters['onlyFree'] ?? false) === true) {
+            $qb->andWhere('g.isFree = true');
+        }
+
+        if (($filters['unavailableInRussia'] ?? false) === true) {
+            $qb->andWhere('g.isAvailableInRussia = false');
         }
     }
 

@@ -130,6 +130,41 @@ class GameImportServiceTest extends TestCase
         self::assertSame('DarkAwe', $result->results[0]->platiGames[0]->getSellerName());
     }
 
+    public function testImportNextBatchStoresPlatiNameFromMatchedItemName(): void
+    {
+        $game = self::makeGame(1, 'Rust', 100);
+        $this->platiGameRepository->method('findGamesPendingCheck')->willReturn([$game]);
+
+        $this->platiClient->method('search')->willReturn([
+            self::item('RUST (STEAM GIFT RU/CIS)', 'https://plati.market/itm/1', 300),
+        ]);
+
+        $result = $this->service->importNextBatch(20, 500);
+
+        self::assertSame('RUST (STEAM GIFT RU/CIS)', $result->results[0]->platiGames[0]->getPlatiName());
+    }
+
+    public function testImportNextBatchFallsBackToNameEngForPlatiNameWhenNameIsEmpty(): void
+    {
+        $game = self::makeGame(1, 'Rust', 100);
+        $this->platiGameRepository->method('findGamesPendingCheck')->willReturn([$game]);
+
+        $this->platiClient->method('search')->willReturn([
+            new PlatiSearchItem(
+                id: '1',
+                name: '',
+                nameEng: 'Rust Steam Gift',
+                url: 'https://plati.market/itm/1',
+                cntSell: 300,
+                sellerName: 'Seller',
+            ),
+        ]);
+
+        $result = $this->service->importNextBatch(20, 500);
+
+        self::assertSame('Rust Steam Gift', $result->results[0]->platiGames[0]->getPlatiName());
+    }
+
     public function testImportNextBatchImportsSingleSellerWhenOnlyOneMatchFound(): void
     {
         $game = self::makeGame(1, 'Rust', 100);
@@ -222,7 +257,7 @@ class GameImportServiceTest extends TestCase
     public function testImportNextBatchUpdatesExistingPlatiGameByUrlInsteadOfCreatingNew(): void
     {
         $game = self::makeGame(1, 'Half-Life', 100);
-        $existing = new PlatiGame($game, 'https://plati.market/itm/1', 'Old Seller Name');
+        $existing = new PlatiGame($game, 'https://plati.market/itm/1', 'Old Seller Name', 'Old Title');
 
         // Отдельный мок вместо переопределения findOneByGameAndUrl на общем —
         // у общего уже есть стаб "null" из setUp(), а PHPUnit при повторном
@@ -245,6 +280,7 @@ class GameImportServiceTest extends TestCase
 
         self::assertSame($existing, $result->results[0]->platiGames[0]);
         self::assertSame('New Seller Name', $existing->getSellerName());
+        self::assertSame('Half-Life Steam Gift', $existing->getPlatiName());
     }
 
     public function testImportNextBatchDelaysBetweenItemsButNotAfterTheLastOne(): void
@@ -339,5 +375,48 @@ class GameImportServiceTest extends TestCase
 
         self::assertSame(0, $result->checkedCount());
         self::assertFalse($result->wrapped);
+    }
+
+    public function testImportForGameSavesUpToTenSellersInsteadOfThree(): void
+    {
+        $game = self::makeGame(1, 'Half-Life', 100);
+
+        $items = [];
+        for ($i = 1; $i <= 12; ++$i) {
+            $items[] = self::item(
+                'Half-Life STEAM Gift',
+                "https://plati.market/itm/{$i}",
+                $i,
+                sellerName: "Seller{$i}",
+            );
+        }
+        $this->platiClient->expects($this->once())->method('search')->with('Half-Life', 10)->willReturn($items);
+
+        $this->entityManager->expects($this->exactly(10))->method('persist');
+        $this->entityManager->expects($this->once())->method('flush');
+
+        $result = $this->service->importForGame($game);
+
+        self::assertTrue($result->isFound());
+        self::assertCount(10, $result->platiGames);
+        // Самые продаваемые (наибольший cntSell) должны быть впереди.
+        self::assertSame('https://plati.market/itm/12', $result->platiGames[0]->getUrl());
+    }
+
+    public function testImportForGameReturnsNotFoundResultWithoutFlushingPersistedEntitiesWhenNoMatches(): void
+    {
+        $game = self::makeGame(1, 'Very Specific Game Name', 5);
+
+        $this->platiClient->method('search')->willReturn([
+            self::item('Something Completely Different', 'https://plati.market/itm/1', 100),
+        ]);
+
+        $this->entityManager->expects($this->never())->method('persist');
+        $this->entityManager->expects($this->once())->method('flush');
+
+        $result = $this->service->importForGame($game);
+
+        self::assertFalse($result->isFound());
+        self::assertStringContainsString('нет совпадений по названию', $result->reason);
     }
 }

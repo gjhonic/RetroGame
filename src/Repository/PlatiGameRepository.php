@@ -175,6 +175,7 @@ class PlatiGameRepository extends ServiceEntityRepository
             'updatedAt' => $qb->addOrderBy('p.updatedAt', $sortDirection),
             'game' => $qb->addOrderBy('game.name', $sortDirection),
             'sellerName' => $qb->addOrderBy('p.sellerName', $sortDirection),
+            'platiName' => $qb->addOrderBy('p.platiName', $sortDirection),
             default => $qb->addOrderBy('p.createdAt', $sortDirection),
         };
     }
@@ -198,6 +199,11 @@ class PlatiGameRepository extends ServiceEntityRepository
         if (($filters['sellerName'] ?? '') !== '') {
             $qb->andWhere('LOWER(p.sellerName) LIKE LOWER(:filterSellerName)')
                 ->setParameter('filterSellerName', '%' . $filters['sellerName'] . '%');
+        }
+
+        if (($filters['platiName'] ?? '') !== '') {
+            $qb->andWhere('LOWER(p.platiName) LIKE LOWER(:filterPlatiName)')
+                ->setParameter('filterPlatiName', '%' . $filters['platiName'] . '%');
         }
     }
 }

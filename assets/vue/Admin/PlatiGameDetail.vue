@@ -12,6 +12,7 @@
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
                 <h2 class="card-title mb-0">{{ platiGame.gameName ?? 'Plati-игра' }}</h2>
+                <button type="button" class="btn btn-outline-danger" @click="deletePlatiGame">Удалить</button>
             </div>
 
             <dl class="row mb-0">
@@ -20,6 +21,9 @@
                     <a v-if="platiGame.gameId" :href="`/admin/games/${platiGame.gameId}`">{{ platiGame.gameName }}</a>
                     <span v-else>—</span>
                 </dd>
+
+                <dt class="col-sm-3">Название товара</dt>
+                <dd class="col-sm-9">{{ platiGame.platiName || '—' }}</dd>
 
                 <dt class="col-sm-3">Ссылка на plati.market</dt>
                 <dd class="col-sm-9">
@@ -66,4 +70,15 @@ onMounted(async () => {
         loading.value = false;
     }
 });
+
+async function deletePlatiGame() {
+    if (!window.confirm('Удалить запись о товаре на plati.market безвозвратно?')) {
+        return;
+    }
+
+    const response = await fetch(`/api/admin/plati-games/${props.id}`, { method: 'DELETE' });
+    if (response.ok) {
+        window.location.href = '/admin/plati-games';
+    }
+}
 </script>

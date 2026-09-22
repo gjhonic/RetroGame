@@ -30,6 +30,9 @@ use Symfony\Component\String\Slugger\SluggerInterface;
  */
 class GameImportService
 {
+    /** Минимум отзывов (recommendations.total) в Steam, чтобы игра считалась не мусорной и импортировалась. */
+    private const MIN_RECOMMENDATIONS = 20;
+
     /**
      * Кэш уже найденных/созданных справочных сущностей (Developer, Genre и
      * т.д.) в рамках текущего запуска — чтобы не плодить дубли по имени
@@ -160,10 +163,20 @@ class GameImportService
      * и Game-специфичные (metacritic, popularity), затем доотвязывает DLC,
      * ожидавшие импорта именно этой игры.
      *
+     * Игры с малым числом отзывов (recommendations.total < MIN_RECOMMENDATIONS)
+     * не импортируются — это отсекает откровенно левые/шаблонные игры без
+     * аудитории. SteamGame при этом всё равно помечается успешным (данные
+     * от Steam получены), просто без Game.
+     *
      * @param array<string, mixed> $details
      */
     private function applyGame(SteamGame $steamGame, array $details, string $fallbackName): void
     {
+        $recommendationsTotal = (int) ($details['recommendations']['total'] ?? 0);
+        if ($recommendationsTotal < self::MIN_RECOMMENDATIONS && $steamGame->getGame() === null) {
+            return;
+        }
+
         $game = $steamGame->getGame();
 
         if ($game === null) {

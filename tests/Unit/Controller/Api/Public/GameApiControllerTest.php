@@ -24,7 +24,6 @@ use App\Repository\GameReactionRepository;
 use App\Repository\GameRepository;
 use App\Repository\GameStatusRepository;
 use App\Repository\GenreRepository;
-use App\Repository\PlatformRepository;
 use App\Repository\PlatiGamePriceRepository;
 use App\Repository\PlatiGameRepository;
 use App\Repository\SteamGameRepository;
@@ -51,7 +50,6 @@ class GameApiControllerTest extends TestCase
     private GameFavoriteRepository&MockObject $gameFavoriteRepository;
     private GameStatusRepository&MockObject $gameStatusRepository;
     private GenreRepository&MockObject $genreRepository;
-    private PlatformRepository&MockObject $platformRepository;
     private SteamGameRepository&MockObject $steamGameRepository;
     private GamePriceRepository&MockObject $gamePriceRepository;
     private PlatiGameRepository&MockObject $platiGameRepository;
@@ -68,7 +66,6 @@ class GameApiControllerTest extends TestCase
         $this->gameFavoriteRepository = $this->createMock(GameFavoriteRepository::class);
         $this->gameStatusRepository = $this->createMock(GameStatusRepository::class);
         $this->genreRepository = $this->createMock(GenreRepository::class);
-        $this->platformRepository = $this->createMock(PlatformRepository::class);
         $this->steamGameRepository = $this->createMock(SteamGameRepository::class);
         $this->gamePriceRepository = $this->createMock(GamePriceRepository::class);
         $this->platiGameRepository = $this->createMock(PlatiGameRepository::class);
@@ -156,7 +153,7 @@ class GameApiControllerTest extends TestCase
         $this->gameRepository->expects($this->once())
             ->method('findForPublicCatalog')
             ->with(
-                ['name' => 'half', 'genre' => '1', 'releaseYearFrom' => '1998'],
+                ['name' => 'half', 'releaseYearFrom' => '1998'],
                 'releaseYear',
                 'ASC',
                 24,
@@ -167,12 +164,53 @@ class GameApiControllerTest extends TestCase
         $request = new Request([
             'filters' => [
                 'name' => ' half ',
-                'genre' => ' 1 ',
                 'releaseYearFrom' => ' 1998 ',
                 'unknownField' => 'ignored',
             ],
             'sortBy' => 'releaseYear',
             'sortDir' => 'asc',
+        ]);
+        $this->controller->list($request, $this->gameRepository, $this->gameMapper);
+    }
+
+    public function testListPassesMultipleGenreIdsToRepository(): void
+    {
+        $this->gameRepository->method('countForPublicCatalog')->willReturn(0);
+        $this->gameRepository->expects($this->once())
+            ->method('findForPublicCatalog')
+            ->with(['genre' => [1, 3]], 'popularity', 'DESC', 24, 0)
+            ->willReturn([]);
+
+        $request = new Request([
+            'filters' => ['genre' => [' 1 ', '3', 'not-a-number', '1']],
+        ]);
+        $this->controller->list($request, $this->gameRepository, $this->gameMapper);
+    }
+
+    public function testListPassesOnlyFreeAndUnavailableInRussiaFiltersToRepository(): void
+    {
+        $this->gameRepository->method('countForPublicCatalog')->willReturn(0);
+        $this->gameRepository->expects($this->once())
+            ->method('findForPublicCatalog')
+            ->with(['onlyFree' => true, 'unavailableInRussia' => true], 'popularity', 'DESC', 24, 0)
+            ->willReturn([]);
+
+        $request = new Request([
+            'filters' => ['onlyFree' => '1', 'unavailableInRussia' => '1'],
+        ]);
+        $this->controller->list($request, $this->gameRepository, $this->gameMapper);
+    }
+
+    public function testListIgnoresFalsyOnlyFreeAndUnavailableInRussiaFilters(): void
+    {
+        $this->gameRepository->method('countForPublicCatalog')->willReturn(0);
+        $this->gameRepository->expects($this->once())
+            ->method('findForPublicCatalog')
+            ->with([], 'popularity', 'DESC', 24, 0)
+            ->willReturn([]);
+
+        $request = new Request([
+            'filters' => ['onlyFree' => '0', 'unavailableInRussia' => 'false'],
         ]);
         $this->controller->list($request, $this->gameRepository, $this->gameMapper);
     }
@@ -189,27 +227,19 @@ class GameApiControllerTest extends TestCase
         $this->controller->list($request, $this->gameRepository, $this->gameMapper);
     }
 
-    public function testFiltersReturnsGenresPlatformsAndReleaseYearRange(): void
+    public function testFiltersReturnsGenresAndReleaseYearRange(): void
     {
         $this->genreRepository->expects($this->once())
             ->method('findBy')
             ->with([], ['name' => 'ASC'])
             ->willReturn([(new Genre('Экшены'))]);
-        $this->platformRepository->expects($this->once())
-            ->method('findBy')
-            ->with([], ['name' => 'ASC'])
-            ->willReturn([(new Platform('Windows'))]);
         $this->gameRepository->method('findPublicReleaseYearRange')->willReturn(['min' => 1998, 'max' => 2024]);
 
-        $response = $this->controller->filters(
-            $this->gameRepository,
-            $this->genreRepository,
-            $this->platformRepository,
-        );
+        $response = $this->controller->filters($this->gameRepository, $this->genreRepository);
         $data = json_decode((string) $response->getContent(), true);
 
         self::assertSame([['id' => null, 'name' => 'Экшены']], $data['genres']);
-        self::assertSame([['id' => null, 'name' => 'Windows']], $data['platforms']);
+        self::assertArrayNotHasKey('platforms', $data);
         self::assertSame(1998, $data['releaseYearMin']);
         self::assertSame(2024, $data['releaseYearMax']);
     }
@@ -220,14 +250,9 @@ class GameApiControllerTest extends TestCase
             (new Genre('Экшены')),
             (new Genre('Сексуальный контент')),
         ]);
-        $this->platformRepository->method('findBy')->willReturn([]);
         $this->gameRepository->method('findPublicReleaseYearRange')->willReturn(null);
 
-        $response = $this->controller->filters(
-            $this->gameRepository,
-            $this->genreRepository,
-            $this->platformRepository,
-        );
+        $response = $this->controller->filters($this->gameRepository, $this->genreRepository);
         $data = json_decode((string) $response->getContent(), true);
 
         self::assertSame([['id' => null, 'name' => 'Экшены']], $data['genres']);
@@ -236,14 +261,9 @@ class GameApiControllerTest extends TestCase
     public function testFiltersReturnsNullReleaseYearRangeWhenNoGamesHaveReleaseDate(): void
     {
         $this->genreRepository->method('findBy')->willReturn([]);
-        $this->platformRepository->method('findBy')->willReturn([]);
         $this->gameRepository->method('findPublicReleaseYearRange')->willReturn(null);
 
-        $response = $this->controller->filters(
-            $this->gameRepository,
-            $this->genreRepository,
-            $this->platformRepository,
-        );
+        $response = $this->controller->filters($this->gameRepository, $this->genreRepository);
         $data = json_decode((string) $response->getContent(), true);
 
         self::assertNull($data['releaseYearMin']);
@@ -433,7 +453,7 @@ class GameApiControllerTest extends TestCase
         $this->steamGameRepository->method('findOneByGame')->willReturn(null);
         $this->gamePriceRepository->method('findHistoryForGame')->willReturn([]);
 
-        $platiGame = new PlatiGame($game, 'https://plati.market/itm/1', 'DarkAwe');
+        $platiGame = new PlatiGame($game, 'https://plati.market/itm/1', 'DarkAwe', 'Half-Life STEAM Gift');
         $this->platiGameRepository = $this->createMock(PlatiGameRepository::class);
         $this->platiGameRepository->method('findByGame')->willReturn([$platiGame]);
         $price = (new PlatiGamePrice($platiGame, new \DateTimeImmutable('2026-09-15')))->markPriced(17400);

@@ -2,12 +2,17 @@
 
 namespace App\Controller\Api\Admin;
 
-use App\Entity\GamePrice;
+use App\Entity\PlatiGame;
 use App\Repository\GamePriceRepository;
 use App\Repository\GameRepository;
+use App\Repository\PlatiGamePriceRepository;
+use App\Repository\PlatiGameRepository;
 use App\Repository\SteamGameRepository;
 use App\Service\Game\GameMapper;
 use App\Service\GamePrice\GamePriceMapper;
+use App\Service\Plati\GameImportService as PlatiGameImportService;
+use App\Service\Plati\PriceImportService as PlatiPriceImportService;
+use App\Service\PlatiGame\PlatiGameMapper;
 use App\Service\Steam\PriceImportService;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -184,20 +189,58 @@ class GameApiController extends AbstractController
                 new OA\Property(property: 'publishers', type: 'array', items: new OA\Items(type: 'string')),
                 new OA\Property(property: 'genres', type: 'array', items: new OA\Items(type: 'string')),
                 new OA\Property(property: 'platforms', type: 'array', items: new OA\Items(type: 'string')),
+                new OA\Property(property: 'steamGame', nullable: true, properties: [
+                    new OA\Property(property: 'id', type: 'integer'),
+                    new OA\Property(property: 'steamAppId', type: 'integer'),
+                ], type: 'object'),
+                new OA\Property(property: 'platiGames', type: 'array', items: new OA\Items(
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer'),
+                        new OA\Property(property: 'sellerName', type: 'string'),
+                        new OA\Property(property: 'platiName', type: 'string'),
+                        new OA\Property(property: 'url', type: 'string'),
+                    ],
+                    type: 'object',
+                )),
             ],
             type: 'object',
         ),
     )]
     #[OA\Response(response: 404, description: 'Игра не найдена')]
-    public function show(int $id, GameRepository $gameRepository, GameMapper $gameMapper): JsonResponse
-    {
+    public function show(
+        int $id,
+        GameRepository $gameRepository,
+        GameMapper $gameMapper,
+        SteamGameRepository $steamGameRepository,
+        PlatiGameRepository $platiGameRepository,
+    ): JsonResponse {
         $game = $gameRepository->find($id);
 
         if ($game === null) {
             throw $this->createNotFoundException('Игра не найдена.');
         }
 
-        return $this->json($gameMapper->toDetail($game));
+        $steamGame = $steamGameRepository->findOneByGame($game);
+
+        return $this->json([
+            ...$gameMapper->toDetail($game),
+            'steamGame' => $steamGame !== null ? [
+                'id' => $steamGame->getId(),
+                'steamAppId' => $steamGame->getSteamAppId(),
+            ] : null,
+            'platiGames' => array_map(self::platiGameToLink(...), $platiGameRepository->findByGame($game)),
+        ]);
+    }
+
+    /** @return array<string, mixed> */
+    private static function platiGameToLink(PlatiGame $platiGame): array
+    {
+        return [
+            'id' => $platiGame->getId(),
+            'sellerName' => $platiGame->getSellerName(),
+            'platiName' => $platiGame->getPlatiName(),
+            'url' => $platiGame->getUrl(),
+        ];
     }
 
     /**
@@ -266,9 +309,10 @@ class GameApiController extends AbstractController
     }
 
     /**
-     * История цены игры по дням — для графика на карточке игры в админке.
-     * Магазин сейчас всегда Steam; storeUrl строится из привязанного
-     * SteamGame::steamAppId (null, если игра не привязана к Steam).
+     * Цены игры для карточки в админке: текущее состояние и история по
+     * дням (для графика) отдельно по Steam и по каждому найденному
+     * продавцу на plati.market — тот же формат, что и у публичного
+     * эндпоинта (см. Api\Public\GameApiController::priceHistory()).
      */
     #[Route(
         '/{id}/price-history',
@@ -285,21 +329,35 @@ class GameApiController extends AbstractController
     )]
     #[OA\Response(
         response: 200,
-        description: 'История цены игры по дням (от старых к новым)',
+        description: 'Цены игры в Steam и на plati.market: текущее состояние и история по дням',
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'items', type: 'array', items: new OA\Items(
+                new OA\Property(property: 'steam', properties: [
+                    new OA\Property(property: 'isFree', type: 'boolean'),
+                    new OA\Property(property: 'isAvailableInRussia', type: 'boolean'),
+                    new OA\Property(property: 'priceKopecks', type: 'integer', nullable: true),
+                    new OA\Property(property: 'store', type: 'string', nullable: true),
+                    new OA\Property(property: 'storeUrl', type: 'string', nullable: true),
+                    new OA\Property(property: 'history', type: 'array', items: new OA\Items(
+                        properties: [
+                            new OA\Property(property: 'date', type: 'string'),
+                            new OA\Property(property: 'priceKopecks', type: 'integer', nullable: true),
+                        ],
+                        type: 'object',
+                    )),
+                ], type: 'object'),
+                new OA\Property(property: 'plati', type: 'array', items: new OA\Items(
                     properties: [
-                        new OA\Property(property: 'id', type: 'integer', nullable: true),
-                        new OA\Property(property: 'gameId', type: 'integer', nullable: true),
-                        new OA\Property(property: 'date', type: 'string'),
+                        new OA\Property(property: 'sellerName', type: 'string'),
+                        new OA\Property(property: 'url', type: 'string'),
                         new OA\Property(property: 'priceKopecks', type: 'integer', nullable: true),
-                        new OA\Property(property: 'currency', type: 'string'),
-                        new OA\Property(property: 'isFree', type: 'boolean'),
-                        new OA\Property(property: 'isAvailableInRussia', type: 'boolean'),
-                        new OA\Property(property: 'store', type: 'string', nullable: true),
-                        new OA\Property(property: 'storeUrl', type: 'string', nullable: true),
-                        new OA\Property(property: 'createdAt', type: 'string'),
+                        new OA\Property(property: 'history', type: 'array', items: new OA\Items(
+                            properties: [
+                                new OA\Property(property: 'date', type: 'string'),
+                                new OA\Property(property: 'priceKopecks', type: 'integer', nullable: true),
+                            ],
+                            type: 'object',
+                        )),
                     ],
                     type: 'object',
                 )),
@@ -314,6 +372,9 @@ class GameApiController extends AbstractController
         SteamGameRepository $steamGameRepository,
         GamePriceRepository $gamePriceRepository,
         GamePriceMapper $gamePriceMapper,
+        PlatiGameRepository $platiGameRepository,
+        PlatiGamePriceRepository $platiGamePriceRepository,
+        PlatiGameMapper $platiGameMapper,
     ): JsonResponse {
         $game = $gameRepository->find($id);
         if ($game === null) {
@@ -321,13 +382,132 @@ class GameApiController extends AbstractController
         }
 
         $steamAppId = $steamGameRepository->findOneByGame($game)?->getSteamAppId();
-        $history = $gamePriceRepository->findHistoryForGame($game);
+        $steamHistory = $gamePriceRepository->findHistoryForGame($game);
+
+        $plati = array_map(
+            static fn (PlatiGame $platiGame): array => $platiGameMapper->toPublicPriceSummary(
+                $platiGame,
+                $platiGamePriceRepository->findHistoryForPlatiGame($platiGame),
+            ),
+            $platiGameRepository->findByGame($game),
+        );
 
         return $this->json([
-            'items' => array_map(
-                static fn (GamePrice $price): array => $gamePriceMapper->toApi($price, $steamAppId),
-                $history,
-            ),
+            'steam' => $gamePriceMapper->toPublicSummary($steamHistory, $steamAppId),
+            'plati' => $plati,
+        ]);
+    }
+
+    /**
+     * Ищет предложения по игре на plati.market вне очереди крона —
+     * кнопка "Импортировать предложения" на карточке игры в админке.
+     * В отличие от app:games:import-plati (до 3 продавцов на игру за
+     * обход) сохраняет до 10 самых продаваемых совпавших предложений
+     * сразу (см. Plati\GameImportService::importForGame()).
+     */
+    #[Route(
+        '/{id}/import-plati',
+        name: 'app_api_admin_game_import_plati',
+        methods: ['POST'],
+        requirements: ['id' => '\d+'],
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        description: 'ID игры',
+        in: 'path',
+        required: true,
+        schema: new OA\Schema(type: 'integer'),
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Итог импорта: сообщение и актуальный список продавцов на plati.market',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'found', type: 'boolean'),
+                new OA\Property(property: 'message', type: 'string'),
+                new OA\Property(property: 'platiGames', type: 'array', items: new OA\Items(
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer'),
+                        new OA\Property(property: 'sellerName', type: 'string'),
+                        new OA\Property(property: 'platiName', type: 'string'),
+                        new OA\Property(property: 'url', type: 'string'),
+                    ],
+                    type: 'object',
+                )),
+            ],
+            type: 'object',
+        ),
+    )]
+    #[OA\Response(response: 404, description: 'Игра не найдена')]
+    public function importPlati(
+        int $id,
+        GameRepository $gameRepository,
+        PlatiGameRepository $platiGameRepository,
+        PlatiGameImportService $platiGameImportService,
+    ): JsonResponse {
+        $game = $gameRepository->find($id);
+        if ($game === null) {
+            throw $this->createNotFoundException('Игра не найдена.');
+        }
+
+        $result = $platiGameImportService->importForGame($game);
+
+        return $this->json([
+            'found' => $result->isFound(),
+            'message' => $result->reason,
+            'platiGames' => array_map(self::platiGameToLink(...), $platiGameRepository->findByGame($game)),
+        ]);
+    }
+
+    /**
+     * Импортирует/обновляет цены на сегодня у всех уже найденных продавцов
+     * игры на plati.market — кнопка "Импортировать цены" в блоке Plati
+     * игры в админке. Использует тот же PriceImportService, что и крон
+     * app:games:import-plati-prices, но сразу по всем продавцам этой игры,
+     * а не по курсору.
+     */
+    #[Route(
+        '/{id}/import-plati-prices',
+        name: 'app_api_admin_game_import_plati_prices',
+        methods: ['POST'],
+        requirements: ['id' => '\d+'],
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        description: 'ID игры',
+        in: 'path',
+        required: true,
+        schema: new OA\Schema(type: 'integer'),
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Итог импорта цен',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'importedCount', type: 'integer'),
+                new OA\Property(property: 'skippedCount', type: 'integer'),
+            ],
+            type: 'object',
+        ),
+    )]
+    #[OA\Response(response: 404, description: 'Игра не найдена')]
+    public function importPlatiPrices(
+        int $id,
+        GameRepository $gameRepository,
+        PlatiGameRepository $platiGameRepository,
+        PlatiPriceImportService $platiPriceImportService,
+    ): JsonResponse {
+        $game = $gameRepository->find($id);
+        if ($game === null) {
+            throw $this->createNotFoundException('Игра не найдена.');
+        }
+
+        $sellersCount = count($platiGameRepository->findByGame($game));
+        $prices = $platiPriceImportService->importPricesForGame($game);
+
+        return $this->json([
+            'importedCount' => count($prices),
+            'skippedCount' => $sellersCount - count($prices),
         ]);
     }
 }
